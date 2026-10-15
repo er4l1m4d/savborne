@@ -22,6 +22,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { bracketFromLuna } from '@/lib/constants'
+import { itemsToUnlock, type ItemKey } from '@/lib/game/items'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -94,5 +95,19 @@ export async function POST(req: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-  return NextResponse.json({ player: data, created: true }, { status: 201 })
+
+  // Immediately unlock items whose bracket threshold is already met at signup.
+  const initialBracket = bracketFromLuna(Math.floor(initialBalanceLuna))
+  const unlockList = itemsToUnlock(new Set<ItemKey>(), initialBracket)
+  if (unlockList.length > 0) {
+    const rows = unlockList.map((k) => ({
+      player_address: address,
+      item_key: k,
+      unlocked_at: new Date().toISOString(),
+    }))
+    const { error: itemErr } = await db.from('player_items').insert(rows)
+    if (itemErr) console.error('Failed to unlock initial items:', itemErr.message)
+  }
+
+  return NextResponse.json({ player: data, created: true, unlockedItems: unlockList }, { status: 201 })
 }

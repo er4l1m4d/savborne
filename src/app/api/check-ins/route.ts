@@ -35,7 +35,9 @@ import { bracketFromLuna, levelFromXp, xpToNextLevel, type Bracket } from '@/lib
 import { computeAward, type PlayerXpState, type XpSource } from '@/lib/game/awards'
 import { evaluateForCheckIn, type CompletedMission } from '@/lib/game/missions'
 import { computeStreak, alreadyCheckedInToday, alreadyCheckedInThisWeek } from '@/lib/game/streaks'
-import { utcDayOf, utcWeekStart } from '@/lib/game/time'
+import { utcDayOf, utcWeekStart, utcDaysBetween } from '@/lib/game/time'
+import { itemsToUnlock, type ItemKey } from '@/lib/game/items'
+import { computeBadgeActions, type BadgeKey } from '@/lib/game/badges'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -224,6 +226,78 @@ export async function POST(req: Request) {
     }
   }
 
+  // 8. Item unlocks on bracket reach. Once unlocked, items never re-lock.
+  const { data: ownedRows } = await db
+    .from('player_items')
+    .select('item_key')
+    .eq('player_address', address)
+  const ownedKeys = new Set<ItemKey>((ownedRows ?? []).map((r) => r.item_key as ItemKey))
+  const unlockList = itemsToUnlock(ownedKeys, newBracket)
+  let unlockedItems: ItemKey[] = []
+  if (unlockList.length > 0) {
+    const insertRows = unlockList.map((k) => ({
+      player_address: address,
+      item_key: k,
+      unlocked_at: now.toISOString(),
+    }))
+    const { error: itemErr } = await db.from('player_items').insert(insertRows)
+    if (itemErr) {
+      console.error('Failed to write player_items:', itemErr.message)
+    } else {
+      unlockedItems = unlockList
+    }
+  }
+
+  // 9. Badge awards and revocations.
+  const { data: activeBadgeRows } = await db
+    .from('player_badges')
+    .select('badge_key')
+    .eq('player_address', address)
+    .is('revoked_at', null)
+  const alreadyActive = new Set<BadgeKey>(
+    (activeBadgeRows ?? []).map((r) => r.badge_key as BadgeKey),
+  )
+  const daysSinceLastWithdrawalReset = player.steady_hand_started_at
+    ? utcDaysBetween(new Date(player.steady_hand_started_at), now)
+    : 0
+  const badgeSnapshot = {
+    hasAnyCheckIn: true, // we just inserted one
+    streakCurrent: streak.current,
+    bracket: newBracket,
+    withdrawalJustNow: priorMostRecent !== null && balanceLuna < priorMostRecent,
+    daysSinceLastWithdrawalReset,
+    hasBattleWin: player.wins > 0,
+  }
+  const badgeActions = computeBadgeActions(badgeSnapshot, alreadyActive)
+  for (const action of badgeActions) {
+    if (action.kind === 'award') {
+      const { error } = await db.from('player_badges').insert({
+        player_address: address,
+        badge_key: action.badge,
+        awarded_at: now.toISOString(),
+        revoked_at: null,
+      })
+      if (error) console.error(`Failed to award badge ${action.badge}:`, error.message)
+    } else {
+      const { error } = await db
+        .from('player_badges')
+        .update({ revoked_at: now.toISOString() })
+        .eq('player_address', address)
+        .eq('badge_key', action.badge)
+        .is('revoked_at', null)
+      if (error) console.error(`Failed to revoke badge ${action.badge}:`, error.message)
+    }
+  }
+
+  // If a withdrawal just happened, restart the Steady Hand counter.
+  if (badgeSnapshot.withdrawalJustNow) {
+    const { error: steadyErr } = await db
+      .from('players')
+      .update({ steady_hand_started_at: now.toISOString() })
+      .eq('address', address)
+    if (steadyErr) console.error('Failed to reset steady_hand_started_at:', steadyErr.message)
+  }
+
   return NextResponse.json({
     ok: true,
     awarded: awards.map((a) => ({
@@ -241,6 +315,8 @@ export async function POST(req: Request) {
     bracketChanged: newBracket !== currentBracket,
     withdrawalDetected: priorMostRecent !== null && balanceLuna < priorMostRecent,
     balanceLuna: Math.floor(balanceLuna),
+    unlockedItems,
+    badgeActions,
   })
 
   // ── helpers defined inside the handler so they close over `db` + `address` ──

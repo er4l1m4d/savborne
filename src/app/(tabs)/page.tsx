@@ -18,6 +18,8 @@ import { getBalance, WalletError } from '@/lib/nimiq'
 import { authHeaders } from '@/lib/session'
 import { usePlayerSession, type PlayerMe } from '@/lib/usePlayerSession'
 import { BRACKETS, LUNA_PER_NIM, type Bracket } from '@/lib/constants'
+import { ITEMS, type ItemKey } from '@/lib/game/items'
+import { BADGES, type BadgeAction } from '@/lib/game/badges'
 
 type AwardSummary = {
   awarded: { key: string; xpApplied: number; xpCapped: number; onetime: boolean }[]
@@ -26,6 +28,8 @@ type AwardSummary = {
   bracketChanged: boolean
   withdrawalDetected: boolean
   balanceLuna: number
+  unlockedItems: ItemKey[]
+  badgeActions: BadgeAction[]
 }
 
 export default function HomePage() {
@@ -229,6 +233,29 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
           Balance dropped since your last check-in. Streak badges are removed;
           everything else stays.
         </p>
+      )}
+      {awards.unlockedItems.length > 0 && (
+        <ul className="text-[11px] text-butter-text flex flex-col gap-0.5 pt-1 border-t border-line">
+          <li className="uppercase tracking-widest font-bold">New items unlocked</li>
+          {awards.unlockedItems.map((k) => {
+            const it = ITEMS.find((i) => i.key === k)
+            return it ? <li key={k}>◈ {it.name} — {it.blurb}</li> : null
+          })}
+        </ul>
+      )}
+      {awards.badgeActions.length > 0 && (
+        <ul className="text-[11px] text-mint flex flex-col gap-0.5 pt-1 border-t border-line">
+          <li className="uppercase tracking-widest font-bold">Badges</li>
+          {awards.badgeActions.map((a) => {
+            const b = BADGES.find((x) => x.key === a.badge)
+            const label = `${a.kind === 'award' ? '◈ Earned' : '◇ Revoked'}: ${b?.name ?? a.badge}`
+            return (
+              <li key={`${a.kind}-${a.badge}`} className={a.kind === 'revoke' ? 'text-coral-text' : ''}>
+                {label}
+              </li>
+            )
+          })}
+        </ul>
       )}
     </section>
   )
