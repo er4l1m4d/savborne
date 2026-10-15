@@ -262,8 +262,7 @@ create policy "own_player_badges" on player_badges
 
 create policy "own_battles" on battles
   for select using (
-    player_address in (player_a, player_b)
-    or current_setting('request.header.x-player-address', true) in (player_a, player_b)
+    current_setting('request.header.x-player-address', true) in (player_a, player_b)
   );
 
 create policy "own_battle_moves" on battle_moves

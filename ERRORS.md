@@ -87,6 +87,19 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** Add `".uiparse/**"` and `"savborne-spike/**"` to `globalIgnores`. Verified: `npx eslint .` → 0 errors, 2 warnings (the documented set-state-in-effect false positives, downgraded to warn via the rules override).
 **Prevention:** When widening an ESLint flat config with non-`files`-scoped objects, audit which directories suddenly fall inside the linted set.
 
+### [2026-10-15] `supabase db push` fails: pooler connection terminated
+**Symptom:** `failed to connect to postgres: failed to connect to host=aws-0-us-east-1.pooler.supabase.com user=postgres.<ref> database=postgres: Connection terminated unexpectedly`. `supabase link` and the management-API commands (api-keys) work fine.
+**Context:** Applying migrations from this machine over its current network. The CLI's direct Postgres/pooler dial is killed mid-handshake while plain HTTPS to the same host succeeds.
+**Root cause:** Network path drops the pooled TLS/TCP connection to port 5432 (ISP or firewall interference), not a credentials or CLI problem.
+**Fix:** Apply migrations manually through the Dashboard SQL Editor (same files, run in filename order). API keys fetched separately via `supabase projects api-keys -o json` piped into `scripts/fetch-supabase-keys.mjs` — the management API is HTTPS and unaffected.
+**Prevention:** On this machine, assume `db push`/`db query`/`gen types` (all pooler-based) may fail; prefer the SQL editor for schema changes, or retry via a different network (phone hotspot). Docker + `supabase db reset` locally would also bypass it entirely.
+
+### [2026-10-15] `own_battles` RLS policy referenced a nonexistent column
+**Symptom:** Caught by static review before applying: `create policy "own_battles" on battles for select using (player_address in (player_a, player_b) or …)` — `battles` has no `player_address` column (they are `player_a`/`player_b`). Postgres would reject the whole migration at that statement.
+**Context:** Migration 20261015000000_init.sql, written during Phase 1; the same expression is valid on sibling tables (check_ins etc.) where the column does exist — copy-paste carry-over.
+**Fix:** Policy now only uses `current_setting('request.header.x-player-address', true) in (player_a, player_b)`, which is what the first condition was incorrectly duplicating.
+**Prevention:** Column names differ per table in this schema (`player_address` on ledgers, `player_a`/`player_b` on battles). Review RLS policies against the specific table's columns; and run migrations in a sandbox DB (Docker `db reset`) before touching a real project — the static catch here came from reading, not testing, which is luck, not process.
+
 ---
 
 ## Historical
