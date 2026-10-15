@@ -85,8 +85,8 @@ export function VersionGate({ children }: { children: ReactNode }) {
 
 function GateShell({ title, body }: { title: string; body: string }) {
   return (
-    <div className="min-h-dvh flex items-center justify-center p-[var(--gut)]">
-      <div className="vpx bg-surface p-6 max-w-[360px] w-full flex flex-col gap-3">
+    <div className="min-h-dvh flex items-center justify-center p-(--gut)">
+      <div className="vpx bg-surface p-6 max-w-90 w-full flex flex-col gap-3">
         <h1
           className="text-2xl leading-tight"
           style={{ fontFamily: 'var(--font-silkscreen)' }}

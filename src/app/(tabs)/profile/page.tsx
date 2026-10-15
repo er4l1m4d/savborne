@@ -73,7 +73,7 @@ export default function ProfilePage() {
   }
   if (error || !data) {
     return (
-      <main className="min-h-dvh flex items-center justify-center p-[var(--gut)]">
+      <main className="min-h-dvh flex items-center justify-center p-(--gut)">
         <div className="vpx bg-coral-tint p-4 text-coral-text text-sm">
           {error ?? 'No data'}
         </div>
@@ -85,7 +85,7 @@ export default function ProfilePage() {
   const activeSet = new Set(data.activeBadges)
 
   return (
-    <main className="p-[var(--gut)] max-w-[420px] mx-auto w-full flex flex-col gap-5">
+    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-5">
       <IdentityStrip data={data} />
       <StatGrid data={data} />
       <section className="flex flex-col gap-2">

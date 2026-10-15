@@ -106,7 +106,7 @@ export default function SetupPage() {
   }
 
   return (
-    <main className="min-h-dvh flex flex-col p-[var(--gut)] max-w-[420px] mx-auto w-full gap-6">
+    <main className="min-h-dvh flex flex-col p-(--gut) max-w-105 mx-auto w-full gap-6">
       <ProgressBar step={step} />
 
       {step === 1 && <StepWelcome onNext={() => setStep(2)} />}
@@ -310,7 +310,7 @@ function PrimaryButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-[2px]"
+      className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-0.5"
       style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
     >
       {children}

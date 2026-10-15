@@ -74,7 +74,7 @@ export default function MissionsPage() {
   const oneTime = missions.filter((m) => m.type === 'onetime')
 
   return (
-    <main className="p-[var(--gut)] max-w-[420px] mx-auto w-full flex flex-col gap-5">
+    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-5">
       <header className="mt-4">
         <h1
           className="text-3xl leading-none"
@@ -187,11 +187,11 @@ function formatTime(iso: string): string {
 
 function Screen({ msg, tone = 'muted' }: { msg: string; tone?: 'muted' | 'error' }) {
   return (
-    <main className="min-h-dvh flex items-center justify-center p-[var(--gut)]">
+    <main className="min-h-dvh flex items-center justify-center p-(--gut)">
       <p
         className={
           tone === 'error'
-            ? 'vpx bg-coral-tint p-4 text-coral-text text-sm max-w-[360px]'
+            ? 'vpx bg-coral-tint p-4 text-coral-text text-sm max-w-90'
             : 'text-fg-muted text-sm'
         }
       >

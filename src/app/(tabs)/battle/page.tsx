@@ -73,7 +73,7 @@ export default function BattleMenuPage() {
   }
 
   return (
-    <main className="p-[var(--gut)] max-w-[420px] mx-auto w-full flex flex-col gap-5">
+    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-5">
       <header className="flex items-baseline justify-between mt-4">
         <h1 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
           Battle
@@ -120,7 +120,7 @@ export default function BattleMenuPage() {
           </code>
           <button
             onClick={copyLink}
-            className="vpx-soft bg-surface-hi py-2 text-sm font-bold active:translate-y-[2px]"
+            className="vpx-soft bg-surface-hi py-2 text-sm font-bold active:translate-y-0.5"
           >
             {copied ? 'Copied!' : 'Copy challenge link'}
           </button>
@@ -191,7 +191,7 @@ function ModeCard({
       <button
         onClick={onClick}
         disabled={disabled}
-        className="vpx py-3 font-bold text-sm active:translate-y-[2px] disabled:opacity-40 disabled:cursor-not-allowed"
+        className="vpx py-3 font-bold text-sm active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
         style={{ background: accent, color: '#0E1D19', boxShadow: '0 3px 0 var(--bevel-shadow)' }}
       >
         {cta}

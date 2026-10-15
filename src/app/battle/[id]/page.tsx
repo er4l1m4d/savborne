@@ -6,7 +6,7 @@
  * stalled opponent auto-plays Defend without any background worker.
  *
  * States rendered:
- *   pending + creator  → "waiting for your friend" + share code + 24h expiry note
+ *   pending + creator  → "waiting for your friend" + 24h expiry note
  *   pending + joiner   → accept button (POST join)
  *   active             → HP bars, turn counter, four move buttons, countdown
  *   completed          → "You win!" / "You lost." / "It's a tie." + XP note
@@ -19,11 +19,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 
 type MoveInfo = { move: string; itemKey: string | null; damage: number } | null
+
 type State = {
   battle: {
     id: string
@@ -58,7 +59,6 @@ const POLL_MS = 3_000
 
 export default function BattleScreen() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const [state, setState] = useState<State | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -77,7 +77,11 @@ export default function BattleScreen() {
       setState((await res.json()) as State)
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection lost. Your move will be saved if you reconnect within 60 seconds.')
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Connection lost. Your move will be saved if you reconnect within 60 seconds.',
+      )
     }
   }, [id])
 
@@ -92,8 +96,6 @@ export default function BattleScreen() {
       clearInterval(clock)
     }
   }, [fetchState])
-
-  const isOver = state?.battle.status === 'completed' || state?.battle.status === 'abandoned'
 
   async function submitMove(move: string, itemKey: ItemKey | null = null) {
     if (!state || submitting) return
@@ -155,7 +157,6 @@ export default function BattleScreen() {
   const oppHp = viewer.side === 'a' ? battle.hpB : battle.hpA
   const iAmCreator = viewer.side === 'a'
 
-  // ── Terminal states ──
   if (battle.status === 'abandoned') {
     return (
       <Shell>
@@ -192,11 +193,13 @@ export default function BattleScreen() {
             <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-silkscreen)' }}>
               {battle.opponentName} challenges you
             </h1>
-            <p className="text-sm text-fg-muted mt-2">5 turns. No chance. Winner has more health.</p>
+            <p className="text-sm text-fg-muted mt-2">
+              5 turns. No chance. Winner has more health.
+            </p>
             <button
               onClick={join}
               disabled={submitting}
-              className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold mt-4 active:translate-y-[2px] disabled:opacity-40"
+              className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold mt-4 active:translate-y-0.5 disabled:opacity-40"
               style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
             >
               {submitting ? 'Joining…' : 'Accept challenge'}
@@ -230,9 +233,7 @@ export default function BattleScreen() {
                 : '+10 XP — a loss still teaches.'}
           </p>
           <div className="flex justify-between text-xs text-fg-faint mt-4 num">
-            <span>
-              You: {myHp} HP
-            </span>
+            <span>You: {myHp} HP</span>
             <span>
               {battle.opponentName}: {oppHp} HP
             </span>
@@ -246,7 +247,7 @@ export default function BattleScreen() {
   // ── Active battle ──
   return (
     <Shell>
-      <div className="w-full max-w-[420px] mx-auto flex flex-col gap-4 p-[var(--gut)]">
+      <div className="w-full max-w-105 mx-auto flex flex-col gap-4 p-(--gut)">
         <header className="flex items-baseline justify-between">
           <span className="text-xs uppercase tracking-widest text-fg-faint">
             {battle.mode === 'ai' ? 'Unranked. Opponent: Savborne AI.' : `vs ${battle.opponentName}`}
@@ -256,7 +257,13 @@ export default function BattleScreen() {
           </span>
         </header>
 
-        <HpBars me={myHp} opp={oppHp} maxHp={battle.startingHp} oppName={battle.opponentName} meName={viewer.displayName} />
+        <HpBars
+          me={myHp}
+          opp={oppHp}
+          maxHp={battle.startingHp}
+          oppName={battle.opponentName}
+          meName={viewer.displayName}
+        />
 
         {viewer.opponentLastMove && (
           <p className="text-[11px] text-mint">
@@ -264,9 +271,7 @@ export default function BattleScreen() {
           </p>
         )}
 
-        {lastTurn && (
-          <TurnLog turn={lastTurn} meSide={viewer.side} />
-        )}
+        {lastTurn && <TurnLog turn={lastTurn} meSide={viewer.side} />}
 
         {viewer.hasMovedThisTurn ? (
           <div className="vpx-soft bg-surface p-4 text-center">
@@ -281,8 +286,18 @@ export default function BattleScreen() {
               Choose your move
             </h2>
             <div className="grid grid-cols-2 gap-2">
-              <MoveButton label="Attack" onClick={() => submitMove('attack')} disabled={submitting} accent="var(--coral)" />
-              <MoveButton label="Defend" onClick={() => submitMove('defend')} disabled={submitting} accent="var(--silver)" />
+              <MoveButton
+                label="Attack"
+                onClick={() => submitMove('attack')}
+                disabled={submitting}
+                accent="var(--coral)"
+              />
+              <MoveButton
+                label="Defend"
+                onClick={() => submitMove('defend')}
+                disabled={submitting}
+                accent="var(--silver)"
+              />
               <MoveButton
                 label={viewer.specialAvailable ? 'Special Move' : 'Special Move (cooldown: 1 turn)'}
                 onClick={() => submitMove('special')}
@@ -333,13 +348,15 @@ export default function BattleScreen() {
 // ─── Atoms ─────────────────────────────────────────────────────────────────
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <main className="min-h-dvh flex items-start justify-center bg-background">{children}</main>
+  return (
+    <main className="min-h-dvh flex items-start justify-center bg-background">{children}</main>
+  )
 }
 
 function Panel({ children, tone }: { children: React.ReactNode; tone?: 'error' }) {
   return (
     <div
-      className={`vpx p-6 max-w-[360px] w-full m-[var(--gut)] ${
+      className={`vpx p-6 max-w-90 w-full m-(--gut) ${
         tone === 'error' ? 'bg-coral-tint text-coral-text' : 'bg-surface text-foreground'
       }`}
     >
@@ -350,7 +367,10 @@ function Panel({ children, tone }: { children: React.ReactNode; tone?: 'error' }
 
 function BackLink({ label = 'Back to battle' }: { label?: string }) {
   return (
-    <Link href="/battle" className="text-sm text-mint underline underline-offset-4 mt-4 self-start">
+    <Link
+      href="/battle"
+      className="inline-block text-sm text-mint underline underline-offset-4 mt-4 self-start"
+    >
       {label}
     </Link>
   )
@@ -377,14 +397,26 @@ function HpBars({
   )
 }
 
-function Hp({ label, value, max, self }: { label: string; value: number; max: number; self?: boolean }) {
+function Hp({
+  label,
+  value,
+  max,
+  self,
+}: {
+  label: string
+  value: number
+  max: number
+  self?: boolean
+}) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100))
   const color = pct > 50 ? 'var(--mint)' : pct > 20 ? 'var(--butter)' : 'var(--coral)'
   return (
     <div className="flex flex-col gap-1">
       <div className="flex justify-between text-[11px] uppercase tracking-widest">
         <span className={self ? 'text-foreground font-bold' : 'text-fg-muted'}>{label}</span>
-        <span className="num text-fg-muted">{value} / {max}</span>
+        <span className="num text-fg-muted">
+          {value} / {max}
+        </span>
       </div>
       <div className="vpx-soft h-4 bg-surface-low overflow-hidden">
         <div
@@ -411,8 +443,18 @@ function TurnLog({
       <span className="font-bold text-fg-faint uppercase tracking-widest text-[10px]">
         Turn {turn.turnNumber} result
       </span>
-      {mine && <span>You used {mine.move}{mine.damage ? ` and dealt ${mine.damage}` : '.'}</span>}
-      {theirs && <span>Opponent used {theirs.move}{theirs.damage ? ` and dealt ${theirs.damage}` : '.'}</span>}
+      {mine && (
+        <span>
+          You used {mine.move}
+          {mine.damage ? ` and dealt ${mine.damage}` : '.'}
+        </span>
+      )}
+      {theirs && (
+        <span>
+          Opponent used {theirs.move}
+          {theirs.damage ? ` and dealt ${theirs.damage}` : '.'}
+        </span>
+      )}
     </div>
   )
 }
@@ -432,7 +474,7 @@ function MoveButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="vpx-soft bg-surface py-3 px-2 text-sm font-bold hover:bg-surface-hi active:translate-y-[2px] disabled:opacity-40 disabled:cursor-not-allowed"
+      className="vpx-soft bg-surface py-3 px-2 text-sm font-bold hover:bg-surface-hi active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
       style={{ color: accent }}
     >
       {label}

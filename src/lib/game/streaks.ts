@@ -52,7 +52,6 @@ export function computeStreak(input: StreakInput): StreakResult {
   const daySet = new Set(checkInsAt.map((d) => utcDayOf(d)))
   const days = Array.from(daySet).sort((a, b) => (a < b ? 1 : -1))
 
-  const todayStr = utcDayOf(now)
   const lastCheckInDay = days[0]
 
   // If the player has NOT checked in today or yesterday, streak is broken.

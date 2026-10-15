@@ -222,7 +222,7 @@ export async function submitMove(
 
   // Validate special cooldown.
   if (move === 'special') {
-    const viewerMods = modsForItems(await activeItemsFor(db, battleId, viewerAddress, turn, battle))
+    const viewerMods = modsForItems(await activeItemsFor(db, battleId, viewerAddress))
     const lastOwn = lastMoveOf(moves, viewerAddress, turn - 1)
     if (!specialAvailable(lastOwn, viewerMods)) {
       return { ok: false, error: 'Special Move is on cooldown', status: 400 }
@@ -243,7 +243,6 @@ export async function submitMove(
     )
     if (used) return { ok: false, error: 'Item already used this battle', status: 409 }
   }
-  if (move !== 'item') itemKeyNullGuard(move, itemKey)
 
   await db.from('battle_moves').insert({
     battle_id: battleId,
@@ -263,7 +262,7 @@ export async function submitMove(
 
   if (battle.mode === 'ai') {
     // AI chooses and the turn always resolves on the player's submit.
-    const aiMove = chooseAiMove(db, battle, movesNow, viewerAddress, turn, now)
+    const aiMove = chooseAiMove(battle, movesNow, viewerAddress, turn)
     await db.from('battle_moves').insert({
       battle_id: battleId,
       player_address: AI_ADDRESS,
@@ -289,10 +288,6 @@ export async function submitMove(
   const refreshed = await loadBattle(db, battleId, viewerAddress, now)
   if ('error' in refreshed) return { ok: false, error: refreshed.error, status: 500 }
   return { ok: true, view: refreshed }
-}
-
-function itemKeyNullGuard(_move: BattleMove, _itemKey: ItemKey | null) {
-  // non-item moves ignore item_key; kept for readability at call sites
 }
 
 // ─── Turn resolution ────────────────────────────────────────────────────────
@@ -321,11 +316,11 @@ async function resolveAndAdvance(
     resolved_damage: 0,
   }
 
-  const aItems = await activeItemsFromMoves(db, battle, moves, battle.player_a, turn)
+  const aItems = activeItemsFromMoves(moves, battle.player_a)
   const bItems =
     battle.mode === 'ai'
       ? aiStartingItems(await playerReachedBronze(db, viewerAddress))
-      : await activeItemsFromMoves(db, battle, moves, battle.player_b ?? '', turn)
+      : activeItemsFromMoves(moves, battle.player_b ?? '')
 
   const outcome = resolveTurn(
     { move: aMove.move_type, mods: modsForItems(aItems) },
@@ -442,7 +437,7 @@ async function settleBattle(
 
     // Battle XP is uncapped raw XP (spec 9.6).
     const xp = battleXp(winnerSide, perspective)
-    await awardRawXp(db, address, { xp: p.xp, level: p.level }, xp, now)
+    await awardRawXp(db, address, { xp: p.xp, level: p.level }, xp)
 
     // W/L/T record.
     const update =
@@ -508,13 +503,11 @@ async function settleBattle(
 
 // ─── Item / move helpers ────────────────────────────────────────────────────
 
-/** Items the viewer has activated so far this battle (before `uptoTurn`). */
+/** Items the viewer has activated so far this battle. */
 async function activeItemsFor(
   db: SupabaseClient,
   battleId: string,
   address: string,
-  _uptoTurn: number,
-  _battle: BattleRow,
 ): Promise<ItemKey[]> {
   const { data } = await db
     .from('battle_moves')
@@ -525,13 +518,7 @@ async function activeItemsFor(
   return (data ?? []).map((r) => r.item_key).filter((k): k is ItemKey => !!k)
 }
 
-async function activeItemsFromMoves(
-  _db: SupabaseClient,
-  _battle: BattleRow,
-  moves: MoveRow[],
-  address: string,
-  _turn: number,
-): Promise<ItemKey[]> {
+function activeItemsFromMoves(moves: MoveRow[], address: string): ItemKey[] {
   return moves
     .filter((m) => m.player_address === address && m.move_type === 'item' && m.item_key)
     .map((m) => m.item_key as ItemKey)
@@ -549,12 +536,10 @@ function lastMoveOf(moves: MoveRow[], address: string, turn: number): BattleMove
 }
 
 function chooseAiMove(
-  db: SupabaseClient,
   battle: BattleRow,
   moves: MoveRow[],
   playerAddress: string,
   turn: number,
-  _now: Date,
 ): BattleMove {
   // AI items are known statically (loadout decision) so modsForItems on them
   // gives specialCooldownOff only if we ever give the AI a Silver Charm.

@@ -162,7 +162,6 @@ export async function awardRawXp(
   address: string,
   player: { xp: number; level: number },
   amount: number,
-  now: Date,
 ): Promise<{ applied: number; leveledUp: boolean; newLevel: number; newXp: number }> {
   const newXp = player.xp + amount
   const newLevel = levelFromXp(newXp)

@@ -66,6 +66,27 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 ```
 **Prevention:** When using Next.js 16's default `eslint-config-next`, this rule may fire. Do not restructure correct hooks around a false positive — verify with `npm run build` first.
 
+### [2026-10-15] Static HTML spike fails: bare module specifier not resolvable
+**Symptom:** A page with `<script type="module">` importing `from '@nimiq/mini-app-sdk'` throws `Failed to resolve module specifier "@nimiq/mini-app-sdk"` in the browser, before any wallet call runs. No output, no crash page — just a silent console error.
+**Context:** The `savborne-spike` static page (and the spike snippet in docs/Savborne-spec.md §15.2), served with `npx serve` or deployed to Vercel as plain files. `npm install` makes the package available to bundlers, but a bare specifier is meaningless to a browser without one.
+**Root cause:** Browser ES modules only accept URL specifiers (`./main.js`, `https://…`). Bare specifiers (`@nimiq/mini-app-sdk`) require a bundler or an import map to resolve.
+**Fix:** Import from a CDN that reshapes the package for browsers: `import { init, NimiqProviderError } from 'https://esm.sh/@nimiq/mini-app-sdk@0.2.4'`. Verified the CDN URL returns 200 + a valid ESM redirect. Pin the exact version to match package.json.
+**Prevention:** Any HTML page with `<script type="module">` must use URL imports. The real app is safe — Next.js bundles and resolves bare specifiers at build time. This only bites dependency-free static demos.
+
+### [2026-10-15] IDE Problems panel shows errors for DELETED files (stale diagnostics)
+**Symptom:** Diagnostics reference `src/app/page.tsx` ("Cannot find module '@/lib/nimiq'", "'err' is of type 'unknown'") and `savborne-app/src/app/globals.css` ("Unknown at rule @theme") — but both paths no longer exist on disk.
+**Context:** After moving `page.tsx` into the `(tabs)` route group and removing the `savborne-app/` scaffold folder, VS Code's TS server and CSS language service kept analyzing the deleted resources and republishing their old errors into the Problems panel.
+**Root cause:** Language servers cache document state per open editor/tab; files deleted via shell (Move-Item / Remove-Item) don't always trigger an immediate unload.
+**Fix:** Verify with `Test-Path` + a real `npm run build` (which passed), then reload the IDE window to flush stale diagnostics.
+**Prevention:** Never trust the Problems panel alone after structural moves — cross-check the resource path actually exists before "fixing" it. `npm run build` is the source of truth.
+
+### [2026-10-15] ESLint flat config: bare `{ rules }` block silently un-ignores non-app folders
+**Symptom:** After adding a `rules` override to `eslint.config.mjs`, `npm run lint` started reporting 14 errors from `.uiparse/` scratch scripts (`require() style import is forbidden`) that never appeared before.
+**Context:** `eslint-config-next` normally ignores everything outside its `files` patterns by default. In flat config, once ANY bare config object without `files` exists in the array, it applies to every matching file — and `globalIgnores` had to stay the single source of exclusions.
+**Root cause:** The rules-override block widened ESLint's effective file set; folders that weren't explicitly ignored (`.uiparse`) got linted under app rules.
+**Fix:** Add `".uiparse/**"` and `"savborne-spike/**"` to `globalIgnores`. Verified: `npx eslint .` → 0 errors, 2 warnings (the documented set-state-in-effect false positives, downgraded to warn via the rules override).
+**Prevention:** When widening an ESLint flat config with non-`files`-scoped objects, audit which directories suddenly fall inside the linted set.
+
 ---
 
 ## Historical

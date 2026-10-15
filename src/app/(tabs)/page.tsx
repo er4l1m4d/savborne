@@ -82,14 +82,14 @@ export default function HomePage() {
 
   if (error) {
     return (
-      <main className="min-h-dvh flex items-center justify-center p-[var(--gut)]">
+      <main className="min-h-dvh flex items-center justify-center p-(--gut)">
         <div className="vpx bg-coral-tint p-4 text-coral-text text-sm">{error}</div>
       </main>
     )
   }
 
   return (
-    <main className="min-h-dvh flex flex-col gap-5 p-[var(--gut)] max-w-[420px] mx-auto w-full">
+    <main className="min-h-dvh flex flex-col gap-5 p-(--gut) max-w-105 mx-auto w-full">
       <Header player={player} />
       <Chips player={player} />
       <XpBar player={player} />
@@ -103,7 +103,7 @@ export default function HomePage() {
       <button
         onClick={onCheckIn}
         disabled={checking}
-        className="vpx bg-mint text-[#0E1D19] py-4 px-4 font-bold text-lg active:translate-y-[2px] disabled:opacity-40"
+        className="vpx bg-mint text-[#0E1D19] py-4 px-4 font-bold text-lg active:translate-y-0.5 disabled:opacity-40"
         style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
       >
         {checking ? 'Reading balance…' : 'Check In'}

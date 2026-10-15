@@ -167,7 +167,6 @@ export async function POST(req: Request) {
   }
   let running: PlayerXpState = { ...dailyHeadroomState }
   let totalApplied = 0
-  let totalCapped = 0
   let leveledUp = false
   const awards: { mission: CompletedMission; applied: number; capped: number }[] = []
 
@@ -179,7 +178,6 @@ export async function POST(req: Request) {
         : { kind: 'weekly_mission', key: m.key }
     const r = computeAward(running, m.xp, source)
     totalApplied += r.applied
-    totalCapped += r.capped
     if (r.leveledUp) leveledUp = true
     running = {
       xp: running.xp + r.applied,

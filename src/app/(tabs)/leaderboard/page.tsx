@@ -8,7 +8,7 @@
 
 export default function LeaderboardPage() {
   return (
-    <main className="p-[var(--gut)] max-w-[420px] mx-auto w-full flex flex-col gap-5">
+    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-5">
       <header className="mt-4">
         <h1
           className="text-3xl leading-none"
