@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   const today = utcDayOf(new Date())
   const weekStart = utcWeekStart(new Date())
 
-  const [{ data: player, error: playerErr }, { data: daily }, { data: weeklyRows }] =
+  const [{ data: player, error: playerErr }, { data: daily }, { data: weeklyRows }, { data: battleRow }] =
     await Promise.all([
       db.from('players').select('*').eq('address', address).maybeSingle(),
       db.from('daily_xp').select('xp_earned').eq('player_address', address).eq('utc_date', today).maybeSingle(),
@@ -37,6 +37,7 @@ export async function GET(req: Request) {
         .eq('player_address', address)
         .gte('recorded_at', weekStart.toISOString())
         .order('recorded_at', { ascending: true }),
+      db.from('daily_battles').select('count').eq('player_address', address).eq('utc_date', today).maybeSingle(),
     ])
 
   if (playerErr) {
@@ -70,6 +71,7 @@ export async function GET(req: Request) {
       lastCheckInAt: player.last_check_in_at,
       dailyXpEarnedToday: daily?.xp_earned ?? 0,
       weeklyXpEarnedThisWeek: weeklyXpEarned,
+      battlesToday: battleRow?.count ?? 0,
     },
   })
 }

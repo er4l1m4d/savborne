@@ -36,6 +36,7 @@ export type PlayerMe = {
   lastCheckInAt: string | null
   dailyXpEarnedToday: number
   weeklyXpEarnedThisWeek: number
+  battlesToday: number
 }
 
 export type UsePlayerSessionResult = {

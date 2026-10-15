@@ -81,6 +81,15 @@ export async function POST(req: Request) {
     .limit(60)
   const prior = history ?? []
 
+  // Owned items, loaded early so the Ledger Scroll XP bonus applies to this
+  // check-in's awards. Items unlocked *during* this check-in take effect
+  // from the next one.
+  const { data: ownedItemRows } = await db
+    .from('player_items')
+    .select('item_key')
+    .eq('player_address', address)
+  const hasLedgerScroll = (ownedItemRows ?? []).some((r) => r.item_key === 'ledger_scroll')
+
   // 2. Insert new check-in.
   const { error: insertErr } = await db.from('check_ins').insert({
     player_address: address,
@@ -122,6 +131,15 @@ export async function POST(req: Request) {
     currentBracket: newBracket,
   }
   const qualified = evaluateForCheckIn(snapshot)
+
+  // Ledger Scroll: +5% XP from check-in missions (spec Section 7).
+  if (hasLedgerScroll) {
+    for (const m of qualified) {
+      if (m.key === 'daily_check_in' || m.key === 'weekly_check_in') {
+        m.xp = Math.round(m.xp * 1.05)
+      }
+    }
+  }
 
   // Filter out missions that are already credited. For one-time missions we
   // check the full history; for repeatables we only check the current window.
@@ -227,11 +245,7 @@ export async function POST(req: Request) {
   }
 
   // 8. Item unlocks on bracket reach. Once unlocked, items never re-lock.
-  const { data: ownedRows } = await db
-    .from('player_items')
-    .select('item_key')
-    .eq('player_address', address)
-  const ownedKeys = new Set<ItemKey>((ownedRows ?? []).map((r) => r.item_key as ItemKey))
+  const ownedKeys = new Set<ItemKey>((ownedItemRows ?? []).map((r) => r.item_key as ItemKey))
   const unlockList = itemsToUnlock(ownedKeys, newBracket)
   let unlockedItems: ItemKey[] = []
   if (unlockList.length > 0) {
