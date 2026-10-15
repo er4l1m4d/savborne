@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne — Type &amp; Colour Specimen (Direction A v2)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   SAVBORNE — DIRECTION A v2  ·  TOKENS
+   Hand-edit this block only to re-skin the entire specimen.
+   Every screen below reads these variables; nothing is hard-coded.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* SURFACE — lifted from #0C1211. Panels now separate by HUE + SATURATION,
+     not by four near-identical near-blacks. Each step is ~7 L* apart. */
+  --shell:        #152420;  /* app background            (was #0C1211) */
+  --surface:      #1C2E29;  /* card                      (was #151F1D) */
+  --surface-hi:   #274438;  /* selected row / raised     (was #1B2E29) */
+  --surface-low:  #101C1A;  /* inset well / disabled     (was #101A18) */
+  --sprite-well:  #0E1D19;  /* behind pixel sprites                    */
+
+  /* TEXT */
+  --fg:           #F5F0DF;  /* primary    (was #F3EEDD, warmed)  */
+  --fg-soft:      #D9DFC6;  /* body copy in emphasised panels     */
+  --fg-muted:     #A6C0B2;  /* secondary  (was #A9B8B2, green-tinted) */
+  --fg-faint:     #7A9187;  /* tertiary / captions                */
+
+  /* STRUCTURE */
+  --line:         #2C463E;  /* interior dividers   (was #243532) */
+  --bevel:        #CFC49B;  /* pixel outline, warm tan (was #C9C1A8) */
+  --bevel-shadow: #35544A;  /* the `0 3px 0` hard drop (was #2E4642) */
+  --bevel-soft:   #4B5A56;  /* disabled outline  (unchanged) */
+
+  /* ACCENTS — 3 now. The collision fix. */
+  --mint:         #5FD3AC;  /* XP, growth, success, active tab */
+  --mint-tint:    #14302A;
+  --coral:        #F2735A;  /* DAMAGE, loss, alerts only       */
+  --coral-text:   #FF9E86;
+  --coral-tint:   #2A1B18;
+  --butter:       #F2B544;  /* NEW — streaks, levels, brackets, rewards */
+  --butter-text:  #FFD37A;
+  --butter-tint:  #35280F;
+
+  /* BRACKET METALS — four distinct hues, one per bracket */
+  --entry:        #D9C98A;  /* wheat  · 1 NIM  */
+  --bronze:       #E08A5B;  /* copper · 3 NIM  */
+  --silver:       #C9D3DC;  /* cool   · 10 NIM */
+  --gold:         #E8C14A;  /* gold   · 25 NIM */
+
+  --nav-h: 84px;
+  --gut: 22px;
+}
+
+/* The three candidate type systems */
+[data-type="archivo"] {
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body:    'IBM Plex Sans', system-ui, sans-serif;
+  --font-num:     'IBM Plex Mono', ui-monospace, monospace;
+  --track-display: -0.025em;
+  --fig: tabular-nums;
+}
+[data-type="grotesk"] {
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Manrope', system-ui, sans-serif;
+  --font-num:     'Space Grotesk', system-ui, sans-serif;
+  --track-display: -0.02em;
+  --fig: tabular-nums;
+}
+[data-type="bricolage"] {
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body:    'Bricolage Grotesque', system-ui, sans-serif;
+  --font-num:     'Bricolage Grotesque', system-ui, sans-serif;
+  --track-display: -0.03em;
+  --fig: tabular-nums;
+}
+[data-type="current"] {
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --font-body:    'Manrope', system-ui, sans-serif;
+  --font-num:     'Outfit', system-ui, sans-serif;
+  --track-display: -0.02em;
+  --fig: normal;   /* the bug, on display */
+}
+
+/* ═══════════════════ DOCUMENT CHROME (not part of the design system) ═════ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0B1613; color: var(--fg);
+  font: 15px/1.6 'IBM Plex Sans', system-ui, sans-serif;
+  padding: 56px 48px 120px;
+}
+main { max-width: 1720px; margin: 0 auto; display: flex; flex-direction: column; gap: 88px; }
+h1.doc { font: 800 44px/1.05 'Archivo', sans-serif; letter-spacing: -0.035em; max-width: 22ch; }
+h1.doc em { font-style: normal; color: var(--butter); }
+h2.doc {
+  font: 800 15px/1 'Archivo', sans-serif; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--mint); margin-bottom: 8px;
+}
+p.doc-lede { color: var(--fg-muted); max-width: 88ch; font-size: 15px; }
+p.doc-lede strong { color: var(--fg); font-weight: 600; }
+hr.doc { border: 0; border-top: 2px solid #223A33; }
+section.doc { display: flex; flex-direction: column; gap: 28px; }
+
+.board-title {
+  font: 700 13px/1 'Archivo', sans-serif; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-faint); margin-bottom: 14px; display: flex; align-items: baseline; gap: 12px;
+}
+.board-title b { color: var(--fg-muted); font-weight: 700; letter-spacing: 0; text-transform: none; font-size: 14px; }
+
+/* ── swatches ─────────────────────────────────────────────────────────── */
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 14px; }
+.swatch { border: 2px solid var(--line); }
+.swatch .chip { height: 76px; }
+.swatch .meta { padding: 10px 12px; background: var(--surface); display: flex; flex-direction: column; gap: 3px; }
+.swatch .name { font: 700 13px/1.2 'Archivo', sans-serif; }
+.swatch .hex  { font: 500 12px/1 'IBM Plex Mono', monospace; color: var(--fg-muted); }
+.swatch .role { font-size: 11.5px; color: var(--fg-faint); line-height: 1.35; }
+
+.ramp { display: flex; border: 2px solid var(--bevel); box-shadow: 0 3px 0 var(--bevel-shadow); }
+.ramp div { flex: 1; height: 108px; display: flex; align-items: flex-end; padding: 8px; }
+.ramp span { font: 600 11px/1 'IBM Plex Mono', monospace; color: #FFF; mix-blend-mode: difference; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.compare .label { font: 600 13px/1 'IBM Plex Sans'; color: var(--fg-muted); margin-bottom: 10px; }
+.compare .label.bad { color: var(--coral-text); }
+.compare .label.good { color: var(--mint); }
+
+/* ── type scale table ─────────────────────────────────────────────────── */
+.scale { display: flex; flex-direction: column; border: 2px solid var(--line); }
+.scale .row {
+  display: grid; grid-template-columns: 96px 1fr 1.3fr; gap: 24px; align-items: baseline;
+  padding: 16px 20px; border-bottom: 2px solid var(--line); background: var(--surface);
+}
+.scale .row:last-child { border-bottom: 0; }
+.scale .row:nth-child(odd) { background: var(--shell); }
+.scale .step { font: 500 12px/1.4 'IBM Plex Mono', monospace; color: var(--fg-faint); }
+.scale .step b { display: block; color: var(--fg-muted); font-weight: 600; }
+.scale .demo { line-height: 1.06; letter-spacing: var(--track-display); font-weight: 700; }
+.scale .specimen { color: var(--fg-muted); font-size: 13.5px; }
+.scale .specimen b { color: var(--fg); font-weight: 600; }
+
+/* ── numeral stress test ──────────────────────────────────────────────── */
+.num-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.num-card { border: 2px solid var(--bevel); box-shadow: 0 3px 0 var(--bevel-shadow); background: var(--surface); padding: 18px; }
+.num-card h4 { font: 700 12px/1 'Archivo'; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); margin-bottom: 14px; }
+.num-card .stack { display: flex; flex-direction: column; gap: 6px; }
+.num-card .stack div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; }
+.num-card .stack span:first-child { color: var(--fg-muted); }
+.num-card .stack b { font: 700 18px/1 var(--font-num); font-variant-numeric: var(--fig); font-feature-settings: 'tnum' 1; }
+.num-card .note { margin-top: 12px; font-size: 12.5px; color: var(--fg-faint); line-height: 1.45; }
+.num-card .note pass { color: var(--mint); font-weight: 600; }
+.num-card .note fail { color: var(--coral-text); font-weight: 600; }
+
+/* ── candidate comparison cards (§2, §3) ──────────────────────────────── */
+.cands { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 20px; }
+.cand { border: 2px solid var(--line); background: var(--surface); }
+.cand > .cap { padding: 12px 16px; background: var(--shell); border-bottom: 2px solid var(--line); display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.cand > .cap .t { font: 700 14px/1 'Archivo'; letter-spacing: 0.02em; }
+.cand > .cap .s { font: 500 11px/1 'IBM Plex Mono'; color: var(--fg-faint); }
+.cand.pick > .cap { border-bottom-color: var(--butter); }
+.cand.pick { border-color: var(--butter); }
+.cand .tag { font: 700 10px/1 'Archivo'; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; background: var(--butter); color: #152420; }
+.cand .tag.alt { background: var(--line); color: var(--fg-muted); }
+.cand .tag.no  { background: var(--coral-tint); color: var(--coral-text); }
+
+/* ═════ SCREEN SYSTEM — the classes every frame in §4 is built from ════ */
+.row-of { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; }
+.frame-label { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+.frame-label b { font: 700 14px/1.2 'Archivo'; letter-spacing: 0.01em; }
+.frame-label span { font-size: 12.5px; color: var(--fg-faint); }
+
+.scr {
+  width: 390px; height: 844px; flex-shrink: 0; overflow: hidden; position: relative;
+  background: var(--shell); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  display: flex; flex-direction: column; border: 2px solid #223A33;
+}
+.scr .num { font-family: var(--font-num); font-variant-numeric: var(--fig); font-feature-settings: 'tnum' 1; }
+.scr > .body { flex: 1; min-height: 0; padding: 20px 22px 0; display: flex; flex-direction: column; gap: 16px; }
+.scr > .body.tight { gap: 14px; padding-top: 20px; }
+
+.vpx { border: 2px solid var(--bevel); box-shadow: 0 3px 0 var(--bevel-shadow); }
+.vpx.soft { border-color: var(--line); box-shadow: 0 3px 0 var(--line); }
+.vpx.off { border: 2px dashed var(--bevel-soft); box-shadow: none; }
+.card { background: var(--surface); }
+
+.hdr { display: flex; align-items: center; justify-content: space-between; height: 44px; }
+.hdr .ttl { font-family: var(--font-display); font-weight: 700; font-size: 28px; letter-spacing: var(--track-display); }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand .wm { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: var(--track-display); }
+.chips { display: flex; align-items: center; gap: 8px; }
+.chip { height: 30px; padding: 0 12px; border-radius: 6px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.chip.bracket { border: 2px solid var(--bevel); color: var(--fg); }
+.chip.level { background: var(--butter); color: #152420; }
+.chip.streak { background: var(--butter-tint); color: var(--butter-text); height: 28px; padding: 0 10px; }
+.chip.gain { background: var(--mint-tint); color: var(--mint); height: 28px; padding: 0 10px; }
+
+.iconbtn { width: 44px; height: 44px; border: 2px solid var(--bevel); box-sizing: border-box; border-radius: 6px; background: var(--surface); color: var(--fg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.charcard { background: var(--surface); padding: 18px; display: flex; gap: 18px; align-items: center; }
+.well { width: 132px; height: 176px; background: var(--sprite-well); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.who .name { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: var(--track-display); line-height: 1.1; }
+.who .sub { font-size: 14px; color: var(--fg-muted); font-weight: 600; }
+.bar { height: 14px; background: var(--surface-low); border: 2px solid var(--bevel); box-sizing: border-box; margin-top: 8px; }
+.bar > i { display: block; height: 100%; background: var(--mint); }
+.bar.thin { height: 10px; border: 0; margin-top: 0; background: var(--surface-low); }
+.bar.dmg > i { background: var(--coral); }
+.fine { font-size: 13px; color: var(--fg-muted); font-weight: 600; }
+
+.savcard { background: var(--surface); padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.savcard .top { display: flex; justify-content: space-between; align-items: baseline; }
+.kicker { font-size: 13px; font-weight: 700; color: var(--fg-muted); letter-spacing: 0.01em; }
+.kicker.ok { color: var(--mint); }
+.big { display: flex; align-items: baseline; gap: 8px; }
+.big .v { font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: var(--track-display); line-height: 1; }
+.big .u { font-size: 16px; font-weight: 700; color: var(--fg-muted); }
+
+.btn { width: 100%; height: 64px; border: 0; background: var(--butter); color: #152420; font-family: inherit; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn.sm { height: 48px; font-size: 15px; padding: 0 18px; width: auto; }
+.btn.ghost { background: var(--surface); color: var(--fg); font-size: 16px; height: 56px; }
+.btn.done { background: var(--surface-low); color: var(--fg-muted); height: 64px; font-size: 18px; }
+
+.list { background: var(--surface); padding: 2px 18px; display: flex; flex-direction: column; }
+.list .li { display: flex; align-items: center; gap: 14px; min-height: 58px; border-bottom: 2px solid var(--line); }
+.list .li:last-child { border-bottom: 0; }
+.box { width: 24px; height: 24px; border: 2px solid var(--mint); box-sizing: border-box; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.box.on { background: var(--mint); border-color: var(--mint); color: #152420; }
+.li .nm { flex: 1; display: flex; flex-direction: column; gap: 1px; font-size: 15px; font-weight: 600; }
+.li .nm small { font-size: 12px; color: var(--fg-muted); font-weight: 600; }
+.li .xp { font-size: 14px; font-weight: 700; color: var(--mint); font-family: var(--font-num); font-variant-numeric: var(--fig); }
+.li .xp.got { color: var(--fg-muted); }
+
+.strip { background: var(--fg); color: #152420; padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
+.strip .l { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.strip .l b { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+.strip .l span { font-size: 13px; font-weight: 700; color: #4A5A55; }
+.strip .btn { background: #152420; color: var(--fg); }
+
+.nav { height: var(--nav-h); box-sizing: border-box; padding: 8px 12px 20px; border-top: 2px solid var(--bevel); background: var(--shell); display: flex; flex-shrink: 0; }
+.nav button { flex: 1; min-height: 56px; border: 0; background: none; color: var(--fg-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 12px; font-weight: 600; }
+.nav button[aria-current] { color: var(--mint); font-weight: 700; }
+
+/* battle */
+.bscr { padding: 20px 22px; gap: 16px; }
+.bhead { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+.bhead .t { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: var(--track-display); line-height: 1.05; }
+.bhead .m { font-size: 13px; color: var(--fg-muted); font-weight: 600; }
+.stage { position: relative; height: 410px; background: var(--surface-low); overflow: hidden; }
+.hpcard { position: absolute; width: 168px; box-sizing: border-box; padding: 10px 12px; background: var(--shell); border: 2px solid var(--bevel); display: flex; flex-direction: column; gap: 6px; }
+.hpcard .r { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; font-weight: 700; }
+.hpcard .r small { font-size: 12px; color: var(--fg-muted); font-weight: 600; }
+.hpcard .hp { height: 10px; background: var(--surface-low); }
+.hpcard .hp > i { display: block; height: 100%; }
+.hpcard .n { font-size: 12px; color: var(--fg-muted); font-weight: 700; font-family: var(--font-num); font-variant-numeric: var(--fig); }
+.fig { position: absolute; }
+.fig.foe { right: 36px; top: 20px; width: 96px; height: 128px; transform: scaleX(-1); }
+.fig.you { left: 30px; bottom: 40px; width: 112px; height: 150px; }
+.shadow { position: absolute; border-radius: 60px; background: rgba(0,0,0,0.45); }
+.ask { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-top: 2px; }
+.moves { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px 14px; }
+.move { width: 100%; height: 84px; border: 0; background: var(--surface); color: var(--fg); font-family: inherit; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; padding: 0 16px; font-size: 18px; font-weight: 700; text-align: left; }
+.move.atk { background: var(--coral); color: #152420; }
+.move.off { background: var(--surface-low); color: var(--fg-muted); gap: 4px; }
+.move.off small { font-size: 12px; font-weight: 600; }
+
+/* result */
+.rscr { padding: 28px 22px 32px; gap: 18px; }
+.eyebrow { font-size: 13px; font-weight: 700; color: var(--fg-muted); text-align: center; letter-spacing: 0.02em; }
+.hero-word { font-family: var(--font-display); font-size: 44px; font-weight: 700; letter-spacing: var(--track-display); line-height: 1.05; text-align: center; color: var(--mint); }
+.stage.sm { height: 250px; }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 2px solid var(--bevel); box-shadow: 0 3px 0 var(--bevel-shadow); padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.stat .v { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: var(--fig); font-feature-settings: 'tnum' 1; }
+.stat .v.up { color: var(--mint); } .stat .v.dn { color: var(--coral-text); } .stat .v.gold { color: var(--butter); }
+.stat .k { font-size: 13px; color: var(--fg-muted); font-weight: 700; }
+.badgerow { background: var(--surface); padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
+.badgerow .l { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.badgerow .l b { font-size: 15px; font-weight: 700; }
+.badgerow .l span { font-size: 13px; color: var(--fg-muted); font-weight: 600; }
+.col { display: flex; flex-direction: column; gap: 14px; }
+.push { margin-top: auto; }
+.lede { font-size: 16px; line-height: 1.5; color: var(--fg-muted); font-weight: 500; }
+.hint { background: var(--surface-low); border: 2px solid var(--line); padding: 14px; font-size: 13px; line-height: 1.5; color: var(--fg-muted); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- Brand mark: "Crown S", retuned for the lifted shell -->
+  <symbol id="mark" viewBox="0 0 24 24" shape-rendering="crispEdges">
+    <rect width="24" height="24" rx="5.4" fill="#0F3A33"/>
+    <path fill="#F6EFD9" d="M7 6h1v1h-1zM11 6h2v1h-2zM16 6h1v1h-1zM7 7h2v1h-2zM10 7h4v1h-4zM15 7h2v1h-2zM7 8h10v1h-10zM9 11h6v1h-6zM8 12h2v1h-2zM14 12h2v1h-2zM8 13h2v1h-2zM9 14h6v1h-6zM14 15h2v1h-2zM8 16h2v1h-2zM14 16h2v1h-2zM9 17h6v1h-6z"/>
+    <path fill="#FF6A4D" d="M7 9h10v1h-10z"/>
+  </symbol>
+  <symbol id="mark-sm" viewBox="4 4 16 16" shape-rendering="crispEdges">
+    <path fill="#F6EFD9" d="M7 6h1v1h-1zM11 6h2v1h-2zM16 6h1v1h-1zM7 7h2v1h-2zM10 7h4v1h-4zM15 7h2v1h-2zM7 8h10v1h-10zM9 11h6v1h-6zM8 12h2v1h-2zM14 12h2v1h-2zM8 13h2v1h-2zM9 14h6v1h-6zM14 15h2v1h-2zM8 16h2v1h-2zM14 16h2v1h-2zM9 17h6v1h-6zM7 9h10v1h-10z"/>
+  </symbol>
+  <!-- PLACEHOLDER pixel combatants. Real sprites are spec open item #10. -->
+  <symbol id="hero" viewBox="0 0 12 16" shape-rendering="crispEdges">
+    <path fill="#33241C" d="M3 0h6v1h-6zM2 1h8v1h-8z"/>
+    <path fill="#E2AE7C" d="M3 2h6v3h-6z"/>
+    <path fill="#0E1D19" d="M4 3h1v1h-1zM7 3h1v1h-1z"/>
+    <path fill="#2F6B58" d="M3 5h6v5h-6zM2 6h1v3h-1zM9 6h1v3h-1z"/>
+    <path fill="#F2B544" d="M3 10h6v1h-6z"/>
+    <path fill="#3B4E48" d="M4 11h1v3h-1zM7 11h1v3h-1z"/>
+    <path fill="#CFC49B" d="M3 14h2v1h-2zM7 14h2v1h-2z"/>
+    <path fill="#C9D3DC" d="M10 2h1v7h-1z"/>
+    <path fill="#E08A5B" d="M9 9h3v1h-3z"/>
+  </symbol>
+  <symbol id="foe" viewBox="0 0 12 16" shape-rendering="crispEdges">
+    <path fill="#2A1B18" d="M3 0h6v1h-6zM2 1h8v1h-8z"/>
+    <path fill="#D9A88A" d="M3 2h6v3h-6z"/>
+    <path fill="#0E1D19" d="M4 3h1v1h-1zM7 3h1v1h-1z"/>
+    <path fill="#8C3B2C" d="M3 5h6v5h-6zM2 6h1v3h-1zM9 6h1v3h-1z"/>
+    <path fill="#CFC49B" d="M3 10h6v1h-6z"/>
+    <path fill="#3B4E48" d="M4 11h1v3h-1zM7 11h1v3h-1z"/>
+    <path fill="#C9C1A8" d="M3 14h2v1h-2zM7 14h2v1h-2z"/>
+    <path fill="#C9D3DC" d="M1 3h1v6h-1z"/>
+    <path fill="#E08A5B" d="M0 9h3v1h-3z"/>
+  </symbol>
+  <symbol id="i-shield" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#E08A5B" d="M0 0h8v4h-8zM1 4h6v1h-6zM2 5h4v1h-4zM3 6h2v1h-2z"/><path fill="#8A5A2B" d="M3 1h2v3h-2z"/></symbol>
+  <symbol id="i-purse"  viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#F5F0DF" d="M2 0h1v1h-1zM5 0h1v1h-1zM3 1h2v1h-2zM1 2h6v1h-6zM0 3h8v4h-8zM1 7h6v1h-6z"/></symbol>
+  <symbol id="i-scroll" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#F5F0DF" d="M1 0h6v7h-6zM0 7h8v1h-8z"/><path fill="#1C2E29" d="M2 2h4v1h-4zM2 4h4v1h-4z"/></symbol>
+  <symbol id="i-blade" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#C9D3DC" d="M6 0h2v1h-2zM5 1h3v1h-3zM4 2h3v1h-3zM3 3h3v1h-3zM2 4h3v1h-3zM1 5h3v1h-3zM0 6h2v1h-2zM1 7h2v1h-2z"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#E8C14A" d="M0 1h1v1h-1zM3 1h1v1h-1zM6 1h1v1h-1zM0 2h2v1h-2zM3 2h2v1h-2zM6 2h2v1h-2zM0 3h8v1h-8zM0 4h8v1h-8zM0 5h8v1h-8z"/></symbol>
+  <symbol id="b-steps" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#5FD3AC" d="M3 1h2v1h-2zM3 2h2v1h-2zM3 3h2v1h-2zM2 4h4v1h-4zM1 5h6v1h-6zM1 6h7v1h-7z"/></symbol>
+  <symbol id="b-warrior" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#F2B544" d="M3 0h1v1h-1zM3 1h2v1h-2zM2 2h3v1h-3zM2 3h4v1h-4zM1 4h6v1h-6zM1 5h6v1h-6zM2 6h4v1h-4zM3 7h2v1h-2z"/></symbol>
+  <symbol id="b-blade" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#F5F0DF" d="M6 0h2v1h-2zM5 1h3v1h-3zM4 2h3v1h-3zM3 3h3v1h-3zM0 4h1v1h-1zM2 4h3v1h-3zM1 5h3v1h-3zM2 6h1v1h-1zM1 7h1v1h-1zM3 7h1v1h-1z"/></symbol>
+</defs></svg>
+
+<main>
+
+<header class="doc" data-type="archivo">
+  <h1 class="doc">Savborne · Direction&nbsp;A <em>v2</em><br>Type &amp; colour specimen</h1>
+  <p class="doc-lede">
+    Direction&nbsp;B and the two logo boards are retired. This file tests the two changes you asked for —
+    <strong>a new type system</strong> and <strong>less black, more colour</strong> — against three real screens,
+    so the choice is made from what will actually ship rather than a description of it.
+    Nothing here is final until you pick a column in §4.
+  </p>
+</header>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<section class="doc">
+  <div>
+    <h2 class="doc">01 · Colour</h2>
+    <p class="doc-lede">
+      The base lifts from <code>#0C1211</code> to <code>#152420</code>. The real fix is underneath it: the old surface
+      ramp was <code>#151F1D</code> / <code>#0E1716</code> / <code>#101A18</code> — three panels roughly 2–3 L* apart,
+      so in practice every card on Home read as the same flat slab and only the border told them apart.
+      The new ramp is <strong>~7 L* per step with rising saturation</strong>, so panels separate on their own.
+    </p>
+  </div>
+
+  <div class="compare">
+    <div>
+      <div class="label bad">Before — four near-blacks, indistinguishable</div>
+      <div class="ramp" aria-label="Old surface ramp">
+        <div style="background:#0C1211"><span>#0C1211</span></div>
+        <div style="background:#101A18"><span>#101A18</span></div>
+        <div style="background:#151F1D"><span>#151F1D</span></div>
+        <div style="background:#0E1716"><span>#0E1716</span></div>
+        <div style="background:#1B2E29"><span>#1B2E29</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="label good">After — lifted, and separated by hue + saturation</div>
+      <div class="ramp" aria-label="New surface ramp">
+        <div style="background:#0E1D19"><span>--sprite-well</span></div>
+        <div style="background:#101C1A"><span>--surface-low</span></div>
+        <div style="background:#152420"><span>--shell</span></div>
+        <div style="background:#1C2E29"><span>--surface</span></div>
+        <div style="background:#274438"><span>--surface-hi</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="board-title">Tokens <b>— edit these and every screen below re-skins</b></div>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="chip" style="background:#152420"></div><div class="meta"><span class="name">--shell</span><span class="hex">#152420</span><span class="role">App background. Screen and nav.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#1C2E29"></div><div class="meta"><span class="name">--surface</span><span class="hex">#1C2E29</span><span class="role">Standard card. +sat vs shell so it lifts.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#274438"></div><div class="meta"><span class="name">--surface-hi</span><span class="hex">#274438</span><span class="role">Selected row, current-player rank row.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#101C1A"></div><div class="meta"><span class="name">--surface-low</span><span class="hex">#101C1A</span><span class="role">Inset wells, HP tracks, disabled.</span></div></div>
+
+    <div class="swatch"><div class="chip" style="background:#F5F0DF"></div><div class="meta"><span class="name">--fg</span><span class="hex">#F5F0DF</span><span class="role">Primary text. Warmed to sit on green.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#A6C0B2"></div><div class="meta"><span class="name">--fg-muted</span><span class="hex">#A6C0B2</span><span class="role">Secondary. 7.1:1 on --surface.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#7A9187"></div><div class="meta"><span class="name">--fg-faint</span><span class="hex">#7A9187</span><span class="role">Captions only. 4.6:1 — never body copy.</span></div></div>
+
+    <div class="swatch"><div class="chip" style="background:#5FD3AC"></div><div class="meta"><span class="name">--mint</span><span class="hex">#5FD3AC</span><span class="role">XP, growth, success, active tab.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#F2735A"></div><div class="meta"><span class="name">--coral</span><span class="hex">#F2735A</span><span class="role">Now damage / loss / alert ONLY.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#F2B544"></div><div class="meta"><span class="name">--butter <b style="color:#F2B544">NEW</b></span><span class="hex">#F2B544</span><span class="role">Streaks, level, brackets, rewards.</span></div></div>
+
+    <div class="swatch"><div class="chip" style="background:#CFC49B"></div><div class="meta"><span class="name">--bevel</span><span class="hex">#CFC49B</span><span class="role">The 2px pixel outline. Slightly brighter.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#35544A"></div><div class="meta"><span class="name">--bevel-shadow</span><span class="hex">#35544A</span><span class="role">The 0 3px 0 hard drop.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#2C463E"></div><div class="meta"><span class="name">--line</span><span class="hex">#2C463E</span><span class="role">Interior dividers.</span></div></div>
+
+    <div class="swatch"><div class="chip" style="background:#D9C98A"></div><div class="meta"><span class="name">--entry</span><span class="hex">#D9C98A</span><span class="role">Entry bracket · 1 NIM · wheat.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#E08A5B"></div><div class="meta"><span class="name">--bronze</span><span class="hex">#E08A5B</span><span class="role">Bronze bracket · 3 NIM · copper.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#C9D3DC"></div><div class="meta"><span class="name">--silver</span><span class="hex">#C9D3DC</span><span class="role">Silver bracket · 10 NIM · cool.</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#E8C14A"></div><div class="meta"><span class="name">--gold</span><span class="hex">#E8C14A</span><span class="role">Gold bracket · 25 NIM.</span></div></div>
+  </div>
+
+  <div>
+    <div class="board-title">The collision this fixes</div>
+    <p class="doc-lede">
+      In the current file <strong>coral does four jobs at once</strong>: it is the primary "Check in now" CTA, the enemy
+      health bar, the loss headline, <em>and</em> the "1-week streak" chip — so the thing a player is proudest of is
+      painted in the app's alarm colour. Coral is now restricted to damage and loss.
+      Streaks, level and bracket promotion move to <strong>--butter</strong>.
+    </p>
+    <div class="compare" style="margin-top:18px">
+      <div>
+        <div class="label bad">Before — streak reads as an alert</div>
+        <div style="display:flex;gap:8px;align-items:center;background:#151F1D;border:2px solid #C9C1A8;padding:14px">
+          <span style="height:28px;padding:0 10px;border-radius:6px;background:#2A1B18;font:700 12px/1 'Outfit';color:#FF9C86;display:inline-flex;align-items:center">1-week streak</span>
+          <span style="height:28px;padding:0 10px;border-radius:6px;background:#6FD0AE;font:700 12px/1 'Outfit';color:#0C1211;display:inline-flex;align-items:center">Lv 7</span>
+        </div>
+      </div>
+      <div>
+        <div class="label good">After — reward is butter, XP is mint, coral is free for damage</div>
+        <div style="display:flex;gap:8px;align-items:center;background:var(--surface);border:2px solid var(--bevel);padding:14px">
+          <span style="height:28px;padding:0 10px;border-radius:6px;background:var(--butter-tint);font:700 12px/1 var(--font-display);color:var(--butter-text);display:inline-flex;align-items:center">1-week streak</span>
+          <span style="height:28px;padding:0 10px;border-radius:6px;background:var(--butter);font:700 12px/1 var(--font-display);color:#152420;display:inline-flex;align-items:center">Lv 7</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="board-title">Open decision <b>— needs your call, see §5</b></div>
+    <p class="doc-lede">
+      If coral is only damage, the primary CTA has to become something. I've rendered §4 with the CTA in
+      <strong>--butter</strong> (the game convention: amber = "press me / reward"), which makes amber do double duty as
+      both reward-colour and action-colour. The alternative is keeping the CTA coral and accepting that a button
+      shares its hue with the enemy health bar.
+    </p>
+  </div>
+</section>
+
+<style>
+/* §2 / §3 demo plumbing */
+.tdemo { display: flex; flex-direction: column; }
+.tdemo .l { padding: 11px 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; }
+.tdemo .l:last-child { border-bottom: 0; }
+.tdemo .meta { font: 500 10.5px/1 'IBM Plex Mono', monospace; color: var(--fg-faint); letter-spacing: 0.03em; }
+.tdemo .d { display: block; line-height: 1.1; }
+.grp { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.grp:last-child { border-bottom: 0; }
+.grp h5 { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-faint); margin-bottom: 10px; }
+.grp .stack { display: flex; flex-direction: column; gap: 5px; }
+.grp .stack div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13px; color: var(--fg-muted); }
+.grp .stack b { font-family: var(--font-num); font-variant-numeric: var(--fig); font-feature-settings: 'tnum' 1; font-size: 17px; font-weight: 700; color: var(--fg); }
+.grp .stack b.up { color: var(--mint); } .grp .stack b.dn { color: var(--coral-text); }
+.verdict { padding: 12px 16px; font-size: 12.5px; line-height: 1.5; color: var(--fg-muted); background: var(--shell); border-top: 2px solid var(--line); }
+.verdict b { color: var(--fg); font-weight: 600; }
+.callout { border: 2px solid var(--butter); background: var(--butter-tint); padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; }
+.callout h3 { font: 800 20px/1.2 'Archivo', sans-serif; letter-spacing: -0.02em; color: var(--butter-text); }
+.callout p { color: var(--fg-soft); font-size: 14.5px; line-height: 1.55; max-width: 92ch; }
+.callout code { font: 600 13.5px/1 'IBM Plex Mono', monospace; color: var(--butter-text); }
+ol.flow { padding-left: 22px; display: flex; flex-direction: column; gap: 8px; color: var(--fg-muted); font-size: 14.5px; max-width: 92ch; }
+ol.flow b { color: var(--fg); }
+</style>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<section class="doc">
+  <div>
+    <h2 class="doc">02 · Type scale, four ways</h2>
+    <p class="doc-lede">
+      Same nine strings, same nine sizes, taken verbatim from the screens. The sizes are the ones actually in use
+      today (44 / 40 / 36 / 28 / 26 / 22 / 16 / 15 / 12), so nothing is invented for the comparison.
+      Read down the <strong>first</strong> column — the page title and the hero — then scan across.
+    </p>
+  </div>
+
+  <div class="cands">
+
+    <div class="cand" data-type="current">
+      <div class="cap"><span class="t">Outfit + Manrope</span><span class="tag no">Current</span></div>
+      <div class="tdemo">
+        <div class="l"><span class="meta">44 · display hero · "You win!"</span><span class="d" style="font:700 44px/1.05 var(--font-display);letter-spacing:-0.02em;color:var(--mint)">You win!</span></div>
+        <div class="l"><span class="meta">40 · balance</span><span class="d" style="font:700 40px/1 var(--font-display);letter-spacing:-0.02em">12.55 <small style="font-size:16px;color:var(--fg-muted)">NIM</small></span></div>
+        <div class="l"><span class="meta">36 · welcome</span><span class="d" style="font:700 36px/1.08 var(--font-display);letter-spacing:-0.02em">Save for real.</span></div>
+        <div class="l"><span class="meta">28 · page title</span><span class="d" style="font:700 28px/1 var(--font-display);letter-spacing:-0.02em">Missions</span></div>
+        <div class="l"><span class="meta">26 · battle head</span><span class="d" style="font:700 26px/1.05 var(--font-display);letter-spacing:-0.02em">Turn 2 of 5</span></div>
+        <div class="l"><span class="meta">22 · section label</span><span class="d" style="font:600 22px/1.1 var(--font-display);letter-spacing:-0.01em">Choose your move</span></div>
+        <div class="l"><span class="meta">16 · lede</span><span class="d" style="font:500 16px/1.5 var(--font-body);color:var(--fg-muted)">Check in on your NIM savings, earn XP and items.</span></div>
+        <div class="l"><span class="meta">15 · list row</span><span class="d" style="font:600 15px/1.3 var(--font-body)">Weekly Strategist</span></div>
+        <div class="l"><span class="meta">12 · nav / caption</span><span class="d" style="font:700 12px/1 var(--font-body);letter-spacing:0.01em">Resets 00:00 UTC · 10 of 25 XP</span></div>
+      </div>
+      <div class="verdict">The 44 and the 28 are the <b>same voice at different weights</b>. Nothing separates a headline from a label except size — which is why the current screens feel flat.
+      </div>
+    </div>
+
+    <div class="cand pick" data-type="archivo">
+      <div class="cap"><span class="t">Archivo + IBM Plex</span><span class="tag">My pick</span></div>
+      <div class="tdemo">
+        <div class="l"><span class="meta">44 · display hero · "You win!"</span><span class="d" style="font:800 44px/1.05 var(--font-display);letter-spacing:-0.035em;color:var(--mint)">You win!</span></div>
+        <div class="l"><span class="meta">40 · balance</span><span class="d" style="font:800 40px/1 var(--font-display);letter-spacing:-0.035em">12.55 <small style="font-size:16px;color:var(--fg-muted)">NIM</small></span></div>
+        <div class="l"><span class="meta">36 · welcome</span><span class="d" style="font:800 36px/1.08 var(--font-display);letter-spacing:-0.03em">Save for real.</span></div>
+        <div class="l"><span class="meta">28 · page title</span><span class="d" style="font:800 28px/1 var(--font-display);letter-spacing:-0.03em">Missions</span></div>
+        <div class="l"><span class="meta">26 · battle head</span><span class="d" style="font:700 26px/1.05 var(--font-display);letter-spacing:-0.025em">Turn 2 of 5</span></div>
+        <div class="l"><span class="meta">22 · section label</span><span class="d" style="font:600 22px/1.1 var(--font-display);letter-spacing:-0.01em">Choose your move</span></div>
+        <div class="l"><span class="meta">16 · lede</span><span class="d" style="font:400 16px/1.5 var(--font-body);color:var(--fg-muted)">Check in on your NIM savings, earn XP and items.</span></div>
+        <div class="l"><span class="meta">15 · list row</span><span class="d" style="font:600 15px/1.3 var(--font-body)">Weekly Strategist</span></div>
+        <div class="l"><span class="meta">12 · nav / caption</span><span class="d" style="font:700 12px/1 var(--font-body);letter-spacing:0.02em">Resets 00:00 UTC · 10 of 25 XP</span></div>
+      </div>
+      <div class="verdict">Archivo is <b>wider and heavier</b> at the top end, so the hero and the title read as a different register from Plex body copy. Two families that genuinely contrast, plus a mono for figures.
+      </div>
+    </div>
+
+    <div class="cand" data-type="grotesk">
+      <div class="cap"><span class="t">Space Grotesk + Manrope</span><span class="tag alt">Option B</span></div>
+      <div class="tdemo">
+        <div class="l"><span class="meta">44 · display hero · "You win!"</span><span class="d" style="font:700 44px/1.05 var(--font-display);letter-spacing:-0.03em;color:var(--mint)">You win!</span></div>
+        <div class="l"><span class="meta">40 · balance</span><span class="d" style="font:700 40px/1 var(--font-display);letter-spacing:-0.03em">12.55 <small style="font-size:16px;color:var(--fg-muted)">NIM</small></span></div>
+        <div class="l"><span class="meta">36 · welcome</span><span class="d" style="font:700 36px/1.08 var(--font-display);letter-spacing:-0.03em">Save for real.</span></div>
+        <div class="l"><span class="meta">28 · page title</span><span class="d" style="font:700 28px/1 var(--font-display);letter-spacing:-0.03em">Missions</span></div>
+        <div class="l"><span class="meta">26 · battle head</span><span class="d" style="font:700 26px/1.05 var(--font-display);letter-spacing:-0.02em">Turn 2 of 5</span></div>
+        <div class="l"><span class="meta">22 · section label</span><span class="d" style="font:600 22px/1.1 var(--font-display);letter-spacing:-0.01em">Choose your move</span></div>
+        <div class="l"><span class="meta">16 · lede</span><span class="d" style="font:500 16px/1.5 var(--font-body);color:var(--fg-muted)">Check in on your NIM savings, earn XP and items.</span></div>
+        <div class="l"><span class="meta">15 · list row</span><span class="d" style="font:600 15px/1.3 var(--font-body)">Weekly Strategist</span></div>
+        <div class="l"><span class="meta">12 · nav / caption</span><span class="d" style="font:700 12px/1 var(--font-body);letter-spacing:0.01em">Resets 00:00 UTC · 10 of 25 XP</span></div>
+      </div>
+      <div class="verdict">The quirky <b>lower-case g, t and a</b> give it character, and it has real tabular figures. But the quirk fires on every headline, so it competes with the pixel art instead of framing it.
+      </div>
+    </div>
+
+    <div class="cand" data-type="bricolage">
+      <div class="cap"><span class="t">Bricolage Grotesque</span><span class="tag alt">Option C</span></div>
+      <div class="tdemo">
+        <div class="l"><span class="meta">44 · display hero · "You win!"</span><span class="d" style="font:800 44px/1.05 var(--font-display);letter-spacing:-0.04em;color:var(--mint)">You win!</span></div>
+        <div class="l"><span class="meta">40 · balance</span><span class="d" style="font:800 40px/1 var(--font-display);letter-spacing:-0.04em">12.55 <small style="font-size:16px;color:var(--fg-muted)">NIM</small></span></div>
+        <div class="l"><span class="meta">36 · welcome</span><span class="d" style="font:800 36px/1.08 var(--font-display);letter-spacing:-0.035em">Save for real.</span></div>
+        <div class="l"><span class="meta">28 · page title</span><span class="d" style="font:700 28px/1 var(--font-display);letter-spacing:-0.03em">Missions</span></div>
+        <div class="l"><span class="meta">26 · battle head</span><span class="d" style="font:700 26px/1.05 var(--font-display);letter-spacing:-0.025em">Turn 2 of 5</span></div>
+        <div class="l"><span class="meta">22 · section label</span><span class="d" style="font:600 22px/1.1 var(--font-display);letter-spacing:-0.01em">Choose your move</span></div>
+        <div class="l"><span class="meta">16 · lede</span><span class="d" style="font:400 16px/1.5 var(--font-body);color:var(--fg-muted)">Check in on your NIM savings, earn XP and items.</span></div>
+        <div class="l"><span class="meta">15 · list row</span><span class="d" style="font:500 15px/1.3 var(--font-body)">Weekly Strategist</span></div>
+        <div class="l"><span class="meta">12 · nav / caption</span><span class="d" style="font:600 12px/1 var(--font-body)">Resets 00:00 UTC · 10 of 25 XP</span></div>
+      </div>
+      <div class="verdict">One variable file, <b>opsz + wdth + wght axes</b>, so display and body come from the same source at a smaller payload. Distinctive, though the wonk leans editorial rather than ledger.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<section class="doc">
+  <div>
+    <h2 class="doc">03 · The figures test — the part that actually decides it</h2>
+    <p class="doc-lede">
+      Savborne is a ledger wearing a costume. Every one of these strings appears in a stacked column in a real screen,
+      where digits must line up vertically and must not shift width as a timer counts down or an HP bar drains.
+      <strong>Compare the right-hand column of each card.</strong> The first card is left on proportional figures —
+      the current behaviour — so you can see the failure.
+    </p>
+  </div>
+
+  <div class="cands">
+
+    <div class="cand" data-type="current">
+      <div class="cap"><span class="t">Outfit — proportional</span><span class="tag no">Fails</span></div>
+      <div class="grp"><h5>Health, both fighters</h5><div class="stack">
+        <div><span>Savborne AI</span><b>62 / 100 HP</b></div>
+        <div><span>Kemi</span><b>78 / 100 HP</b></div>
+        <div><span>Tobi</span><b>100 / 100 HP</b></div>
+        <div><span>Kemi, late game</span><b>6 / 100 HP</b></div>
+      </div></div>
+      <div class="grp"><h5>Balance, across check-ins</h5><div class="stack">
+        <div><span>2.00 baseline</span><b>2.00 NIM</b></div>
+        <div><span>last week</span><b>11.40 NIM</b></div>
+        <div><span>now</span><b>12.55 NIM</b></div>
+        <div><span>after withdrawal</span><b>6.20 NIM</b></div>
+      </div></div>
+      <div class="grp"><h5>Timers &amp; Elo</h5><div class="stack">
+        <div><span>Queue</span><b>0:42</b></div>
+        <div><span>Queue, later</span><b>11:05</b></div>
+        <div><span>Rating</span><b>1042 → 1060</b></div>
+        <div><span>Widening</span><b>±150 / ±600</b></div>
+      </div></div>
+      <div class="verdict"><b>The right edges are ragged.</b> "6 / 100 HP" and "100 / 100 HP" do not align, and 0:42 → 11:05 makes the timer slide sideways as it counts. This is the bug to fix, whatever font wins.</div>
+    </div>
+
+    <div class="cand pick" data-type="archivo">
+      <div class="cap"><span class="t">Plex Mono for figures</span><span class="tag">Passes</span></div>
+      <div class="grp"><h5>Health, both fighters</h5><div class="stack">
+        <div><span>Savborne AI</span><b>62 / 100 HP</b></div>
+        <div><span>Kemi</span><b>78 / 100 HP</b></div>
+        <div><span>Tobi</span><b>100 / 100 HP</b></div>
+        <div><span>Kemi, late game</span><b>6 / 100 HP</b></div>
+      </div></div>
+      <div class="grp"><h5>Balance, across check-ins</h5><div class="stack">
+        <div><span>2.00 baseline</span><b>2.00 NIM</b></div>
+        <div><span>last week</span><b>11.40 NIM</b></div>
+        <div><span>now</span><b>12.55 NIM</b></div>
+        <div><span>after withdrawal</span><b>6.20 NIM</b></div>
+      </div></div>
+      <div class="grp"><h5>Timers &amp; Elo</h5><div class="stack">
+        <div><span>Queue</span><b>0:42</b></div>
+        <div><span>Queue, later</span><b>11:05</b></div>
+        <div><span>Rating</span><b class="up">1042 → 1060</b></div>
+        <div><span>Widening</span><b>±150 / ±600</b></div>
+      </div></div>
+      <div class="verdict">Fixed advance. Every digit column is flush, and a ticking timer holds its position. Mono is used <b>only</b> for HP, NIM, Elo deltas, timers and the XP column — never for prose.</div>
+    </div>
+
+    <div class="cand" data-type="grotesk">
+      <div class="cap"><span class="t">Space Grotesk, tnum</span><span class="tag alt">Passes</span></div>
+      <div class="grp"><h5>Health, both fighters</h5><div class="stack">
+        <div><span>Savborne AI</span><b>62 / 100 HP</b></div>
+        <div><span>Kemi</span><b>78 / 100 HP</b></div>
+        <div><span>Tobi</span><b>100 / 100 HP</b></div>
+        <div><span>Kemi, late game</span><b>6 / 100 HP</b></div>
+      </div></div>
+      <div class="grp"><h5>Balance, across check-ins</h5><div class="stack">
+        <div><span>2.00 baseline</span><b>2.00 NIM</b></div>
+        <div><span>last week</span><b>11.40 NIM</b></div>
+        <div><span>now</span><b>12.55 NIM</b></div>
+        <div><span>after withdrawal</span><b>6.20 NIM</b></div>
+      </div></div>
+      <div class="grp"><h5>Timers &amp; Elo</h5><div class="stack">
+        <div><span>Queue</span><b>0:42</b></div>
+        <div><span>Queue, later</span><b>11:05</b></div>
+        <div><span>Rating</span><b class="up">1042 → 1060</b></div>
+        <div><span>Widening</span><b>±150 / ±600</b></div>
+      </div></div>
+      <div class="verdict">Space Grotesk ships real <b>tnum</b>, so it aligns with no extra file — the cheapest pass. Digits are characterful but slightly less rigid than a true mono.</div>
+    </div>
+
+    <div class="cand" data-type="bricolage">
+      <div class="cap"><span class="t">Bricolage, tnum</span><span class="tag alt">Verify</span></div>
+      <div class="grp"><h5>Health, both fighters</h5><div class="stack">
+        <div><span>Savborne AI</span><b>62 / 100 HP</b></div>
+        <div><span>Kemi</span><b>78 / 100 HP</b></div>
+        <div><span>Tobi</span><b>100 / 100 HP</b></div>
+        <div><span>Kemi, late game</span><b>6 / 100 HP</b></div>
+      </div></div>
+      <div class="grp"><h5>Balance, across check-ins</h5><div class="stack">
+        <div><span>2.00 baseline</span><b>2.00 NIM</b></div>
+        <div><span>last week</span><b>11.40 NIM</b></div>
+        <div><span>now</span><b>12.55 NIM</b></div>
+        <div><span>after withdrawal</span><b>6.20 NIM</b></div>
+      </div></div>
+      <div class="grp"><h5>Timers &amp; Elo</h5><div class="stack">
+        <div><span>Queue</span><b>0:42</b></div>
+        <div><span>Queue, later</span><b>11:05</b></div>
+        <div><span>Rating</span><b class="up">1042 → 1060</b></div>
+        <div><span>Widening</span><b>±150 / ±600</b></div>
+      </div></div>
+      <div class="verdict">Aligns here, but the <b>opsz axis changes the figure set between sizes</b>, so a 40px balance and a 12px caption may not agree. I'd want to test this on a live countdown before trusting it.</div>
+    </div>
+  </div>
+</section>
+
+<!-- icon symbols for the screen frames -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="n-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linejoin="round" d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></symbol>
+  <symbol id="n-battle" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M4 20L20 4M15 4h5v5M20 20L4 4M4 9V4h5"/></symbol>
+  <symbol id="n-missions" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M5 6l2 2 3-3M5 14l2 2 3-3M13 7h7M13 15h7"/></symbol>
+  <symbol id="n-ranks" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M5 20v-8h4v8M10 20V5h4v15M15 20V9h4v11"/></symbol>
+  <symbol id="n-profile" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></g></symbol>
+  <symbol id="i-sword" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M4 20L20 4M15 4h5v5M7 17l-3 3M9 15l-3-3"/></symbol>
+  <symbol id="i-defend" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linejoin="round" d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6z"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round" d="M6 9h12l1 11H5zM9 9a3 3 0 016 0"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linejoin="round" d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.4 9.3l6-.7z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5 9-10"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
+</defs></svg>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<section class="doc">
+  <div>
+    <h2 class="doc">04 · Three real screens, three type systems</h2>
+    <p class="doc-lede">
+      Home · checked in, Battle · Turn 2 of 5, and Result · win — lifted from the handoff and rebuilt on the v2 tokens.
+      <strong>Each row is identical except the type.</strong> Walk down one row, then compare it to the row above.
+      Sprites are placeholders (spec open item #10); the layout and every string are the real ones.
+    </p>
+  </div>
+
+  <div data-type="archivo" id="row-src">
+    <div class="board-title">Row 2 · Archivo + IBM Plex Sans + Plex Mono <b>my pick</b></div>
+    <div class="row-of">
+
+      <div>
+        <div class="frame-label"><b>Home · checked in</b><span>Where a player lands every day</span></div>
+        <article class="scr">
+          <div class="body">
+            <div class="hdr">
+              <div class="brand"><svg width="36" height="36"><use href="#mark"/></svg><span class="wm">Savborne</span></div>
+              <div class="chips"><span class="chip bracket">Silver</span><span class="chip level num">Lv 7</span></div>
+            </div>
+            <div class="vpx charcard">
+              <div class="well"><svg width="96" height="128"><use href="#hero"/></svg></div>
+              <div class="who">
+                <div class="name">Kemi</div>
+                <div class="sub">Level 7 · Silver</div>
+                <div class="bar"><i style="width:72%"></i></div>
+                <div class="fine num">52 XP to Level 8</div>
+              </div>
+            </div>
+            <div class="vpx savcard">
+              <div class="top"><span class="kicker">Savings account</span><span class="kicker ok">Checked in just now</span></div>
+              <div class="big"><span class="v num">12.55</span><span class="u">NIM</span><span class="chip gain num" style="margin-left:auto">+0.15 since last</span></div>
+              <div class="vpx soft"><button class="btn done"><svg width="22" height="22" stroke-width="3.2"><use href="#i-check"/></svg>Checked in today</button></div>
+            </div>
+            <div class="vpx list">
+              <div class="li"><span class="box on"><svg width="16" height="16" stroke-width="3.2"><use href="#i-check"/></svg></span><span class="nm" style="color:var(--fg-muted)">Daily Check-in</span><span class="xp got num">+10 XP earned</span></div>
+              <div class="li"><span class="box"></span><span class="nm">Quick Duel</span><span class="xp num">+15 XP</span></div>
+            </div>
+            <div class="vpx strip">
+              <div class="l"><b>Battle</b><span class="num">3 battles left today</span></div>
+              <button class="btn sm">Choose opponent</button>
+            </div>
+          </div>
+          <nav class="nav">
+            <button aria-current="page"><svg width="24" height="24" stroke-width="2.4"><use href="#n-home"/></svg>Home</button>
+            <button><svg width="24" height="24" stroke-width="2"><use href="#n-battle"/></svg>Battle</button>
+            <button><svg width="24" height="24" stroke-width="2"><use href="#n-missions"/></svg>Missions</button>
+            <button><svg width="24" height="24" stroke-width="2"><use href="#n-ranks"/></svg>Ranks</button>
+            <button><svg width="24" height="24" stroke-width="2"><use href="#n-profile"/></svg>Profile</button>
+          </nav>
+        </article>
+      </div>
+
+      <div>
+        <div class="frame-label"><b>Battle · Turn 2 of 5</b><span>The most-seen screen in the app</span></div>
+        <article class="scr bscr">
+          <div class="bhead">
+            <div><div class="t">Turn 2 of 5</div><div class="m">Unranked. Opponent: Savborne AI.</div></div>
+            <button class="iconbtn"><svg width="20" height="20" stroke-width="2.4"><use href="#i-x"/></svg></button>
+          </div>
+          <div class="vpx stage">
+            <div class="hpcard" style="left:14px;top:14px">
+              <div class="r">Savborne AI<small class="num">Lv 5</small></div>
+              <div class="hp"><i style="width:62%;background:var(--coral)"></i></div>
+              <div class="n">62 / 100 HP</div>
+            </div>
+            <div class="shadow" style="right:30px;top:150px;width:110px;height:18px"></div>
+            <div class="fig foe"><svg width="96" height="128"><use href="#foe"/></svg></div>
+            <div class="shadow" style="left:26px;bottom:28px;width:130px;height:22px"></div>
+            <div class="fig you"><svg width="112" height="150"><use href="#hero"/></svg></div>
+            <div class="hpcard" style="right:14px;bottom:36px">
+              <div class="r">Kemi<small class="num">Lv 7</small></div>
+              <div class="hp"><i style="width:78%;background:var(--mint)"></i></div>
+              <div class="n">78 / 100 HP</div>
+            </div>
+          </div>
+          <div class="ask">Choose your move</div>
+          <div class="moves">
+            <div class="vpx"><button class="move atk"><svg width="24" height="24" stroke-width="2.4"><use href="#i-sword"/></svg>Attack</button></div>
+            <div class="vpx"><button class="move"><svg width="24" height="24" stroke-width="2.4"><use href="#i-defend"/></svg>Defend</button></div>
+            <div class="vpx"><button class="move"><svg width="24" height="24" stroke-width="2.4"><use href="#i-bag"/></svg>Use item</button></div>
+            <div class="vpx off"><button class="move off" disabled><svg width="24" height="24" stroke-width="2.4"><use href="#i-star"/></svg><span>Special Move</span><small>(cooldown: 1 turn)</small></button></div>
+          </div>
+        </article>
+      </div>
+
+      <div>
+        <div class="frame-label"><b>Result · win</b><span>Reward hierarchy under stress</span></div>
+        <article class="scr rscr">
+          <div class="eyebrow">Ranked · vs Tobi</div>
+          <h1 class="hero-word">You win!</h1>
+          <div class="vpx stage sm">
+            <div class="shadow" style="left:60px;bottom:26px;width:120px;height:20px"></div>
+            <div class="fig" style="left:66px;bottom:36px;width:108px;height:148px"><svg width="108" height="148"><use href="#hero"/></svg></div>
+            <div class="shadow" style="right:56px;bottom:26px;width:96px;height:16px"></div>
+            <div class="fig" style="right:60px;bottom:32px;width:84px;height:112px;transform:scaleX(-1);opacity:.5"><svg width="84" height="112"><use href="#foe"/></svg></div>
+          </div>
+          <div class="duo">
+            <div class="stat"><span class="v up num">+30 XP</span><span class="k">Battle win</span></div>
+            <div class="stat"><span class="v up num">+18</span><span class="k num">Rating 1042 → 1060</span></div>
+          </div>
+          <div class="vpx soft badgerow">
+            <svg width="36" height="36"><use href="#b-blade"/></svg>
+            <div class="l"><b>First Blade earned</b><span>Your first battle win</span></div>
+          </div>
+          <div class="col push">
+            <div class="vpx"><button class="btn" style="height:60px;font-size:17px">Back to Battle</button></div>
+            <div class="vpx soft"><button class="btn ghost">Go to Home</button></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section class="doc">
+  <div>
+    <h2 class="doc">05 · What I'd change beyond the two you asked for</h2>
+    <p class="doc-lede">Three things fell out of rebuilding the screens. Flagging them here rather than sneaking them in.</p>
+  </div>
+
+  <ol class="flow">
+    <li><b>Coral stops being the primary button.</b> Right now "Check in now" and the enemy health bar are the same
+      hex. Once coral means only "damage / loss", <code>--butter</code> takes the CTA, which is also the game
+      convention for a reward action. This is the one change you should push back on if you disagree — it moves
+      the app's single most-tapped button.</li>
+    <li><b>The streak chip was painted in the alarm colour.</b> "1-week streak" used coral-on-coral-tint, so the
+      thing a player is proudest of read as a warning. It is now butter. Same for the level chip.</li>
+    <li><b>Four bracket hues, not one grey metal.</b> Entry / Bronze / Silver / Gold currently share `#C9C1A8` for
+      their outlines, so "Silver" and "Bronze" are indistinguishable at a glance in the header chips and the Items
+      grid. Each bracket now owns a hue, which also makes the Bracket Climb screen legible without reading it.</li>
+  </ol>
+
+  <div class="callout">
+    <h3>Two things I'd fix regardless of which font you pick</h3>
+    <p>
+      <strong>Self-host, subset, and stop using Google Fonts.</strong> Both current families load from
+      <code>fonts.gstatic.com</code> at runtime, which puts a third-party round-trip between a judge opening the app
+      and the app being legible — inside a WebView, on a Nigerian mobile connection, at the moment they are scoring
+      "Functionality, reliability" (45 pts). Subset WOFF2 files served from Vercel with
+      <code>font-display: swap</code> and a <code>preconnect</code> remove that failure mode and cut the payload.
+      If Archivo + Plex is chosen, Plex Mono ships digits and <code>/:±.,NIMXP</code> only — a few KB.
+    </p>
+    <p>
+      <strong><code>tabular-nums</code> on every figure.</strong> §3 shows the failure. HP counters, NIM balances, Elo
+      deltas, the 24-hour challenge countdown and the queue timer all change value in place, so they must not change
+      width in place. This is a two-line CSS fix and it is currently missing.
+    </p>
+  </div>
+</section>
+
+<script>
+/* Rows 1, 3 and 4 are clones of row 2, so the comparison is identical-by-construction
+   rather than identical-by-copy-paste. Only the data-type attribute differs.
+   Delete this block if you want the frames to be genuinely static markup. */
+(() => {
+  const src = document.getElementById('row-src');
+  const rows = [
+    ['current',   'Row 1 · Outfit + Manrope — today, on the new palette', 'baseline'],
+    ['grotesk',   'Row 3 · Space Grotesk + Manrope', 'option B'],
+    ['bricolage', 'Row 4 · Bricolage Grotesque, single family', 'option C']
+  ];
+  let anchor = src;
+  rows.forEach(([type, title, tag]) => {
+    const c = src.cloneNode(true);
+    c.removeAttribute('id');
+    c.setAttribute('data-type', type);
+    c.querySelector('.board-title').innerHTML = title + ' <b>' + tag + '</b>';
+    if (type === 'current') src.parentElement.insertBefore(c, src); // baseline goes first
+    else anchor = (anchor.after(c), c);                             // then in option order
+  });
+})();
+</script>
+</main>
+</body>
+</html>

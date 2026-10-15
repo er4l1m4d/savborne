@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SAVBORNE DESIGN TOKENS
+   Source: "Savborne Type & Colour Specimen.html" — Direction A v2
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* SURFACE — panels separate by hue + saturation, ~7 L* apart */
+  --shell:        #152420;
+  --surface:      #1C2E29;
+  --surface-hi:   #274438;
+  --surface-low:  #101C1A;
+  --sprite-well:  #0E1D19;
+
+  /* TEXT */
+  --fg:           #F5F0DF;
+  --fg-soft:      #D9DFC6;
+  --fg-muted:     #A6C0B2;
+  --fg-faint:     #7A9187;
+
+  /* STRUCTURE */
+  --line:         #2C463E;
+  --bevel:        #CFC49B;
+  --bevel-shadow: #35544A;
+  --bevel-soft:   #4B5A56;
+
+  /* ACCENTS */
+  --mint:         #5FD3AC;
+  --mint-tint:    #14302A;
+  --coral:        #F2735A;
+  --coral-text:   #FF9E86;
+  --coral-tint:   #2A1B18;
+  --butter:       #F2B544;
+  --butter-text:  #FFD37A;
+  --butter-tint:  #35280F;
+
+  /* BRACKET METALS */
+  --entry:        #D9C98A;
+  --bronze:       #E08A5B;
+  --silver:       #C9D3DC;
+  --gold:         #E8C14A;
+
+  /* LAYOUT */
+  --nav-h: 84px;
+  --gut: 22px;
+}
+
+/* Tailwind v4 theme mapping */
+@theme inline {
+  --color-background: var(--shell);
+  --color-foreground: var(--fg);
+  --color-surface: var(--surface);
+  --color-surface-hi: var(--surface-hi);
+  --color-surface-low: var(--surface-low);
+  --color-line: var(--line);
+  --color-bevel: var(--bevel);
+  --color-bevel-shadow: var(--bevel-shadow);
+  --color-bevel-soft: var(--bevel-soft);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+  --color-mint: var(--mint);
+  --color-mint-tint: var(--mint-tint);
+  --color-coral: var(--coral);
+  --color-coral-text: var(--coral-text);
+  --color-coral-tint: var(--coral-tint);
+  --color-butter: var(--butter);
+  --color-butter-text: var(--butter-text);
+  --color-butter-tint: var(--butter-tint);
+  --color-entry: var(--entry);
+  --color-bronze: var(--bronze);
+  --color-silver: var(--silver);
+  --color-gold: var(--gold);
+  --color-sprite-well: var(--sprite-well);
+
+  --font-display: var(--font-silkscreen);
+  --font-body: var(--font-jakarta);
+
+  --spacing-gutter: var(--gut);
+}
+
+/* Base body styles */
+body {
+  background: var(--shell);
+  color: var(--fg);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Bevel utility — the signature pixel-RPG border */
+.vpx {
+  border: 2px solid var(--bevel);
+  box-shadow: 0 3px 0 var(--bevel-shadow);
+}
+.vpx-soft {
+  border: 2px solid var(--line);
+  box-shadow: 0 3px 0 var(--line);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--surface-low); }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
