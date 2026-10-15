@@ -28,7 +28,7 @@ export type ItemKey =
 /** Bracket tier order, lowest first. */
 const TIER_ORDER: Bracket[] = ['entry', 'bronze', 'silver', 'gold']
 
-/** Item catalog mirroring the SQL seed in `supabase/migrations/0001_init.sql`. */
+/** Item catalog mirroring the SQL seed in `supabase/migrations/…_init.sql`. */
 export const ITEMS: {
   key: ItemKey
   name: string

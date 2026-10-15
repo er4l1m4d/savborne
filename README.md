@@ -30,7 +30,9 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-Apply `supabase/migrations/0001_init.sql` in your Supabase project's SQL editor before the first run.
+Apply the migrations with the Supabase CLI after linking your project
+(`npx supabase link --project-ref <ref>` then `npx supabase db push`), or paste
+`supabase/migrations/*.sql` into the Dashboard SQL Editor in filename order.
 
 ## Testing inside Nimiq Pay
 
