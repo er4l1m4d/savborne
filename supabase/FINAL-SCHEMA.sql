@@ -303,6 +303,13 @@ declare
   new_battle_id    uuid;
   current_bracket  bracket_name;
 begin
+  -- 0. Sweep abandoned entries on EVERY call (spec 16.3 step 4: "deleted on
+  --    next poll"). Cannot live only on the match path — with no candidate,
+  --    abandoned rows would otherwise persist forever.
+  delete from queue
+    where status = 'waiting'
+      and last_poll_at < now() - interval '30 seconds';
+
   select * into me_row from queue
     where player_address = me_address and status = 'waiting'
     for update;
@@ -351,10 +358,6 @@ begin
   update queue set status = 'matched', battle_id = new_battle_id
     where player_address in (me_address, candidate.player_address);
 
-  delete from queue
-    where status = 'waiting'
-      and last_poll_at < now() - interval '30 seconds';
-
   return new_battle_id;
 end;
 $$;
@@ -371,6 +374,55 @@ grant execute on function match_me(text) to service_role;
 grant usage on schema public to service_role;
 grant all privileges on all tables in schema public to service_role;
 grant all privileges on all sequences in schema public to service_role;
+
+-- ─── Leaderboard aggregation (Phase 5) ─────────────────────────────────────────────
+-- One row per human player with everything both boards sort on.
+-- growth_luna = current balance − the FIRST-ever check-in balance (spec 4.5
+-- "balance growth between check-ins", net since joining). Normalisation to
+-- 0–100 happens in the API route (it needs the whole cohort's max).
+create or replace function leaderboard_stats()
+returns table (
+  player_address  text,
+  display_name    text,
+  level           int,
+  bracket         bracket_name,
+  rating          int,
+  wins            int,
+  losses          int,
+  ties            int,
+  streak_current  int,
+  streak_best     int,
+  growth_luna     bigint
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    p.address,
+    p.display_name,
+    p.level,
+    p.bracket,
+    p.rating,
+    p.wins,
+    p.losses,
+    p.ties,
+    p.streak_current,
+    p.streak_best,
+    p.current_balance_luna - coalesce(
+      (select ci.balance_luna
+         from check_ins ci
+        where ci.player_address = p.address
+        order by ci.recorded_at asc
+        limit 1),
+      p.current_balance_luna
+    ) as growth_luna
+  from players p
+  where p.address <> 'ai-savborne'
+$$;
+
+revoke all on function leaderboard_stats() from public;
+grant execute on function leaderboard_stats() to service_role;
 
 -- ─── Verification (optional — paste separately, expect 10|8|6|≥1|13|3|true) ─
 -- select (select count(*) from missions) as missions,

@@ -25,6 +25,8 @@ const eslintConfig = defineConfig([
     ".uiparse/**",
     // Standalone spike (own package.json, not part of the app lint).
     "savborne-spike/**",
+    // Third-party asset packs (Kenney etc.) — reference material, not app code.
+    "assets-raw/**",
   ]),
 ]);
 

@@ -122,6 +122,27 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** Added `supabase/migrations/20261016000001_grants.sql` (`grant usage on schema public` + `grant all on all tables/sequences in schema public to service_role`) and folded the same grants into init.sql for fresh clones. Deliberately NO grants to anon/authenticated — the app never reads via REST with those roles, and least-privilege stays intact.
 **Prevention:** Any migration file that creates tables must also grant privileges explicitly — never assume the platform's default grants exist.
 
+### [2026-10-16] Battles swapped damage: each side received the damage IT dealt
+**Symptom:** E2E flagged it behaviorally — a naive all-Attack player beat an AI holding Silver Blade + Bronze Shield, which the balance math makes impossible (the player should be KO'd by turn 5). Build and lint were clean; only a live game loop exposed it.
+**Context:** `resolveAndAdvance` in `src/lib/game/battleServer.ts` applied `outcome.damageToB` (damage A dealt to B) against A's own HP, and vice versa.
+**Root cause:** Misreading `resolveTurn`'s contract at the call site: `damageToA` means "damage dealt TO A (by B)" — the HP line must subtract damageToA from A. The naming reads like "A's attack damage" at a glance.
+**Fix:** Swapped the subtraction; re-ran the full suite green with `winner=ai-savborne` for naive play (AI difficulty curve now behaves per spec 11.3).
+**Prevention:** Outcome fields crossing two parties need "to WHOM" naming at every consumer, or a unit test asserting asymmetric damage (e.g. Attack vs Defend → only the attacker loses HP). This is exactly what the 42-assertion E2E is for — run it after ANY battle-engine change: `node scripts/e2e-test.mjs` (self-cleans its test players).
+
+### [2026-10-16] Guarded UPDATE race-check via `count` silently always-null
+**Symptom:** After refactoring battles to start `pending`→`active` with a guarded flip (`.eq('status','pending')`), every AI battle got stuck: moves returned 409 "Battle is pending", the flip's bookkeeping (daily counters, Quick Duel) never ran, and the busy-guard then blocked later battles.
+**Context:** `beginBattleIfDue` decided "did I win the race?" from `const { count } = await db.from('battles').update(...).eq(...).select('id')`.
+**Root cause:** supabase-js returns `count: null` unless you pass `{ count: 'exact' }` — so the winner-check was always false. Compounding: `loadBattle` trusted that false and returned the pre-flip stale `pending` row.
+**Fix:** Check `data` (updated-rows array from `.select()`) instead of `count`; and in `loadBattle`, always re-read the row whenever a flip was *attempted* (not just when this caller won it), so a race-loser never serves stale status.
+**Prevention:** Never branch on `count` from supabase-js without explicitly requesting `count: 'exact'`. Prefer the returned rows for "did my guarded write apply?" checks. Race-sensitive reads must re-read after any conditional write attempt.
+
+### [2026-10-16] Queue stale-cleanup only ran on the match path — zombie rows never swept
+**Symptom:** Stress test section 3: a queue entry backdated 31 s still existed (`status: waiting`) after the other player polled for 35 s. Expected: deleted on next poll (spec 16.3 step 4).
+**Context:** `match_me()` had the stale `DELETE` as its final step — but every earlier branch ("no candidate found", "not in queue", "bracket lost") `RETURN null` before reaching it. A player waiting alone in a bracket never triggered cleanup.
+**Root cause:** Placement — cleanup written as post-match housekeeping instead of per-call housekeeping. Reading the branches top-to-bottom shows step 7 is unreachable in exactly the scenario it exists for.
+**Fix:** Moved the `DELETE ... last_poll_at < now() - 30s` to step 0, before anything else, in both FINAL-SCHEMA.sql and the record migration. Candidate search already ignores stale rows, so behavior only gains the sweep.
+**Prevention:** For any "X should happen on next poll" requirement, assert it in a test where no match occurs — the stress suite caught this precisely because section 3 is match-negative by design.
+
 ---
 
 ## Historical

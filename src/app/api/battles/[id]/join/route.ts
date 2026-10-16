@@ -12,7 +12,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
-import { BATTLE } from '@/lib/constants'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -40,20 +39,18 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     return NextResponse.json({ error: 'You created this challenge' }, { status: 400 })
   }
 
-  const now = new Date()
+  // Claim the seat only — do NOT flip to active. beginBattleIfDue (run by the
+  // next loadBattle) is the single place a battle starts, so both players'
+  // daily counters and Quick Duel credit exactly once through it.
   const { error: updErr } = await db
     .from('battles')
-    .update({
-      player_b: address,
-      status: 'active',
-      started_at: now.toISOString(),
-      turn_deadline: new Date(now.getTime() + BATTLE.turnTimerSeconds * 1000).toISOString(),
-    })
+    .update({ player_b: address })
     .eq('id', id)
-    .eq('status', 'pending') // optimistic guard against a double-join race
+    .eq('status', 'pending')
+    .is('player_b', null) // atomic guard against a double-join race
   if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
 
-  // Verify we were the one who flipped it (someone else may have raced us).
+  // Verify we were the one who claimed it (someone else may have raced us).
   const { data: fresh } = await db.from('battles').select('player_b').eq('id', id).single()
   if (fresh?.player_b !== address) {
     return NextResponse.json({ error: 'Challenge was just accepted by someone else' }, { status: 409 })

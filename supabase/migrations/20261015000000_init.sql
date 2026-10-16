@@ -279,6 +279,11 @@ declare
   new_battle_id    uuid;
   current_bracket  bracket_name;
 begin
+  -- 0. Sweep abandoned entries on EVERY call (spec 16.3 step 4).
+  delete from queue
+    where status = 'waiting'
+      and last_poll_at < now() - interval '30 seconds';
+
   -- 1. Load my queue row (locked).
   select * into me_row from queue
     where player_address = me_address and status = 'waiting'
@@ -335,11 +340,6 @@ begin
   -- 6. Mark both queue rows matched.
   update queue set status = 'matched', battle_id = new_battle_id
     where player_address in (me_address, candidate.player_address);
-
-  -- 7. Clean up any stale entries (best-effort).
-  delete from queue
-    where status = 'waiting'
-      and last_poll_at < now() - interval '30 seconds';
 
   return new_battle_id;
 end;

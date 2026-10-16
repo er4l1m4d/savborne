@@ -1,0 +1,7 @@
+Pack: Tiny Dungeon (Kenney)
+Source page: https://opengameart.org/content/tiny-dungeon  (Kenney-uploaded, license badge: CC0)
+Canonical page: https://kenney.nl/assets/tiny-dungeon
+File: https://opengameart.org/sites/default/files/kenney_tinydungeon.zip
+License: CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/
+Downloaded: 2026-10-16 by automated fetch for Savborne UI hardening (task 1).
+Note: attribution NOT required under CC0; recorded anyway for provenance.

@@ -19,7 +19,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { BATTLE, XP_VALUES, type Bracket } from '../constants'
+import { BATTLE, XP_VALUES, eloDelta, type Bracket } from '../constants'
 import {
   aiChooseMove,
   aiStartingItems,
@@ -69,10 +69,15 @@ export type StartResult =
 
 /**
  * Create a battle of `mode` for `address`. Enforces:
- * - Daily limit of 3 across all modes (spec 9.4).
+ * - Daily limit of 3 STARTED battles across all modes (spec 9.4).
  * - One open battle at a time per player (busy guard).
- * Increments daily_battles and credits Quick Duel when the first battle of
- * the UTC day starts.
+ *
+ * The battle is created as `pending` for EVERY mode. Counting (daily_battles
+ * + Quick Duel) happens exactly once, per human, when the battle flips to
+ * `active` in beginBattleIfDue — for AI immediately on the first poll, for
+ * friend challenges when both sides are present, for ranked when match_me
+ * pairs the queue. A challenge nobody accepts therefore never consumes the
+ * creator's daily allowance.
  */
 export async function startBattle(
   db: SupabaseClient,
@@ -106,14 +111,14 @@ export async function startBattle(
     .from('battles')
     .insert({
       mode,
-      status: mode === 'ai' ? 'active' : 'pending',
+      status: 'pending',
       player_a: address,
       player_b: playerB,
       current_turn: 1,
-      turn_deadline: mode === 'ai' ? new Date(now.getTime() + BATTLE.turnTimerSeconds * 1000).toISOString() : null,
+      turn_deadline: null,
       player_a_hp: BATTLE.startingHp,
       player_b_hp: BATTLE.startingHp,
-      started_at: mode === 'ai' ? now.toISOString() : null,
+      started_at: null,
     })
     .select()
     .single()
@@ -122,10 +127,45 @@ export async function startBattle(
     return { ok: false, code: 'unknown', error: error?.message ?? 'Insert failed' }
   }
 
-  await incrementDailyBattles(db, address, today)
-  await creditQuickDuel(db, address, now, limitRow?.count ?? 0)
-
   return { ok: true, battleId: battle.id }
+}
+
+/**
+ * Flip a due `pending` battle to `active` exactly once (guarded update —
+ * concurrent callers lose the race silently). On a won flip, each human
+ * participant gets their daily_battles increment and, if it is their first
+ * battle of the UTC day, the Quick Duel mission credit.
+ * Returns true when THIS call performed the flip.
+ */
+export async function beginBattleIfDue(
+  db: SupabaseClient,
+  battle: BattleRow,
+  now: Date,
+): Promise<boolean> {
+  if (battle.status !== 'pending') return false
+  const readyToStart = battle.mode === 'ai' || battle.player_b !== null
+  if (!readyToStart) return false
+
+  const { data: flipped } = await db
+    .from('battles')
+    .update({
+      status: 'active',
+      started_at: now.toISOString(),
+      turn_deadline: new Date(now.getTime() + BATTLE.turnTimerSeconds * 1000).toISOString(),
+      current_turn: Math.max(1, battle.current_turn),
+    })
+    .eq('id', battle.id)
+    .eq('status', 'pending')
+    .select('id')
+  if (!flipped || flipped.length === 0) return false // another caller won the flip
+
+  const day = utcDayOf(now)
+  for (const addr of [battle.player_a, battle.player_b]) {
+    if (!addr || addr === AI_ADDRESS) continue
+    const countBefore = await incrementDailyBattles(db, addr, day)
+    if (countBefore === 0) await creditQuickDuel(db, addr, now)
+  }
+  return true
 }
 
 // ─── Load / poll ────────────────────────────────────────────────────────────
@@ -167,15 +207,19 @@ export async function loadBattle(
     }
   }
 
-  // Turn timeout: any unresolved due turn is resolved with Defend defaults
-  // (spec 9.5). Then re-read the row since HP/turn may have advanced.
+  // Start a due pending battle (counts dailies exactly once). When we even
+  // ATTEMPTED the flip, always re-read: a concurrent caller may have won the
+  // race, and we must not hand back a stale 'pending' row. Then run turn
+  // timeout defaulting (spec 9.5).
   let current = row
-  if (
+  const attemptedBegin = current.status === 'pending'
+  await beginBattleIfDue(db, current, now)
+  const dueForTimeout =
     current.status === 'active' &&
-    current.turn_deadline &&
+    current.turn_deadline !== null &&
     new Date(current.turn_deadline) < now
-  ) {
-    await timeoutResolveTurn(db, current, now)
+  if (attemptedBegin || dueForTimeout) {
+    if (dueForTimeout) await timeoutResolveTurn(db, current, now)
     const { data: fresh } = await db.from('battles').select('*').eq('id', battleId).single()
     current = fresh as BattleRow
   }
@@ -435,6 +479,16 @@ async function settleBattle(
   const participants = [battle.player_a, battle.player_b].filter(
     (p): p is string => !!p && p !== AI_ADDRESS,
   )
+  // Elo applies to RANKED human-vs-human battles only (spec 10.2). Compute
+  // both deltas from pre-battle ratings before writing either.
+  const addressRow = new Map<string, { rating: number }>()
+  if (battle.mode === 'ranked' && participants.length === 2) {
+    const { data: preRows } = await db
+      .from('players')
+      .select('address, rating')
+      .in('address', participants)
+    for (const r of preRows ?? []) addressRow.set(r.address, { rating: r.rating })
+  }
   for (const address of participants) {
     const { data: p } = await db.from('players').select('*').eq('address', address).single()
     if (!p) continue
@@ -445,6 +499,20 @@ async function settleBattle(
     // Battle XP is uncapped raw XP (spec 9.6).
     const xp = battleXp(winnerSide, perspective)
     await awardRawXp(db, address, { xp: p.xp, level: p.level }, xp)
+
+    // Elo rating change (ranked only).
+    if (battle.mode === 'ranked') {
+      const own = addressRow.get(address)?.rating ?? p.rating
+      const oppAddr = participants.find((x) => x !== address)
+      const opp = oppAddr ? (addressRow.get(oppAddr)?.rating ?? 1000) : 1000
+      const resultNum = outcome === 'win' ? 1 : outcome === 'tie' ? 0.5 : 0
+      const delta = eloDelta(own, opp, resultNum)
+      const { error: eloErr } = await db
+        .from('players')
+        .update({ rating: own + delta })
+        .eq('address', address)
+      if (eloErr) console.error('settleBattle: elo update failed:', eloErr.message)
+    }
 
     // W/L/T record.
     const update =
@@ -561,7 +629,7 @@ function chooseAiMove(
   })
 }
 
-async function incrementDailyBattles(db: SupabaseClient, address: string, day: string) {
+async function incrementDailyBattles(db: SupabaseClient, address: string, day: string): Promise<number> {
   const { data: cur } = await db
     .from('daily_battles')
     .select('count')
@@ -574,19 +642,14 @@ async function incrementDailyBattles(db: SupabaseClient, address: string, day: s
       .update({ count: cur.count + 1 })
       .eq('player_address', address)
       .eq('utc_date', day)
-  } else {
-    await db.from('daily_battles').insert({ player_address: address, utc_date: day, count: 1 })
+    return cur.count
   }
+  await db.from('daily_battles').insert({ player_address: address, utc_date: day, count: 1 })
+  return 0
 }
 
-/** Quick Duel: "start one battle today" — credit on the first start of the day. */
-async function creditQuickDuel(
-  db: SupabaseClient,
-  address: string,
-  now: Date,
-  countBefore: number,
-) {
-  if (countBefore > 0) return
+/** Quick Duel: "start one battle today" — credit on the first started battle. */
+async function creditQuickDuel(db: SupabaseClient, address: string, now: Date) {
   const { data: p } = await db.from('players').select('xp, level').eq('address', address).single()
   if (!p) return
   await settleMissions(db, address, { xp: p.xp, level: p.level, wins: 0 }, [
