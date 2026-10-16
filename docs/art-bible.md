@@ -52,29 +52,31 @@ Pack colors below 3:1 against `--sv-ground #0C1211`:
 4. **Silhouette language:** weapons = diagonal, tip up-right; containers = bottom-heavy mass with visible opening top-left; tools = circular head + grip; badges = roundel + ribbon; characters read at 1× as head+shoulders mass.
 5. **Every asset passes:** palette membership, no orphan pixels (any painted pixel with no 4-neighbour), silhouette-identifiable when flooded to solid `#3F2631`, and readable in grayscale.
 
-## 4. Coverage matrix — slot → Tiny Dungeon material (tile coords = row,col of the 12-wide tilemap)
+## 4. Coverage matrix — HUMAN-VERIFIED 2026-10-16 (contact sheet + user confirmations)
 
-| Savborne slot | Pack material | Status |
+Earlier guesses were partly wrong (r0c0 is a floor tile, not a scroll; r7c0 is a wizard, not a king). Verified identities below:
+
+| Savborne slot | Tiny Dungeon tile (verified) | Status |
 |---|---|---|
-| Hero character (4 bracket gears) | r7c0–c8 + r8: knight variants (white/red/blue/green + crowned king) | **COVERED — gear = pack colorways**, king = Gold tier |
-| Rival / opponent | r7/r8 dark-knight & mage variants, coral recolor | COVERED |
-| Item: Ledger Scroll | r0c0 scroll | COVERED |
-| Item: Bronze Shield | r10 shield tiles | COVERED (recolor to bronze ramp) |
-| Item: Silver Blade | r10 sword tiles | COVERED (steel ramp) |
-| Item: Cloth Purse | barrel/chest/urn tiles r8 | PARTIAL — purse ≈ small chest/urn; keep current hand-drawn (it passed user review) |
-| Item: Copper Compass | none | **GAP — hand-drawn exception** |
-| Item: Silver Charm | gems r9 | PARTIAL (single gem tile) |
-| Item: Gold Gauntlet | none | **GAP — hand-drawn exception** |
-| Item: Golden Crown | king head r7c0 | COVERED |
-| Badges (6) | none (banner/torch/chalice approximations) | MOSTLY GAP — hand-drawn in pack language |
-| Nav icons (home/missions/battle/ranks/profile) | door/scroll/sword/king-head/knight-head | COVERED as objects |
-| UI glyphs: back, forward, check, lock, warning | none — **no CC0 pixel pack ships these; they are app chrome, not game art** | **DOCUMENTED EXCEPTION: hand-drawn, 12×12, token colors** |
-| Arena floor/background | full tileset (walls, floors, torches) | COVERED (bonus: real arena backdrops possible) |
+| Hero · Entry gear | r7c1 (tile_0085) orange-haired youth, plain clothes | DECIDED |
+| Hero · Bronze gear | r8c2 (tile_0098) youth with steel shoulder plate | DECIDED |
+| Hero · Silver gear | r8c0 (tile_0096) full steel knight | DECIDED |
+| Hero · Gold gear | r8c0 recolored via gilt map: `C0CBDC→FEE761, 8B9BB4→FEAE34, 52607C→BD6C4A, 262B44→763B36`, outline/skin kept | DECIDED (quantized recolor) |
+| Rival / opponent | r7c3 (tile_0087) white-haired goblin, light armor | DECIDED — distinct silhouette |
+| Item · Silver Blade | r8c10 (tile_0106) broad steel sword | DECIDED — no kitbash needed |
+| Item · Bronze Shield | r8c6 (tile_0102) steel heater shield → bronze ramp recolor | DECIDED |
+| Extra weapon art | r8c8 sword, r8c11 bronze-hilt sword w/ red gem, r9c9 hammer, r9c11 axe, r10c9 dagger | available |
+| Item · Ledger Scroll | r10c10 (tile_0130) scroll with blue seal | DECIDED |
+| Item · Cloth Purse | keep current hand-drawn shape, recolor to bible ramps (bronze ramp for leather: `EAA56C→CF8254→BD6C4A`, outline `#3F2631`) | user-approved |
+| Item · Copper Compass | kitbash from round pack elements through bible ramps | pending tile pick (candidates on sheet r8c5 emblem, r9 orbs) |
+| Item · Gold Gauntlet | kitbash: crop armored hand/arm region of r8c0 knight, gilt map | pending region confirm |
+| Item · Golden Crown | king/crown tile NOT found — hand-draw to bible or use wizard-hat motif | GAP |
+| Nav icons | Option A (hand-drawn) vs B (tiles: gate r6c9, scroll r10c10, sword r8c10, wizard r7c0, head r7c1) vs C (Shade CC0 pack) — live comparison at `/assets-raw/nav-compare.html` | PENDING USER PICK |
+| UI glyphs (back/check/lock/warning/forward) | search log: Shade 16×16 = CC0 author-confirmed (candidate); Kyrise license unverified; Raven rejected | awaiting nav pick outcome |
+| Badges (6) | no pack equivalents | hand-draw to bible §3 language |
+| Arena backdrop | full environment tileset (walls, floors, gate, torches) | bonus, optional |
 
-**Director's calls (flagged for approval):**
-- A. Adopt pack characters at 16×16; retire the invented 16×24 kit.
-- B. "Replace all hand-drawn icons" is impossible-as-literally-stated for UI glyphs (back/check/lock) — no CC0 source exists; proposal: Kenney wholesale for all *game content*, hand-drawn exception for the 5 UI glyphs, documented above.
-- C. Item names that have no pack art (Compass, Gauntlet) get hand-drawn art built strictly to this bible's ramps.
+**Superseded decisions:** C (kitbash weapons) no longer needed — real sword/shield tiles exist. Weapons ship as untouched pack art (shield gets the bronze-ramp quantized recolor only).
 
 ## 5. Motion (timing sheet)
 

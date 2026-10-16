@@ -143,6 +143,12 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** Moved the `DELETE ... last_poll_at < now() - 30s` to step 0, before anything else, in both FINAL-SCHEMA.sql and the record migration. Candidate search already ignores stale rows, so behavior only gains the sweep.
 **Prevention:** For any "X should happen on next poll" requirement, assert it in a test where no match occurs — the stress suite caught this precisely because section 3 is match-negative by design.
 
+### [2026-10-16] PostgREST null filter `col=not.null` → 400, script swallowed it
+**Symptom:** reset script returned HTTP 400 on battles/queue deletes, 409 on players (FK still referenced) — while logging "deleted" as if fine. Ghost test data persisted.
+**Root cause:** Correct PostgREST syntax is `col=is.null` / `col=not.is.null`. `not.null` is invalid. Also: the script printed status codes but never checked them.
+**Fix:** `id=not.is.null`; any non-2xx delete now hard-exits with the response body. DB verified pristine (players: 1 = AI row only, battles: 0, queue: 0).
+**Prevention:** REST-filter scripts must assert response status — a 400 mid-chain looks identical to success in optimistic logs.
+
 ---
 
 ## Historical
