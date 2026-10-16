@@ -30,9 +30,11 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-Apply the migrations with the Supabase CLI after linking your project
-(`npx supabase link --project-ref <ref>` then `npx supabase db push`), or paste
-`supabase/migrations/*.sql` into the Dashboard SQL Editor in filename order.
+Apply the schema by pasting **`supabase/FINAL-SCHEMA.sql`** into the Dashboard
+SQL Editor and running it — it is fully idempotent (safe to re-run on any
+state of the database). Timestamped files in `supabase/migrations/` are the
+historical record and the path for `supabase db push` where the pooler is
+reachable.
 
 ## Testing inside Nimiq Pay
 

@@ -346,8 +346,10 @@ async function resolveAndAdvance(
     .eq('player_address', bMoveFinal.player_address)
     .eq('turn_number', turn)
 
-  const hpA = Math.max(0, battle.player_a_hp - outcome.damageToB)
-  const hpB = Math.max(0, battle.player_b_hp - outcome.damageToA)
+  // Each side loses the damage the OPPONENT dealt it:
+  // damageToA = dealt by B → subtract from A's hp (and vice versa).
+  const hpA = Math.max(0, battle.player_a_hp - outcome.damageToA)
+  const hpB = Math.max(0, battle.player_b_hp - outcome.damageToB)
   const over = checkBattleOver(hpA, hpB, turn)
 
   if (over.over) {

@@ -116,7 +116,7 @@ r = await call('POST', '/api/battles/ai', A)
 check('ai battle created', r.status === 201 && !!r.json?.battleId, `status ${r.status}`)
 const battleId = r.json?.battleId
 
-r = await call('POST', `/api/battles/${battleId}/move`, B)
+r = await call('POST', `/api/battles/${battleId}/move`, B, { move: 'attack' })
 check('non-participant blocked (403)', r.status === 403, `got ${r.status}`)
 
 let battleDone = false
@@ -135,7 +135,7 @@ check('battle reached completion', battleDone)
 
 r = await call('GET', `/api/battles/${battleId}`, A)
 const view = r.json || {}
-check('battle view: 5 turns resolved', view.battle?.current_turn <= 5 && view.lastTurn, `turn ${view.battle?.current_turn}`)
+check('battle view: turns resolved', view.battle?.currentTurn <= 5 && !!view.lastTurn, `turn ${view.battle?.currentTurn}`)
 check('loss recorded (A hp ≤ B hp or KO)', view.battle?.status === 'completed')
 
 r = await call('GET', '/api/players/me', A)
@@ -184,6 +184,28 @@ for (let i = 0; i < 7; i++) {
 r = await call('POST', '/api/battles/ai', A)
 check('4th battle blocked 429', r.status === 429, JSON.stringify(r.json))
 check('limit copy exact', r.json?.error?.includes('3 battles today') && r.json?.error?.includes('00:00 UTC'))
+
+// ─── Cleanup: remove the two test players (battles first — their FKs don't
+// cascade; player deletion cascades everything else) ────────────────────────
+import { readFileSync } from 'node:fs'
+const env = Object.fromEntries(
+  readFileSync('.env.local', 'utf8')
+    .split('\n')
+    .filter((l) => l.includes('=') && !l.startsWith('#'))
+    .map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]),
+)
+for (const addr of [A, B]) {
+  await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/battles?or=(player_a.eq.${addr},player_b.eq.${addr})`, {
+    method: 'DELETE',
+    headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
+  })
+  const res = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/players?address=eq.${addr}`, {
+    method: 'DELETE',
+    headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
+  })
+  if (res.status !== 204) console.log(`  cleanup warn: ${addr} → ${res.status}`)
+}
+console.log('▸ test players cleaned up (battles removed first, rest cascades)')
 
 // ─── Summary ────────────────────────────────────────────────────────────────
 console.log(`\n═══ E2E: ${pass} passed, ${fail} failed ═══`)
