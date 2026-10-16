@@ -1,0 +1,5 @@
+stroke->pixel icons: 78
+sprites replaced: 21
+item art swapped: 8
+tab headers -> title: 0
+Pixel art section inserted

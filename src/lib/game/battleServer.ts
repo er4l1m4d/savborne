@@ -147,9 +147,14 @@ export async function loadBattle(
   if (error) return { error: error.message, status: 500 }
   if (!battle) return { error: 'Battle not found', status: 404 }
   const row = battle as BattleRow
-  if (row.player_a !== viewerAddress && row.player_b !== viewerAddress && row.player_b === null) {
-    // Viewer is the challenged side of a still-pending friend battle — allowed
-    // so they can see and accept it.
+  // Participant check. The challenged side of a still-pending friend battle
+  // is allowed so they can view it and accept; once an opponent is set,
+  // only the two actual participants may access this battle.
+  const isParticipant =
+    row.player_a === viewerAddress ||
+    row.player_b === viewerAddress ||
+    (row.status === 'pending' && row.player_b === null)
+  if (!isParticipant) {
     return { error: 'Not your battle', status: 403 }
   }
 

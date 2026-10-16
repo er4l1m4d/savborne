@@ -119,12 +119,15 @@ export async function POST(req: Request) {
 
   const newBracket: Bracket | null = bracketFromLuna(balanceLuna)
   const currentBracket: Bracket | null = (player.bracket as Bracket | null) ?? null
+  const withdrewNow = priorMostRecent !== null && balanceLuna < priorMostRecent
 
   const snapshot = {
     currentBalanceLuna: balanceLuna,
     previousBalanceLuna: priorMostRecent,
     weekOpeningBalanceLuna: weekOpening,
-    anyWithdrawalThisWeek,
+    // A withdrawal at this check-in disqualifies Steady Saver too (spec 6.3:
+    // "withdrawals reset this mission for the week").
+    anyWithdrawalThisWeek: anyWithdrawalThisWeek || withdrewNow,
     alreadyCheckedInToday: alreadyToday,
     alreadyCheckedInThisWeek: alreadyWeek,
     totalCheckInsBefore: player.check_in_count,

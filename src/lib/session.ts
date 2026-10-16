@@ -14,9 +14,14 @@
  * Server-side: API routes receive the address in a request header
  * (`X-Player-Address`). Handlers should trust-but-verify by confirming the
  * address exists in the `players` table before writing.
+ *
+ * NOTE: no `'use client'` directive here. This module is imported by BOTH
+ * client components (authHeaders/readSession) and server route handlers
+ * (PLAYER_HEADER). A 'use client' at the top would turn every export into a
+ * client reference and crash server imports with "Attempted to call
+ * PLAYER_HEADER() from the server". Browser-only functions guard on
+ * `typeof window` internally instead. (ERRORS.md 2026-10-16.)
  */
-
-'use client'
 
 const STORAGE_KEY = 'savborne.session.v1'
 

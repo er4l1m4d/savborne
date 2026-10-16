@@ -108,6 +108,20 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** Policy now only uses `current_setting('request.header.x-player-address', true) in (player_a, player_b)`, which is what the first condition was incorrectly duplicating.
 **Prevention:** Column names differ per table in this schema (`player_address` on ledgers, `player_a`/`player_b` on battles). Review RLS policies against the specific table's columns; and run migrations in a sandbox DB (Docker `db reset`) before touching a real project — the static catch here came from reading, not testing, which is luck, not process.
 
+### [2026-10-16] `'use client'` lib module imported by API routes → every export becomes a throwing client reference
+**Symptom:** All API routes 500 with `TypeError: Headers.get: "function() { throw new Error("Attempted to call PLAYER_HEADER() from the server but PLAYER_HEADER is on the client…")" is an invalid header name.` — the imported *constant* arrived as a client-reference function.
+**Context:** `src/lib/session.ts` carried `'use client'` (it touches localStorage). Route handlers imported `PLAYER_HEADER` from the same module.
+**Root cause:** In the App Router module graph, a `'use client'` boundary transforms ALL exports of that module into client references when imported from server code — even plain constants. Calling/reading them server-side throws.
+**Fix:** Removed the directive from the lib module. Browser-only functions already guard on `typeof window`; the directive belongs on component files, not shared utilities. Re-verified: routes now reach the database layer.
+**Prevention:** Files under `src/lib` that are imported by BOTH server and client must never have `'use client'`. E2E caught this in seconds — exactly why we run them.
+
+### [2026-10-16] Service-role client denied despite valid key: missing Postgres GRANTs
+**Symptom:** `{"error":"permission denied for table players"}` from every route using the service-role key — despite `service_role` having BYPASSRLS and a valid key. Auth succeeded; the table-level GRANT did not exist.
+**Context:** Migrations applied via Dashboard SQL Editor (runs as `postgres`). On this project the PostgREST roles (anon/authenticated/service_role) did not receive the usual Supabase default privileges on new tables.
+**Root cause:** Default-privilege wiring differs by project/creation path; SQL-editor-created tables are owned by `postgres` and are not automatically granted to the API roles.
+**Fix:** Added `supabase/migrations/20261016000001_grants.sql` (`grant usage on schema public` + `grant all on all tables/sequences in schema public to service_role`) and folded the same grants into init.sql for fresh clones. Deliberately NO grants to anon/authenticated — the app never reads via REST with those roles, and least-privilege stays intact.
+**Prevention:** Any migration file that creates tables must also grant privileges explicitly — never assume the platform's default grants exist.
+
 ---
 
 ## Historical

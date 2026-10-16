@@ -349,3 +349,13 @@ revoke all on function match_me(text) from public;
 -- service_role ONLY: the API routes call this. anon/authenticated must not be
 -- able to drive matchmaking for forged addresses via direct REST calls.
 grant execute on function match_me(text) to service_role;
+
+-- ─── Role privileges ─────────────────────────────────────────────────────────
+-- Tables created by a migration run as `postgres` do not always inherit
+-- default grants to the PostgREST roles (observed on fresh 2026 projects —
+-- see ERRORS.md 2026-10-16). The app's only DB path is the service-role
+-- client, so grant it explicitly. anon/authenticated get NOTHING here;
+-- their reads go through API routes, never direct REST.
+grant usage on schema public to service_role;
+grant all privileges on all tables in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;
