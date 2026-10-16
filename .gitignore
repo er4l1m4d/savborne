@@ -40,6 +40,10 @@ yarn-error.log*
 # HTML parsing scratch output (user's local tool cache)
 /.uiparse/
 
+# Third-party asset packs (Kenney etc.) — local source material only.
+# Derived, attributed sprites live under public/sprites with a CREDITS file.
+/assets-raw/
+
 # vercel
 .vercel
 
