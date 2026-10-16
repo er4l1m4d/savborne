@@ -222,60 +222,45 @@ create table daily_xp (
 );
 
 -- ─── Row-Level Security ────────────────────────────────────────────────────
--- Savborne does not use Supabase Auth. Identity is the Nimiq address, which
--- the client passes via a request header. All writes go through server-side
--- API routes using the service-role client (bypasses RLS). Anon reads are
--- allowed only on the leaderboard-visible columns via policies that check a
--- `request.header ->> 'x-player-address'` claim, or fall back to public data.
+-- Identity is the Nimiq address, but PostgREST cannot cryptographically bind a
+-- claimed address to the caller — header-based policies are forgeable. So the
+-- browser-facing roles (anon, authenticated) get ZERO access to personal
+-- tables: RLS is enabled on everything with NO select/insert/update/delete
+-- policies for those roles, which denies by default. All reads and writes go
+-- through the Next.js API routes using the service-role client (BYPASSRLS),
+-- which validates the X-Player-Address header server-side.
 --
--- Because anon writes are effectively disabled by these policies, the app
--- must never call .insert() / .update() / .delete() with the anon client.
+-- The three catalog tables (missions, items, badges) are static game
+-- definitions — nothing personal — so they carry read-only policies for anon.
+-- Writes to them happen only via migrations (postgres role) or service_role.
+--
+-- Known accepted v1 limitation: the API header is self-declared, so a
+-- malicious client can impersonate another address THROUGH THE ROUTES. Impact
+-- is game state only — Savborne holds no money. A sign-in challenge or device
+-- identifier binding closes this; tracked as a Phase 6 stretch goal.
 
 alter table players          enable row level security;
 alter table check_ins        enable row level security;
+alter table missions         enable row level security;
 alter table player_missions  enable row level security;
+alter table items            enable row level security;
 alter table player_items     enable row level security;
+alter table badges           enable row level security;
 alter table player_badges    enable row level security;
 alter table battles          enable row level security;
 alter table battle_moves     enable row level security;
 alter table queue            enable row level security;
 alter table daily_battles    enable row level security;
 alter table daily_xp         enable row level security;
--- missions, items, badges are pure lookup tables — readable by anon, no RLS.
 
--- Public read of leaderboard-relevant player fields.
-create policy "players_public_read" on players
-  for select using (true);
-
--- Own rows readable for other tables.
-create policy "own_check_ins" on check_ins
-  for select using (player_address = current_setting('request.header.x-player-address', true));
-
-create policy "own_player_missions" on player_missions
-  for select using (player_address = current_setting('request.header.x-player-address', true));
-
-create policy "own_player_items" on player_items
-  for select using (player_address = current_setting('request.header.x-player-address', true));
-
-create policy "own_player_badges" on player_badges
-  for select using (player_address = current_setting('request.header.x-player-address', true));
-
-create policy "own_battles" on battles
-  for select using (
-    current_setting('request.header.x-player-address', true) in (player_a, player_b)
-  );
-
-create policy "own_battle_moves" on battle_moves
-  for select using (player_address = current_setting('request.header.x-player-address', true));
-
-create policy "own_queue" on queue
-  for select using (player_address = current_setting('request.header.x-player-address', true));
-
-create policy "own_daily_battles" on daily_battles
-  for select using (player_address = current_setting('request.header.x-player-address', true));
-
-create policy "own_daily_xp" on daily_xp
-  for select using (player_address = current_setting('request.header.x-player-address', true));
+-- Catalog tables: world-readable, write-denied for browser roles (no write
+-- policy exists, and service_role bypasses anyway).
+create policy "catalog_read_missions" on missions
+  for select to anon, authenticated using (true);
+create policy "catalog_read_items" on items
+  for select to anon, authenticated using (true);
+create policy "catalog_read_badges" on badges
+  for select to anon, authenticated using (true);
 
 -- ─── Matchmaking function (spec Section 16.3) ──────────────────────────────
 -- Atomically pair two waiting players, widen by wait time, honor bracket
@@ -361,4 +346,6 @@ end;
 $$;
 
 revoke all on function match_me(text) from public;
-grant execute on function match_me(text) to anon, authenticated, service_role;
+-- service_role ONLY: the API routes call this. anon/authenticated must not be
+-- able to drive matchmaking for forged addresses via direct REST calls.
+grant execute on function match_me(text) to service_role;

@@ -21,6 +21,14 @@ Each entry follows this structure:
 
 ## Entries
 
+### [OPEN · 2026-10-15] `supabase db push` blocked by network (pooler dial killed)
+**Status:** UNRESOLVED — workaround in place.
+**Symptom:** "Connection terminated unexpectedly" connecting to `aws-0-us-east-1.pooler.supabase.com:5432` while HTTPS to the same project works.
+**Current workaround:** schema applied manually via Dashboard SQL Editor (see the two paste steps below in this file's history or ask the agent).
+**Try next time:** (a) swap to phone hotspot and rerun `npx supabase db push`; (b) install Docker Desktop and use `supabase db reset` locally; (c) investigate local firewall rules on port 5432.
+
+---
+
 ### [2026-10-15] `npm install` aborts with ECONNRESET during Next.js scaffold
 **Symptom:** `create-next-app` prints `npm error code ECONNRESET / syscall read / errno -4077` and the project directory is created but `node_modules` is missing.
 **Context:** Running `npx create-next-app` on Windows with a slow or flaky network. The scaffold files (package.json, tsconfig, src/, public/) were created before the install failed, so the directory is not empty — a second `create-next-app` refuses to run.
