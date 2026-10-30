@@ -63,42 +63,52 @@ Pack colors below 3:1 against `--sv-ground #0C1211`:
 9. **A gate cannot see a wrong fill rule.** Four shipped glyphs (`leave`, `useItem`, `flag`, `withdrawal`) had pixels missing because the builder ran one even-odd pass over every ring from every `<path>`; SVG fills each path independently and unions them, so a later path carved holes in an earlier one. Palette, orphans and contrast all stayed green. The only check that catches this compares against an independent renderer of the source — so `scripts/glyph-provenance.mjs` now re-derives every sourced glyph from its vendored SVG and fails on any drift, and any new sourced art must go through it.
 10. **Art may not depict a state the game cannot produce.** Three badges were drawn in a "removed" rendering — First Steps, First Blade, Steady Hand — for which `computeBadgeActions()` in `src/lib/game/badges.ts` has no `revoke` path at all. Every gate passed them: palette, orphans, contrast, provenance. Reachability is not a pixel property, so no art gate can catch it; the check is reading the state machine the asset is supposed to represent. `assets/badges.json` now carries `revocable` and `reachableStates` per badge, derived from the code, and the gallery renders from that field rather than from a cartesian product of every state — so if a revoke path is added later, the art set changes when the *rule* changes, not when someone remembers.
 
-## 4. Battle state channels — APPROVED 2026-10-17
+## 4. Battle state channels — REVISED 2026-10-30, supersedes 2026-10-17
 
 Every battle state must be legible without reading a word of text. To keep it that way, **each visual channel carries exactly one meaning**, with a value scale. A state may compose several channels; no channel may serve two meanings, and no state may claim a channel already assigned below.
 
 | Channel | Its one meaning | Values |
 |---|---|---|
-| **opacity** | defeated or not | `1` in play · `0.55` defeated |
+| **nameplate border** | **control state — the primary, motion-independent cue** | acting = **4px solid `#C9C1A8`** · idle = **2px solid `#5A6988`** · committed = **2px dashed `#5A6988`** |
+| **nameplate tag** | status label; the explicit layer under the border | `YOUR MOVE` · `THEIRS` · `ACTED` · `OFFLINE` |
+| **sprite opacity** | waiting — reinforcement of the border, never the cue | `1` acting · **`0.62` not acting** |
+| **opacity + scale together** | defeated | `0.55` **and** `84`, never either alone |
 | **scale** | outcome magnitude | `108` winner · `84` loser · equal in a tie |
-| **vertical offset** | liveness | bobbing `0 → −1px, steps(2)` = acts now · still = does not |
 | **horizontal offset** | aggression | `+3px` lunge, on the attacker's resolving beat only |
 | **colour tint** | damage received | material rows → `#FF706D` for 100ms |
-| **nameplate border** | control state | lit = your turn · neutral = theirs · hatched = you acted, waiting |
-| **nameplate tag** | status label | `YOUR MOVE` · `THEIRS` · `ACTED` · `OFFLINE` |
-| **ground shadow** | floor contact | **retired 2026-10-17** (see consequence 4). Never carries state |
-| **glow** | **reserved, unused** | nothing may claim it without amending this table first |
+| **glow** | **an effect has been applied to this fighter** — spent 2026-10-30 on defend and item-use | 1px silhouette rim in **`#FEE761`**. Defend and item look identical: one meaning, one treatment; the turn log says which |
+| **vertical offset** | **decoration only, carries no information** | bob `0 → −2px, steps(1)` on the acting fighter. Demoted 2026-10-30, see consequence 3 |
+| **ground shadow** | floor contact | **retired 2026-10-17.** Never carries state |
 
 ### The state grid
 
-| State | opacity | scale | vert | horiz | tint | plate border | plate tag |
+| State | plate border | plate tag | sprite opacity | scale | horiz | tint | glow |
 |---|---|---|---|---|---|---|---|
-| **your turn** | 1 | standing | **bobbing** | — | — | **lit** | `YOUR MOVE` |
-| **their turn** | 1 | standing | still | — | — | neutral | `THEIRS` |
-| **committed** | 1 | standing | still | — | — | **hatched** | `ACTED` |
-| **resolving** | 1 | standing | still | **lunge** on attacker | **flash** on victim | unchanged | unchanged |
-| **won** | 1 | **108** | still | — | — | neutral | — |
-| **lost** | **0.55** | **84** | still | — | — | neutral | — |
-| **tie** | 1 · 1 | **equal** | still | — | — | neutral | — |
-| **disconnected** | 1 | standing | still | — | — | neutral | `OFFLINE` |
+| **your turn** | **acting 4px** | `YOUR MOVE` | 1 you · .62 them | standing | — | — | — |
+| **their turn** | acting 4px on theirs | `THEIRS` | .62 you · 1 them | standing | — | — | — |
+| **committed** | **hatched** on yours | `ACTED` | .62 you | standing | — | — | — |
+| **resolving** | unchanged | unchanged | unchanged | standing | **lunge** on attacker | **flash** on victim | — |
+| **defend / item** | unchanged | unchanged | unchanged | standing | — | — | **gilt rim** |
+| **won** | neutral | — | 1 | 108 winner · 84 loser | — | — | — |
+| **lost** | neutral | — | **0.55 + 84** on the loser | — | — | — | — |
+| **tie** | neutral | — | 1 · 1 | **equal** | — | — | — |
+| **disconnected** | idle | `OFFLINE` | unchanged | standing | — | — | — |
 
 ### Consequences of the rule, not exceptions to it
 
-1. **A tie must not dim either fighter.** Opacity means defeated and a tie defeats nobody. If a tie ever looks like it needs dimming to read, the fix is another channel.
-2. **Disconnected gets no sprite channel at all.** It is a match-level state, so it lives in the plate tag and the screen banner. Giving it opacity would make a dropped connection look like a knockout.
-3. **Liveness is the turn cue and it survives the grayscale blink test** — a bobbing sprite against a still one reads with no colour, no contrast and no text. The lit border is reinforcement, not the load-bearing cue.
-4. **Ground shadows are retired, not reassigned.** The arena pills measured **1.08:1** against the arena floor — effectively invisible — and no token in the set is dark enough for a hard-edged shadow to read without inventing a new colour for it. Deleted from the five arenas that carried them on 2026-10-17 (A_ConnLost never had one). Measured afterwards: `A_Battle` and `A_InBattleWait` still have two nameplate panels each to sit against, but `A_Win`, `A_Loss` and `A_Tie` contain **nothing but two sprites on a bare panel** — those three arenas now have no ground cue at all. That is an accepted, open consequence, and it is the strongest argument for building the arena backdrop in §5 rather than leaving the floor flat. If shadows return, they return as a decided token, not an ad-hoc `rgba()`.
-5. **`prefers-reduced-motion` collapses the bob**, leaving turn state on the border and tag alone — still legible, less glanceable. This is the one place the rule degrades rather than holds, and it is accepted knowingly.
+1. **A tie must not dim either fighter.** Opacity means defeated and a tie defeats nobody. Shipped that way: `A_Tie` has no opacity anywhere in its arena and both sprites stand equal.
+2. **Disconnected gets no sprite channel.** It is a match-level state, so it lives in the plate tag and the screen dim. Giving a fighter opacity would make a dropped connection look like a knockout.
+3. **The bob is decoration, because measurement killed it as a cue.** It was specified as `0 → −1px, steps(2)` with the claim that it "survives the grayscale blink test" — written before anything was rendered. At the shipped size a 2px travel on a 104px sprite is **1.9% of its height** and was invisible in a zoomed render with a ruler beside it. It stays on screen so the active fighter does not look frozen, and a reduced-motion user loses nothing by its absence.
+4. **The border is the cue, and it had to be rebuilt to deserve the job.** The original spec was "lit mint `#6FD0AE` versus neutral cream `#C9C1A8`", which measures **1.03:1** — a hue difference on a 2px line, invisible in grayscale and against colourblindness, while the plate's own HP bar is the same mint in a shape seventy times louder. It is now a luminance and weight difference: **4px `#C9C1A8` against 2px `#5A6988`, 3.06:1**. `#5A6988` is taken from the pack census rather than blended, and was chosen so the idle border still clears 3:1 against the arena on its own (**3.43:1**) — the rendered proposal used `#545147`, which is 2.38:1, and was not shipped.
+5. **Sprite opacity at `0.62` and defeated at `0.55` do not collide, and that is a load-bearing fact, not luck.** `battleServer.ts` writes the HP clamp and `status: 'completed'` in the same update, so there is no frame in which a fighter is at 0 HP while a turn is live — the two states can never co-occur. Defeated is also never opacity alone: it is opacity **and** the shrink to 84. **If a mid-battle knockout animation is ever added, this rule breaks and must be amended first.**
+6. **`prefers-reduced-motion` no longer degrades the design.** The original consequence 5 conceded that reduced-motion users were left with a weaker signal. After consequences 3 and 4 the primary cue is static by construction, so the collapse removes only decoration.
+7. **Turn state exists in three arenas and cannot exist in four.** `A_Battle`, `A_InBattleWait` and `A_ConnLost` carry nameplates and now carry the treatment. `A_ItemSheet`, `A_Win`, `A_Loss` and `A_Tie` have **no nameplate at all** — they are two sprites on a bare panel — so there is no border to light and no tag to show. That is the same gap consequence 8 records for ground contact, and it is why the arena backdrop in §5 is open work rather than polish.
+8. **Ground shadows are retired, not reassigned.** The arena pills measured **1.08:1** against the arena floor — effectively invisible — and no token in the set is dark enough for a hard-edged shadow to read without inventing a new colour for it. Deleted from the five arenas that carried them on 2026-10-17 (`A_ConnLost` never had one). `A_Win`, `A_Loss` and `A_Tie` now have neither a ground cue nor a nameplate. If shadows return they return as a decided token, not an ad-hoc `rgba()`.
+9. **The plate has no fill to dim.** The arena surface reversal made the arena `#0C1211`, which is what every nameplate already used as its background, so plates are now border-only. Every control-state signal therefore has to live in the border, which is what consequence 4 provides and what any future change must not weaken.
+
+### Shipped state, verified
+
+`arena-plates.mjs` on 2026-10-30: `A_Battle` tags `[YOUR MOVE]` with a `#5A6988` idle border and rival sprite opacity `0.62`; `A_InBattleWait` tags `[THEIRS, ACTED]` with a dashed idle border and hero sprite `0.62`; `A_ConnLost` tags `[OFFLINE]`; `A_Win` and `A_Loss` carry `0.55` on the defeated sprite only; `A_Tie` carries no opacity. 187 assets audited, 0 FAIL.
 
 ## 5. Coverage matrix — HUMAN-VERIFIED 2026-10-16 (contact sheet + user confirmations)
 
@@ -136,7 +146,7 @@ Earlier guesses were partly wrong (r0c0 is a floor tile, not a scroll; r7c0 is a
 
 Channel assignments are governed by §4 — a beat may only use a channel whose meaning it matches.
 
-- Idle: 2-frame bob, translateY 0 → −1px, 500ms per frame, `steps(1)`. **§4 makes the bob load-bearing**: a bobbing fighter acts now, a still one does not.
+- Idle: 2-frame bob, translateY 0 → −1px, 500ms per frame, `steps(1)`. **§4 makes the bob load-bearing**: a bobbing fighter acts now, a still one does not.
 - Attack: 3 beats **on the single-pose sprite** — windup (translateX −1px), active (+3px lunge, 120ms), recover (+1px, 200ms); total ≤450ms. There are no drawn attack frames and none are planned: the pose is the pack tile, motion is transform-only.
 - Damage flash: swap material rows to `#FF706D` tint for 2 frames (100ms).
 - Reduced motion: all frames collapse to final pose, static; turn state then rests on the nameplate border and tag alone.
