@@ -215,7 +215,10 @@
     "turnStateShippedToHandoff": "2026-10-30",
     "glowChannelSpentOnGilt": "2026-10-30",
     "bobDemotedToDecoration": "2026-10-30",
-    "arenaStatesRealisticPerScreen": "2026-10-30"
+    "arenaStatesRealisticPerScreen": "2026-10-30",
+    "channelScopeNarrowedToBattleState": "2026-10-30",
+    "damageCueAdoptedFromDoc": "2026-10-30",
+    "motionSpecRewrittenFromDocument": "2026-10-30"
   },
   "turnState": {
     "decision": "SHIPPED 2026-10-30 into Savborne-handoff.html. Revises the art bible section 4 written 2026-10-17.",
@@ -248,5 +251,26 @@
     "sideEffect": "the arena surface reversal made the arena #0C1211, which is what nameplates already used as their background, so plates are now border-only with no fill to dim.",
     "script": "scripts/turn-state-ship.mjs (12 edits, verified by scripts/arena-plates.mjs)",
     "verified": "A_Battle tags YOUR MOVE + idle border + rival opacity 0.62; A_InBattleWait tags THEIRS and ACTED with a dashed border + hero opacity 0.62; A_ConnLost tags OFFLINE; A_Win and A_Loss carry 0.55 on the defeated sprite only; A_Tie carries no opacity. 187 assets 0 FAIL, div 678/678, svg 192/192, span 448/448, provenance 0 drift."
+  },
+  "motionSpec": {
+    "revised": "2026-10-30, second revision. Sections 4 and 6 of the art bible.",
+    "whySecondRevision": "The first revision of each was written against assets-raw/turn-states.html, a scratch page I had authored from the spec. The handoff already contained a working motion vocabulary that contradicted almost every value. Same error twice: describing the artefact from a model of it instead of reading it.",
+    "authoritativeRead": "scripts/motion-vocabulary.mjs — dumps every @keyframes, timing token, animation-bearing class and demo function out of Savborne-handoff.html. Run it before amending section 4 or 6.",
+    "correctedFromTheDocument": {
+      "lunge": "0 -> translateX(24px) -> 0, 450ms steps(6). I had specified 0 -> -3 -> +9 -> 0 at ease-out.",
+      "damage": ".sv-hit is filter:brightness(2.2) 400ms steps(4) PLUS sv-shake +-6px 300ms steps(5). I had specified a #FF706D colour tint, which the document has never implemented.",
+      "hpDrain": "sv-fill 700ms steps(14). I had specified 500ms linear.",
+      "thinkingIndicator": "sv-dots exists (width 0 -> 2ch). My first draft claimed no thinking indicator can work under polling; a HELD indicator works fine, an instantaneous one does not.",
+      "alsoMissed": "sv-enter, sv-pop, sv-tick, sv-levelup, and the token set --sv-ease, --sv-t-press, --sv-t-enter, --sv-t-fill, --sv-t-pop"
+    },
+    "houseRule": "Motion is quantised. Every battle and feedback beat uses steps(n), not a smooth ease. Only sv-pop and sv-enter use --sv-ease, and they are transitions rather than state.",
+    "scopeNarrowed": "Section 4 now governs only the two battle sprites and their nameplates. General UI motion is transition and feedback and is free of the one-channel-one-meaning rule. It had already broken that rule four times: sv-tick and sv-levelup use scale, sv-enter and sv-pop use vertical offset, sv-shake uses horizontal offset, and damage uses a filter rather than a tint.",
+    "channelIsGesture": "A channel is a perceptual gesture, not a CSS property. Lunge and shake both animate translateX and both are legitimate because they are distinguishable without reading - one-way and committed versus two-way and decaying.",
+    "pendingWork": {
+      "timeoutBeat": "Needs an API change. The server auto-plays defend on deadline and the payload reports it as a chosen move, so the client cannot tell them apart. Needs an auto / move_source flag on the move row, surfaced through the battle GET.",
+      "glowBeat": "Needs a pre-baked 8-neighbour gilt rim path per character in assets/characters.json. Not done. A 4-neighbour rim renders as a dotted outline. filter: drop-shadow would break the quantised idiom. Until it lands, defend and item-use have no animation.",
+      "arenasWithoutPlates": "A_ItemSheet, A_Win, A_Loss and A_Tie carry no nameplate, so handover and commit beats have nowhere to land."
+    },
+    "reducedMotion": "Implemented twice in the document and both are required: a CSS media query, and a JS reduce flag from matchMedia used inside the demo functions. The media query alone cannot express \"skip this beat but still drain the bar\"."
   }
 }

@@ -63,32 +63,40 @@ Pack colors below 3:1 against `--sv-ground #0C1211`:
 9. **A gate cannot see a wrong fill rule.** Four shipped glyphs (`leave`, `useItem`, `flag`, `withdrawal`) had pixels missing because the builder ran one even-odd pass over every ring from every `<path>`; SVG fills each path independently and unions them, so a later path carved holes in an earlier one. Palette, orphans and contrast all stayed green. The only check that catches this compares against an independent renderer of the source — so `scripts/glyph-provenance.mjs` now re-derives every sourced glyph from its vendored SVG and fails on any drift, and any new sourced art must go through it.
 10. **Art may not depict a state the game cannot produce.** Three badges were drawn in a "removed" rendering — First Steps, First Blade, Steady Hand — for which `computeBadgeActions()` in `src/lib/game/badges.ts` has no `revoke` path at all. Every gate passed them: palette, orphans, contrast, provenance. Reachability is not a pixel property, so no art gate can catch it; the check is reading the state machine the asset is supposed to represent. `assets/badges.json` now carries `revocable` and `reachableStates` per badge, derived from the code, and the gallery renders from that field rather than from a cartesian product of every state — so if a revoke path is added later, the art set changes when the *rule* changes, not when someone remembers.
 
-## 4. Battle state channels — REVISED 2026-10-30, supersedes 2026-10-17
+## 4. Battle state channels — REVISED 2026-10-30 (2nd revision), supersedes 2026-10-17
 
-Every battle state must be legible without reading a word of text. To keep it that way, **each visual channel carries exactly one meaning**, with a value scale. A state may compose several channels; no channel may serve two meanings, and no state may claim a channel already assigned below.
+Every battle state must be legible without reading a word of text. To keep it that way, **each channel carries exactly one meaning**, with a value scale. A state may compose several channels; no channel may serve two meanings, and no state may claim a channel already assigned below.
 
-| Channel | Its one meaning | Values |
+### Scope — and what a channel is
+
+**This table governs the two battle sprites and their nameplates, and nothing else.** General UI motion in §6 — entrances, bar fills, level-up, tick, the thinking indicator — is transition and feedback, not state, and is free of the exclusivity rule. Narrowing the scope is a correction: the previous revision implied it covered all motion, and the document's own keyframes had already broken that claim four times over.
+
+**A channel is a perceptual gesture, not a CSS property.** Lunge and shake both animate `translateX`, and both are legitimate, because they are distinguishable without reading anything — one-way and committed versus two-way and decaying. What may not happen is two meanings riding the same *gesture*. Judging it by property instead of gesture would forbid a great deal of good animation and protect nothing.
+
+| Channel | Its one meaning | Values, as implemented |
 |---|---|---|
 | **nameplate border** | **control state — the primary, motion-independent cue** | acting = **4px solid `#C9C1A8`** · idle = **2px solid `#5A6988`** · committed = **2px dashed `#5A6988`** |
 | **nameplate tag** | status label; the explicit layer under the border | `YOUR MOVE` · `THEIRS` · `ACTED` · `OFFLINE` |
 | **sprite opacity** | waiting — reinforcement of the border, never the cue | `1` acting · **`0.62` not acting** |
 | **opacity + scale together** | defeated | `0.55` **and** `84`, never either alone |
 | **scale** | outcome magnitude | `108` winner · `84` loser · equal in a tie |
-| **horizontal offset** | aggression | `+3px` lunge, on the attacker's resolving beat only |
-| **colour tint** | damage received | material rows → `#FF706D` for 100ms |
-| **glow** | **an effect has been applied to this fighter** — spent 2026-10-30 on defend and item-use | 1px silhouette rim in **`#FEE761`**. Defend and item look identical: one meaning, one treatment; the turn log says which |
-| **vertical offset** | **decoration only, carries no information** | bob `0 → −2px, steps(1)` on the acting fighter. Demoted 2026-10-30, see consequence 3 |
+| **lunge** (one-way horizontal) | aggression | `0 → translateX(24px) → 0`, 450ms `steps(6)`, attacker's resolving beat only |
+| **impact** (brightness flash + two-way decaying shake) | damage received | `filter: brightness(2.2)` 400ms `steps(4)` **plus** `translateX ±6px` 300ms `steps(5)` |
+| **glow** (gilt silhouette rim) | **an effect has been applied to this fighter** — claimed 2026-10-30 for defend and item-use | 1px rim `#FEE761`, 8-neighbour silhouette. **Not yet implemented**; needs a pre-baked rim path per character |
+| **bob** (small vertical) | **decoration only, carries no information** | `0 → −2px, steps(1)` on the acting fighter. Demoted 2026-10-30, see consequence 3 |
 | **ground shadow** | floor contact | **retired 2026-10-17.** Never carries state |
+
+**`#FF706D` is not a damage cue and never was implemented as one.** The previous revision specified damage as a colour tint to that hex; the document's own `.sv-hit` uses a brightness filter and a shake, and has always done so. Adopted as specified.
 
 ### The state grid
 
-| State | plate border | plate tag | sprite opacity | scale | horiz | tint | glow |
+| State | plate border | plate tag | sprite opacity | scale | lunge | impact | glow |
 |---|---|---|---|---|---|---|---|
 | **your turn** | **acting 4px** | `YOUR MOVE` | 1 you · .62 them | standing | — | — | — |
 | **their turn** | acting 4px on theirs | `THEIRS` | .62 you · 1 them | standing | — | — | — |
 | **committed** | **hatched** on yours | `ACTED` | .62 you | standing | — | — | — |
-| **resolving** | unchanged | unchanged | unchanged | standing | **lunge** on attacker | **flash** on victim | — |
-| **defend / item** | unchanged | unchanged | unchanged | standing | — | — | **gilt rim** |
+| **resolving** | unchanged | unchanged | unchanged | standing | **fires** on attacker | **fires** on victim | — |
+| **defend / item** | unchanged | unchanged | unchanged | standing | — | — | **fires** |
 | **won** | neutral | — | 1 | 108 winner · 84 loser | — | — | — |
 | **lost** | neutral | — | **0.55 + 84** on the loser | — | — | — | — |
 | **tie** | neutral | — | 1 · 1 | **equal** | — | — | — |
@@ -98,17 +106,18 @@ Every battle state must be legible without reading a word of text. To keep it th
 
 1. **A tie must not dim either fighter.** Opacity means defeated and a tie defeats nobody. Shipped that way: `A_Tie` has no opacity anywhere in its arena and both sprites stand equal.
 2. **Disconnected gets no sprite channel.** It is a match-level state, so it lives in the plate tag and the screen dim. Giving a fighter opacity would make a dropped connection look like a knockout.
-3. **The bob is decoration, because measurement killed it as a cue.** It was specified as `0 → −1px, steps(2)` with the claim that it "survives the grayscale blink test" — written before anything was rendered. At the shipped size a 2px travel on a 104px sprite is **1.9% of its height** and was invisible in a zoomed render with a ruler beside it. It stays on screen so the active fighter does not look frozen, and a reduced-motion user loses nothing by its absence.
-4. **The border is the cue, and it had to be rebuilt to deserve the job.** The original spec was "lit mint `#6FD0AE` versus neutral cream `#C9C1A8`", which measures **1.03:1** — a hue difference on a 2px line, invisible in grayscale and against colourblindness, while the plate's own HP bar is the same mint in a shape seventy times louder. It is now a luminance and weight difference: **4px `#C9C1A8` against 2px `#5A6988`, 3.06:1**. `#5A6988` is taken from the pack census rather than blended, and was chosen so the idle border still clears 3:1 against the arena on its own (**3.43:1**) — the rendered proposal used `#545147`, which is 2.38:1, and was not shipped.
+3. **The bob is decoration, because measurement killed it as a cue.** It was specified as `0 → −1px, steps(2)` with the claim that it "survives the grayscale blink test" — written before anything was rendered. At the shipped size a 2px travel on a 104px sprite is **1.9% of its height** and was invisible in a zoomed render with a ruler beside it. It stays so the active fighter does not look frozen, and a reduced-motion user loses nothing by its absence.
+4. **The border is the cue, and it had to be rebuilt to deserve the job.** The original spec was "lit mint `#6FD0AE` versus neutral cream `#C9C1A8`", which measures **1.03:1** — a hue difference on a 2px line, invisible in grayscale and against colourblindness, while the plate's own HP bar is the same mint in a shape seventy times louder. It is now a luminance and weight difference: **4px `#C9C1A8` against 2px `#5A6988`, 3.06:1**. `#5A6988` is taken from the pack census rather than blended, and was chosen so the idle border still clears 3:1 against the arena on its own (**3.43:1**) — the rendered proposal used `#545147` at 2.38:1 and was not shipped.
 5. **Sprite opacity at `0.62` and defeated at `0.55` do not collide, and that is a load-bearing fact, not luck.** `battleServer.ts` writes the HP clamp and `status: 'completed'` in the same update, so there is no frame in which a fighter is at 0 HP while a turn is live — the two states can never co-occur. Defeated is also never opacity alone: it is opacity **and** the shrink to 84. **If a mid-battle knockout animation is ever added, this rule breaks and must be amended first.**
-6. **`prefers-reduced-motion` no longer degrades the design.** The original consequence 5 conceded that reduced-motion users were left with a weaker signal. After consequences 3 and 4 the primary cue is static by construction, so the collapse removes only decoration.
+6. **`prefers-reduced-motion` no longer degrades the design.** The original consequence 5 conceded that reduced-motion users were left with a weaker signal. After consequences 3 and 4 the primary cue is static by construction, so the collapse removes only decoration. The document implements the collapse in JS via a `reduce` flag from `matchMedia`, plus a CSS media query.
 7. **Turn state exists in three arenas and cannot exist in four.** `A_Battle`, `A_InBattleWait` and `A_ConnLost` carry nameplates and now carry the treatment. `A_ItemSheet`, `A_Win`, `A_Loss` and `A_Tie` have **no nameplate at all** — they are two sprites on a bare panel — so there is no border to light and no tag to show. That is the same gap consequence 8 records for ground contact, and it is why the arena backdrop in §5 is open work rather than polish.
-8. **Ground shadows are retired, not reassigned.** The arena pills measured **1.08:1** against the arena floor — effectively invisible — and no token in the set is dark enough for a hard-edged shadow to read without inventing a new colour for it. Deleted from the five arenas that carried them on 2026-10-17 (`A_ConnLost` never had one). `A_Win`, `A_Loss` and `A_Tie` now have neither a ground cue nor a nameplate. If shadows return they return as a decided token, not an ad-hoc `rgba()`.
+8. **Ground shadows are retired, not reassigned.** The arena pills measured **1.08:1** against the arena floor — effectively invisible — and no token in the set is dark enough for a hard-edged shadow to read without inventing a new colour. Deleted from the five arenas that carried them on 2026-10-17 (`A_ConnLost` never had one). `A_Win`, `A_Loss` and `A_Tie` now have neither a ground cue nor a nameplate. If shadows return they return as a decided token, not an ad-hoc `rgba()`.
 9. **The plate has no fill to dim.** The arena surface reversal made the arena `#0C1211`, which is what every nameplate already used as its background, so plates are now border-only. Every control-state signal therefore has to live in the border, which is what consequence 4 provides and what any future change must not weaken.
+10. **This section was wrong twice, in the same way, and the check that catches it is not a gate.** The first revision specified channels that had never been rendered. The second was written against a scratch preview I had authored, and the document already contained a working motion vocabulary that contradicted it — `sv-lunge` travels 24px on `steps(6)`, not 9px on `ease-out`, and `.sv-hit` has always been a brightness flash plus a shake rather than a colour tint. Both errors were the same error: **describing the artefact from a model of it instead of reading the artefact.** `scripts/motion-vocabulary.mjs` is the read; run it before amending §4 or §6.
 
 ### Shipped state, verified
 
-`arena-plates.mjs` on 2026-10-30: `A_Battle` tags `[YOUR MOVE]` with a `#5A6988` idle border and rival sprite opacity `0.62`; `A_InBattleWait` tags `[THEIRS, ACTED]` with a dashed idle border and hero sprite `0.62`; `A_ConnLost` tags `[OFFLINE]`; `A_Win` and `A_Loss` carry `0.55` on the defeated sprite only; `A_Tie` carries no opacity. 187 assets audited, 0 FAIL.
+`arena-plates.mjs` on 2026-10-30: `A_Battle` tags `[YOUR MOVE]` with a `#5A6988` idle border and rival sprite opacity `0.62`; `A_InBattleWait` tags `[THEIRS, ACTED]` with a dashed idle border and hero sprite `0.62`; `A_ConnLost` tags `[OFFLINE]`; `A_Win` and `A_Loss` carry `0.55` on the defeated sprite only; `A_Tie` carries no opacity. Counts in the file: 2 acting plates, 3 idle or hatched, 2 sprite opacities at `0.62`. 187 assets audited, 0 FAIL.
 
 ## 5. Coverage matrix — HUMAN-VERIFIED 2026-10-16 (contact sheet + user confirmations)
 
@@ -142,11 +151,79 @@ Earlier guesses were partly wrong (r0c0 is a floor tile, not a scroll; r7c0 is a
 
 **Superseded decisions:** C (kitbash weapons) no longer needed — real sword/shield tiles exist. Weapons ship as untouched pack art (shield gets the bronze-ramp quantized recolor only).
 
-## 6. Motion (timing sheet)
+## 6. Motion — the beat layer, REVISED 2026-10-30 (2nd revision)
 
-Channel assignments are governed by §4 — a beat may only use a channel whose meaning it matches.
+Channel assignments for **battle state** are governed by §4, and §4's scope is the two battle sprites and their nameplates. Everything else here is transition and feedback, which §4 does not restrict.
 
-- Idle: 2-frame bob, translateY 0 → −1px, 500ms per frame, `steps(1)`. **§4 makes the bob load-bearing**: a bobbing fighter acts now, a still one does not.
-- Attack: 3 beats **on the single-pose sprite** — windup (translateX −1px), active (+3px lunge, 120ms), recover (+1px, 200ms); total ≤450ms. There are no drawn attack frames and none are planned: the pose is the pack tile, motion is transform-only.
-- Damage flash: swap material rows to `#FF706D` tint for 2 frames (100ms).
-- Reduced motion: all frames collapse to final pose, static; turn state then rests on the nameplate border and tag alone.
+This revision is written from `scripts/motion-vocabulary.mjs`, which reads the keyframes, timing tokens and demo functions out of `Savborne-handoff.html` itself. The previous revision was written from a scratch preview and contradicted the document's own working animation on every line. Where a number below disagrees with that earlier draft, **the document won.**
+
+### The vocabulary that already exists
+
+| Name | Definition | Where it belongs |
+|---|---|---|
+| `sv-lunge` | `0% none → 40% translateX(24px) → 100% none`, **450ms `steps(6)`** | §4 **aggression** |
+| `sv-hit` | `sv-flash 400ms steps(4)` **+** `sv-shake 300ms steps(5)` composed | §4 **damage received** |
+| `sv-flash` | `0%,100% filter:none → 30% filter:brightness(2.2)` | half of `sv-hit` |
+| `sv-shake` | `±6px → ±4px` decaying, two-way | half of `sv-hit` |
+| `sv-fill` | `width: var(--from) → var(--to)`, **700ms `steps(14)`** | feedback — HP bars, XP bars |
+| `sv-enter` | `opacity 0 translateY(8px) → 1 none`, **180ms** | transition |
+| `sv-pop` | rises `8px → −16px` and fades, **900ms `--sv-ease`** | feedback — floating XP text |
+| `sv-tick` | `scale 1 → 1.25 → 1`, **300ms `steps(3)`** | feedback — a number changed |
+| `sv-levelup` | `scale .6 → 1.15 → 1` with opacity, **1200ms `steps(8)`** | celebration |
+| `sv-dots` | `width 0 → 2ch` | feedback — waiting on the opponent |
+| `.sv-btn__face` | `transform 80ms steps(2)` | press feedback |
+
+Tokens: `--sv-ease: cubic-bezier(0.2, 0.8, 0.2, 1)` · `--sv-t-press: 80ms` · `--sv-t-enter: 180ms` · `--sv-t-fill: 700ms` · `--sv-t-pop: 900ms`.
+
+**The house rule the whole set already follows: motion is quantised.** Every battle and feedback beat uses `steps(n)`, not a smooth ease — the only exceptions are `sv-pop` and `sv-enter`, which are transitions rather than state. A pixel-art sprite that glides looks wrong; one that jumps in six frames looks like it was drawn that way. Any new beat inherits this.
+
+### The constraint that shapes the battle beats
+
+The app polls `GET /api/battles/[id]` every three seconds. There is no game loop, no push, no websocket. So **every battle beat is triggered by a state transition observed between two polls, never by a clock.** Two consequences follow, and they are not preferences:
+
+1. **A beat can arrive up to three seconds after the thing it depicts happened.** Nothing may depend on beats landing at a particular moment.
+2. **Two turns can resolve inside one poll interval.** The arbitration rule is **newest wins, older dropped** — the client holds at most one beat sequence in flight, and when a poll reveals a newer state it renders that and discards the older beat rather than queueing it. Queueing would put the screen behind reality, which is worse than occasionally missing a lunge.
+
+What that rules out, stated plainly so nobody plans for it: an indicator that resolves the instant an opponent taps, a simultaneous two-sided clash, and any sequence where beat *N* must finish before *N+1* begins. Note that `sv-dots` is a *held* indicator, not an instantaneous one — it says "the opponent is deciding" for as long as the poll keeps saying so, which is exactly what survives this architecture.
+
+### The battle beat table
+
+| Beat | Trigger (poll diff) | Fires | Duration | Reduced motion |
+|---|---|---|---|---|
+| **turn handover** | `currentTurn` increments, or `hasMovedThisTurn` flips for the side now acting | plate border, plate tag, sprite opacity; `sv-bob` starts on the acting fighter only | 120ms | border, tag and opacity **snap to final values**. No motion is lost, because per §4 none of them was carrying state |
+| **commit** | local tap, before the poll returns | plate border → hatched, tag `ACTED` | 0 — immediate | identical. This is the player's own feedback and is never deferred |
+| **attack** | new `lastTurn` where this side played attack | `sv-lunge` on the attacker, then `sv-hit` on the defender | 450ms + 400/300ms overlap | **lunge and impact both skipped.** The HP bar still drains |
+| **special** | same, move type `special` | `sv-lunge`, larger travel, same gesture | 600ms | skipped |
+| **damage** | same diff, the receiving side | `sv-hit`, then `sv-fill` on the HP bar | 400ms + 700ms | **flash and shake skipped, bar still drains over 700ms `steps(14)`** — a value changing with no transition is a legibility cost, not an accessibility win |
+| **defend** | move type `defend` | **glow** — gilt rim on the defender | 240ms in, 240ms out | see the glow note below; the rim is static, so it may persist for one frame and clear |
+| **item used** | `item_key` present | **glow**, identical to defend — one meaning, one treatment | same | same |
+| **timeout** | move type `defend` **and** the `auto` flag | glow + the turn log line "ran out of time" | as defend | as defend |
+| **result** | `status` → `completed` | opacity and scale per §4: loser `0.55`+`84`, winner `1`+`108`, **tie `96`+`96` both at `1`** | 400ms | values applied instantly |
+
+### Required before the timeout beat can exist
+
+The server auto-plays `defend` when `turnDeadline` passes and the payload reports it as an ordinary chosen move, so the client **cannot distinguish "they defended" from "they ran out of time"** — the information is not in the response. This is an API change, not a CSS decision, and it is the one item here that needs code:
+
+- a flag on the move row (`auto`, or `move_source` of `chosen` / `timeout`) written where `battleServer.ts` applies the deadline
+- surfaced through the battle `GET` response and into `lastTurn`
+- the turn log line and the beat then read from it
+
+Until that lands the honest ceiling is: **we can show what they played, never why.** The countdown number is already on screen, so a player can infer it; the animation cannot.
+
+### Required before the glow beat can exist
+
+`filter: drop-shadow` produces a soft, anti-aliased halo and would break the quantised idiom the whole set holds. The rim is therefore generated the way the badge chips are — an **8-neighbour** silhouette outline, one pixel wide, in `#FEE761` — and **pre-baked per character into `assets/characters.json`** as an extra path so the client only toggles its visibility. A 4-neighbour rim was tried and renders as a dotted outline, because every diagonal corner is left unpainted.
+
+This is an asset change and is **not done**. `scripts/glow-candidates.mjs` is the reference implementation of the rim. Until it lands, defend and item-use have no beat, which is the honest state of things rather than a gap in the spec.
+
+### Reduced motion
+
+The document implements the collapse twice: a JS `reduce` flag from `matchMedia('(prefers-reduced-motion: reduce)')`, used inside the demo functions to zero delays and disable transitions, and a CSS media query. **Both are required** — the media query cannot express "skip this beat but still drain the bar", which is a per-beat decision, not a global one.
+
+Collapses: `sv-lunge`, `sv-hit` (flash and shake), `sv-shake`, `sv-pop`, `sv-enter`, `sv-levelup`, `sv-tick`, `sv-dots`, the bob.
+Survives: `sv-fill` on HP and XP bars, all final values, plate border, plate tag, sprite opacity.
+
+### Open, and deliberately not solved here
+
+`A_ItemSheet`, `A_Win`, `A_Loss` and `A_Tie` carry no nameplate, so the handover and commit beats have nowhere to land on those screens. §4 consequence 7 records it. This section specifies the beats; making them visible in four of the seven battle arenas needs the §5 backdrop or a plate on those screens, and that is a separate decision.
+
