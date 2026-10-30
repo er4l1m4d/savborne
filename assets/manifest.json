@@ -1,0 +1,216 @@
+{
+  "generated": "2026-10-16",
+  "pack": {
+    "name": "Tiny Dungeon 1.0",
+    "author": "Kenney",
+    "license": "CC0",
+    "local": "assets-raw/kenney_tinydungeon/",
+    "licenseFile": "assets-raw/kenney_tinydungeon/License.txt"
+  },
+  "nav": {
+    "home": {
+      "tile": "r2c5",
+      "maps": [
+        "wall-chroma-key(#8B9BB4,#52607C,#262B44,#AAB7CC,#E4EDF9,#C0CBDC,#FFFFFF→transparent)",
+        "center-bbox",
+        "nearestProductHue",
+        "active: reds→#6FD0AE"
+      ]
+    },
+    "missions": {
+      "tile": "r7c5",
+      "maps": [
+        "center-bbox",
+        "nearestProductHue"
+      ]
+    },
+    "battle": {
+      "tile": "r8c10",
+      "maps": [
+        "center-bbox",
+        "nearestProductHue"
+      ]
+    },
+    "ranks": {
+      "tile": "r5c5",
+      "maps": [
+        "center-bbox",
+        "nearestProductHue"
+      ]
+    },
+    "profile": {
+      "tile": "r7c1",
+      "maps": [
+        "center-bbox",
+        "nearestProductHue"
+      ]
+    }
+  },
+  "productPalette": [
+    "#F3EEDD",
+    "#C9C1A8",
+    "#A9B8B2",
+    "#6FD0AE",
+    "#F2735A",
+    "#FF6A4D",
+    "#FF9C86",
+    "#F6EFD9",
+    "#2E4642",
+    "#4B5A56",
+    "#A8452F",
+    "#0C3B35"
+  ],
+  "display": "24px CSS (1.5x; exact on DPR2+)",
+  "items": {
+    "Cloth Purse": "hand-drawn pouch, cloth ramps",
+    "Ledger Tome": "renamed from Ledger Scroll; hand-drawn tome",
+    "Bronze Shield": "programmatic v2 heater (replaces r8c6 recolor)",
+    "Copper Compass": "programmatic v2",
+    "Silver Blade": "pack sword r8c10",
+    "Silver Charm": "hand-drawn, bible ramps",
+    "Gold Gauntlet": "programmatic v3: segmented fingers, knuckle guard, gem plate, thumb, banded cuff",
+    "Golden Crown": "programmatic v2"
+  },
+  "characters": {
+    "grid": "16x16 pack-native, whole-pixel display scales only",
+    "hero": {
+      "Entry": "r7c1",
+      "Bronze": "r8c2",
+      "Silver": "r8c0",
+      "Gold": "r8c0 + GOLD_MAP gilt (C0CBDC→FEE761, 8B9BB4→FEAE34, 52607C→BD6C4A, 262B44→763B36)"
+    },
+    "heroine": {
+      "recipe": "head = r8c3 rows 0-9 clipped to cols 2-13; gear body rows 10-15 verbatim",
+      "whyClip": "r8c3's hair is one column wider than the hero's head; the clip puts her outline on the hero's own outline columns. Eyes sit at cols 6 and 10 in both tiles.",
+      "Entry": "r8c3 head + r7c1 body (32 px differ from Hero · Entry)",
+      "Bronze": "r8c3 head + r8c2 body (32 px differ from Hero · Bronze)",
+      "Silver": "r8c0 helm verbatim + 4 hair px at row 10 cols 5,6,9,10 (outline cells only)",
+      "Gold": "Heroine · Silver + GOLD_MAP gilt",
+      "check": "scripts/heroine-check.mjs — 13 invariants, reads shipped assets/characters.json"
+    },
+    "rivals": {
+      "roll": "one of four per AI battle, uniform; fixed for the battle's life via battle-id hash (no migration, no re-roll on poll)",
+      "Mint Wraith": "r9c0",
+      "Hollow Ghost": "r10c1",
+      "Hooded Miser": "r9c3",
+      "Cutpurse": "r9c1",
+      "naming": "rival name replaces 'Savborne AI' in opponent and winner labels; the seeded ai-savborne player row is unchanged"
+    },
+    "rejected": {
+      "r8c8": "sword tile — proposed as a rival, is not a creature; dropped by user",
+      "r7c3": "white-haired goblin — superseded by the four-rival roster"
+    },
+    "frames": "no drawn attack frames; idle bob and lunge are CSS transforms on the single pose",
+    "shipped": "21 screen sprite slots squared to 1:1 wrappers + 12-card Pixel-art gallery, 2026-10-16"
+  },
+  "uiGlyphs": {
+    "grid": "24x24 (supersedes the hand-drawn 12x12 set)",
+    "source": "pixelarticons v2.4.2 — https://github.com/halfmage/pixelarticons",
+    "license": "MIT (c) Gerrit Halfmann — full text at assets-raw/pixelarticons/LICENSE.txt",
+    "vendored": "assets-raw/pixelarticons/svg/*.svg copied verbatim out of node_modules by scripts/pixelarticons-vendor.mjs (npm install pixelarticons --no-save)",
+    "native": "used at their own 24 grid, no resampling; paths parsed and even-odd polygon filled by scripts/glyphs-24.mjs",
+    "glyphs": {
+      "back": "pixelarticons:chevron-left",
+      "check": "HAND-DRAWN — their check is a 1px diagonal, 8px at the 12 grid with all 8 as orphans; ours is two 2px 45-deg arms, 52px, 0 orphans",
+      "lock": "pixelarticons:lock",
+      "leave": "pixelarticons:logout",
+      "defend": "pixelarticons:shield — outline, deliberately not the filled Bronze Shield item silhouette",
+      "useItem": "pixelarticons:backpack — replaces the old bag, which duplicated the Cloth Purse item",
+      "attack": "pixelarticons:sword — split out of the old crossed-swords X",
+      "ranked": "pixelarticons:trophy — split out of the old crossed-swords X",
+      "friend": "pixelarticons:users",
+      "special": "pixelarticons:zap — replaces a crown-shaped glyph that collided with the Golden Crown item",
+      "flag": "pixelarticons:flag (report / forfeit)",
+      "withdrawal": "pixelarticons:arrow-right",
+      "update": "pixelarticons:arrow-up",
+      "alert": "pixelarticons:square-alert"
+    },
+    "collisionRule": "an action glyph may not duplicate the silhouette of an ownable item (bible rule 6)",
+    "shipped": "29 in-screen instances + 12-card gallery, 2026-10-17; zero 12x12 instances remain",
+    "defect_found_and_repaired": "2026-10-17, same day. glyphs-24.mjs ran ONE even-odd polygon pass over every ring from every <path> in a source icon. SVG fills each <path> independently and unions them, so on a multi-path icon a later path carved holes in an earlier one. Verified by rasterising both the original SVG and our encoding to a 24x24 canvas in the browser and diffing pixel by pixel (scripts/glyph-diff.mjs): leave lost 4px, useItem 8px, flag 8px, withdrawal 8px. Every single-path glyph diffed at 0, which is what isolated the cause. Fixed the builder to fill per path then union, and re-shipped the 11 affected instances in the handoff via scripts/glyphs-refill.mjs (matches by pixel set, preserves each instance's own fill, refuses to write if any buggy set survives or tags go unbalanced). Post-fix diff: 0 of 12 differ from the browser render. Lesson: a gate that checks palette, orphans and contrast cannot see a wrong FILL RULE — the only check that catches it is comparing against an independent renderer of the source.",
+    "count": 14,
+    "fillRuleDefect": "2026-10-17, same day as the ship. See the defect_found_and_repaired note above. Two more glyphs (update, alert) were added afterwards and are multi-path or verified: arrow-up is also 2-path and would have lost 8px to the old order.",
+    "provenanceGate": "scripts/glyph-provenance.mjs re-derives every sourced glyph from its vendored SVG and exits non-zero on drift. 13 sourced verified, 1 hand-drawn, 0 drift."
+  },
+  "arenaFloor": {
+    "decision": "SUPERSEDED 2026-10-17 — the dark floor + lit horizon shipped, then the user reversed it the same day",
+    "now": "flat arena panel, filled with the page ground #0C1211. No floor band, no horizon line.",
+    "why": "the page ground is the best contour value among tokens we already own — 1.38:1 against the outline, versus 1.30:1 for the old #101A18 arena. Making the arena fill identical to the page also means the bevel frame carries the panel instead of a colour change.",
+    "shipped": "7 arenas recoloured (A_ItemSheet, A_Battle, A_InBattleWait, A_Win, A_Loss, A_Tie, A_ConnLost); 7 floor bands removed",
+    "measured": "contour vs #0C1211 = 1.38:1; contour vs #763B36 floor was 1.60:1",
+    "rejected": [
+      "Kenney's copper floor #EAA56C — contour 6.59:1 but the silver knight drops to 1.27:1 against its own ground",
+      "floor = contour colour #3F2631 — halo vanishes by identity but the sprites lose their outline entirely",
+      "dark floor + lit horizon — shipped briefly, reversed by the user"
+    ],
+    "open": "the outline shell is still a low-contrast film at 1.38:1. No token we own fixes it; only a mid-tone floor (#565A58 for 2:1, #707673 for 3:1) or a real tilemap backdrop would, and both change the arena's character more than the user wanted."
+  },
+  "badges": {
+    "decision": "SHIPPED 2026-10-17 at 24x24, SOURCED — not drawn",
+    "whySourced": "The 16x16 decision made earlier the same day was superseded. Hand-drawn 16x16 pictograms were reviewed by the user and rejected as not reading; pixelarticons (already licensed, MIT, and vendored for the UI glyphs) has a proper icon for all six. Grid follows the pack because resampling 24 to 16 breaks pixels the same way the rejected Shade 16x16 attempt did.",
+    "icons": {
+      "first_steps": "map-pin — a check-in is a pin; no stairs/footprint icon exists in the free set",
+      "week_warrior": "fire — streak = fire, the near-universal convention",
+      "iron_saver": "money — a savings challenge; replaces an ingot stack that read as a bell",
+      "steady_hand": "anchor — holds steady through 30 days with no withdrawal",
+      "first_blade": "sword — first battle win",
+      "golden_crown": "crown — Gold bracket status"
+    },
+    "states": "ONE drawing per badge, changed by ramp plus a corner chip, so all three survive grayscale",
+    "ramps": {
+      "earned": "ink #FEE761 / deep #BD6C4A, solid, no chip",
+      "locked": "ink #C0CBDC / deep #8B9BB4, minus chip",
+      "removed": "ink #8B9BB4 / deep #5A6988, cross chip"
+    },
+    "chipGeometry": "lower-right 9x9, punched out of the pictogram beneath it so the two never fuse; the symbol itself is punched out of the chip so it reads as background showing through",
+    "rejected": [
+      "full-canvas diagonal cross for removed — built, measured, and rejected by the user as defacing the icon",
+      "hollow outline for locked — on a thin pictogram every pixel is already an edge pixel, so locked and earned came out byte-identical (steady_hand 79 vs 79, first_blade 46 vs 46)",
+      "candy-stripe shading via (x+y)%3 — violated bible rule 1 (light from top-left); now a solid body with a deep rim on bottom and right edges only",
+      "roundel + ribbon construction — bible rule 4 rewritten; at card size there is no room for a roundel, a ribbon AND an identifying mark"
+    ],
+    "measured": "18 states, 0 orphans, every state >= 5.98:1 against the #151F1D card. The set it replaced had three badges at 2.32:1 and one using #E8C14A, a UI token that fails pack palette.",
+    "display": "48px on the Profile card (2x), 72px in large pixel panels (3x), 24px inline in leaderboard rows (1x). Replaced 36px and 18px, which are not whole multiples of 24.",
+    "collisionFixed": "steady_hand stopped being a flag — the Report/forfeit GLYPH is a flag and both appear on the Profile screen. Bible rule 6 in a new place, created by the glyph ship and caught by inspection.",
+    "collisionAccepted": "first_blade shares the sword silhouette with the Attack glyph. Verified acceptable by scripts/cooccurrence.mjs: the Attack glyph exists only in A_Battle; badges appear on 8 screens, none of them A_Battle. They never co-occur.",
+    "scripts": "built by scripts/badges-from-pack.mjs -> assets/badges.json (source of truth); shipped by scripts/badges-ship.mjs (10 instances by aria-label match) then scripts/badge-followups.mjs (1 card the label sweep missed, plus the gallery group)",
+    "gridRetired": "8x8 — zero instances remain in Savborne-handoff.html",
+    "reachability": {
+      "rule": "only states computeBadgeActions() can produce are drawn and exhibited",
+      "revocable": [
+        "week_warrior",
+        "iron_saver",
+        "golden_crown"
+      ],
+      "permanent": [
+        "first_steps",
+        "first_blade",
+        "steady_hand"
+      ],
+      "removedStateScreen": "A_Withdrawal — the only screen that shows a removed badge, and the only visible cost of withdrawing",
+      "gallerySvgs": "18 → 15 after the trim",
+      "overproduction": "3 removed renderings depicted a state no code path can trigger, and every gate passed them. Recorded as bible rule 10: reachability is not a pixel property, so no art gate can catch it.",
+      "encodedIn": "assets/badges.json → revocable + reachableStates per badge"
+    },
+    "gallerySvgs": 15
+  },
+  "signedOff": {
+    "ledgerTomeRename": "2026-10-16",
+    "rivalRosterNames": "2026-10-16",
+    "heroineSprites": "2026-10-16",
+    "glyphGridMoveTo24": "2026-10-17",
+    "specialMoveBecomesZap": "2026-10-17",
+    "swordsSplitIntoSwordAndTrophy": "2026-10-17",
+    "stateChannelMatrix": "2026-10-17",
+    "groundShadowsRetired": "2026-10-17",
+    "arenaFloorDarkWithLitHorizon": "2026-10-17",
+    "badgeGrid16": "SUPERSEDED 2026-10-17 same day - moved to 24x24 and sourced from pixelarticons after the hand-drawn 16x16 set was rejected",
+    "badgeGridRevisedTo24Sourced": "2026-10-17",
+    "badgesAreFlatPictograms": "2026-10-17",
+    "badgeStatesRampPlusCornerChip": "2026-10-17",
+    "steadyHandBecomesAnchor": "2026-10-17",
+    "badgeSetShippedGrid8x8Retired": "2026-10-17",
+    "glyphFillRuleDefectRepaired": "2026-10-17",
+    "badgeStatesTrimmedToReachable": "2026-10-18"
+  }
+}

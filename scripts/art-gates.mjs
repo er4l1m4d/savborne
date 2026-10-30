@@ -1,13 +1,13 @@
 // Art gates: palette audit + orphan check + silhouette dump for every art SVG in the handoff
 import fs from 'node:fs';
-const c = fs.readFileSync('Savborne-handoff.html', 'utf8');
+const c = fs.readFileSync(process.argv[2] || 'Savborne-handoff.html', 'utf8');
 
 // Allowed = pack 27 (docs/art-bible.md §2) + UI tokens (chrome exception)
-const PACK = ['#3F2631', '#262B44', '#52607C', '#8B9BB4', '#C0CBDC', '#FFFFFF', '#763B36', '#BD6C4A', '#CF8254', '#EAA56C', '#F7C282', '#E19A65', '#69FFD4', '#43E1B3', '#25956A', '#FF706D', '#E84537', '#FEAE34', '#FEE761', '#75E3FF', '#0099DB', '#D176D0', '#9B4CA3', '#AAB7CC', '#E4EDF9'];
+const PACK = ['#3F2631', '#262B44', '#52607C', '#8B9BB4', '#C0CBDC', '#FFFFFF', '#763B36', '#BD6C4A', '#CF8254', '#EAA56C', '#F7C282', '#E19A65', '#69FFD4', '#43E1B3', '#25956A', '#FF706D', '#E84537', '#FEAE34', '#FEE761', '#75E3FF', '#0099DB', '#D176D0', '#9B4CA3', '#AAB7CC', '#E4EDF9', '#5A6988', '#FEC99C'];
 const TOKENS = ['#0C1211', '#151F1D', '#101A18', '#243532', '#C9C1A8', '#2E4642', '#F3EEDD', '#A9B8B2', '#6FD0AE', '#F2735A', '#A8452F', '#FF9C86', '#2A1B18', '#4B5A56', '#0C3B35', '#F6EFD9', '#FF6A4D', 'currentColor'];
 const ALLOWED = new Set([...PACK, ...TOKENS]);
 
-const GRID = /^<svg [^>]*viewBox="0 0 (12|16) (12|16|24)"/;
+const GRID = /^<svg [^>]*viewBox="0 0 (8|12|16|24) (8|12|16|24)"/;
 const assets = [];
 for (const m of c.matchAll(/<svg\b[\s\S]*?<\/svg>/g)) {
   const tag = m[0];
@@ -15,7 +15,9 @@ for (const m of c.matchAll(/<svg\b[\s\S]*?<\/svg>/g)) {
   const W = +tag.match(/viewBox="0 0 (\d+)/)[1], H = +tag.match(/viewBox="0 0 \d+ (\d+)/)[1];
   const g = Array.from({ length: H }, () => Array(W).fill(null));
   const bad = new Set();
-  for (const p of tag.matchAll(/<path([^>]*)d="([^"]*)"><\/path>/g)) {
+  // accept both <path ...></path> and self-closing <path .../> — the brand mark uses the
+  // latter, and skipping it made the asset read as empty (visibility -Infinity)
+  for (const p of tag.matchAll(/<path([^>]*?)d="([^"]*)"(?:\s*\/>|><\/path>)/g)) {
     const fill = (p[1].match(/fill="([^"]+)"/) || [])[1];
     if (!fill) continue;
     if (!ALLOWED.has(fill.toUpperCase() === fill ? fill : fill)) {

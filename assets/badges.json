@@ -1,0 +1,197 @@
+{
+  "first_steps": {
+    "viewBox": "0 0 24 24",
+    "source": "pixelarticons:map-pin (MIT)",
+    "meaning": "a check-in is a location pin; no stairs/footprint icon exists in the free set",
+    "revocable": false,
+    "reachableStates": [
+      "earned",
+      "locked"
+    ],
+    "states": {
+      "earned": "<path fill=\"#FEE761\" shape-rendering=\"crispEdges\" d=\"M7 2h9v1h-9zM5 4h1v1h-1zM17 4h1v1h-1zM3 6h1v1h-1zM10 6h3v1h-3zM19 6h1v1h-1zM3 7h1v1h-1zM19 7h1v1h-1zM3 8h1v1h-1zM8 8h1v1h-1zM14 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM8 9h1v1h-1zM14 9h1v1h-1zM19 9h1v1h-1zM3 10h1v1h-1zM8 10h1v1h-1zM14 10h1v1h-1zM19 10h1v1h-1zM3 11h1v1h-1zM19 11h1v1h-1zM3 12h1v1h-1zM10 12h3v1h-3zM19 12h1v1h-1zM5 14h1v1h-1zM17 14h1v1h-1zM5 15h1v1h-1zM17 15h1v1h-1zM7 17h1v1h-1zM15 17h1v1h-1zM9 19h1v1h-1zM13 19h1v1h-1zM11 21h1v1h-1z\"></path><path fill=\"#BD6C4A\" shape-rendering=\"crispEdges\" d=\"M16 2h1v1h-1zM7 3h10v1h-10zM6 4h1v1h-1zM18 4h1v1h-1zM5 5h2v1h-2zM17 5h2v1h-2zM4 6h1v1h-1zM13 6h1v1h-1zM20 6h1v1h-1zM4 7h1v1h-1zM10 7h4v1h-4zM20 7h1v1h-1zM4 8h1v1h-1zM9 8h1v1h-1zM15 8h1v1h-1zM20 8h1v1h-1zM4 9h1v1h-1zM9 9h1v1h-1zM15 9h1v1h-1zM20 9h1v1h-1zM4 10h1v1h-1zM9 10h1v1h-1zM15 10h1v1h-1zM20 10h1v1h-1zM4 11h1v1h-1zM8 11h2v1h-2zM14 11h2v1h-2zM20 11h1v1h-1zM4 12h1v1h-1zM13 12h1v1h-1zM20 12h1v1h-1zM3 13h2v1h-2zM10 13h4v1h-4zM19 13h2v1h-2zM6 14h1v1h-1zM18 14h1v1h-1zM6 15h1v1h-1zM18 15h1v1h-1zM5 16h2v1h-2zM17 16h2v1h-2zM8 17h1v1h-1zM16 17h1v1h-1zM7 18h2v1h-2zM15 18h2v1h-2zM10 19h1v1h-1zM14 19h1v1h-1zM9 20h2v1h-2zM13 20h2v1h-2zM12 21h1v1h-1zM11 22h2v1h-2z\"></path>",
+      "locked": "<path fill=\"#C0CBDC\" shape-rendering=\"crispEdges\" d=\"M7 2h9v1h-9zM5 4h1v1h-1zM17 4h1v1h-1zM3 6h1v1h-1zM10 6h3v1h-3zM19 6h1v1h-1zM3 7h1v1h-1zM19 7h1v1h-1zM3 8h1v1h-1zM8 8h1v1h-1zM14 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM8 9h1v1h-1zM14 9h1v1h-1zM19 9h1v1h-1zM3 10h1v1h-1zM8 10h1v1h-1zM14 10h1v1h-1zM19 10h1v1h-1zM3 11h1v1h-1zM19 11h1v1h-1zM3 12h1v1h-1zM10 12h3v1h-3zM19 12h1v1h-1zM5 14h1v1h-1zM5 15h1v1h-1zM7 17h1v1h-1zM9 19h1v1h-1zM13 19h1v1h-1zM11 21h1v1h-1z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M16 2h1v1h-1zM7 3h10v1h-10zM6 4h1v1h-1zM18 4h1v1h-1zM5 5h2v1h-2zM17 5h2v1h-2zM4 6h1v1h-1zM13 6h1v1h-1zM20 6h1v1h-1zM4 7h1v1h-1zM10 7h4v1h-4zM20 7h1v1h-1zM4 8h1v1h-1zM9 8h1v1h-1zM15 8h1v1h-1zM20 8h1v1h-1zM4 9h1v1h-1zM9 9h1v1h-1zM15 9h1v1h-1zM20 9h1v1h-1zM4 10h1v1h-1zM9 10h1v1h-1zM15 10h1v1h-1zM20 10h1v1h-1zM4 11h1v1h-1zM8 11h2v1h-2zM14 11h2v1h-2zM20 11h1v1h-1zM4 12h1v1h-1zM13 12h1v1h-1zM20 12h1v1h-1zM3 13h2v1h-2zM10 13h4v1h-4zM19 13h2v1h-2zM6 14h1v1h-1zM17 14h2v1h-2zM6 15h1v1h-1zM5 16h2v1h-2zM8 17h1v1h-1zM7 18h2v1h-2zM10 19h1v1h-1zM14 19h1v1h-1zM9 20h2v1h-2zM13 20h2v1h-2zM12 21h1v1h-1zM11 22h2v1h-2z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h9v1h-9zM15 17h9v1h-9zM15 18h9v1h-9zM15 19h2v1h-2zM22 19h2v1h-2zM15 20h2v1h-2zM22 20h2v1h-2zM15 21h9v1h-9zM15 22h9v1h-9zM15 23h9v1h-9z\"></path>",
+      "removed": "<path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M7 2h9v1h-9zM5 4h1v1h-1zM17 4h1v1h-1zM3 6h1v1h-1zM10 6h3v1h-3zM19 6h1v1h-1zM3 7h1v1h-1zM19 7h1v1h-1zM3 8h1v1h-1zM8 8h1v1h-1zM14 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM8 9h1v1h-1zM14 9h1v1h-1zM19 9h1v1h-1zM3 10h1v1h-1zM8 10h1v1h-1zM14 10h1v1h-1zM19 10h1v1h-1zM3 11h1v1h-1zM19 11h1v1h-1zM3 12h1v1h-1zM10 12h3v1h-3zM19 12h1v1h-1zM5 14h1v1h-1zM5 15h1v1h-1zM7 17h1v1h-1zM9 19h1v1h-1zM13 19h1v1h-1zM11 21h1v1h-1z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M16 2h1v1h-1zM7 3h10v1h-10zM6 4h1v1h-1zM18 4h1v1h-1zM5 5h2v1h-2zM17 5h2v1h-2zM4 6h1v1h-1zM13 6h1v1h-1zM20 6h1v1h-1zM4 7h1v1h-1zM10 7h4v1h-4zM20 7h1v1h-1zM4 8h1v1h-1zM9 8h1v1h-1zM15 8h1v1h-1zM20 8h1v1h-1zM4 9h1v1h-1zM9 9h1v1h-1zM15 9h1v1h-1zM20 9h1v1h-1zM4 10h1v1h-1zM9 10h1v1h-1zM15 10h1v1h-1zM20 10h1v1h-1zM4 11h1v1h-1zM8 11h2v1h-2zM14 11h2v1h-2zM20 11h1v1h-1zM4 12h1v1h-1zM13 12h1v1h-1zM20 12h1v1h-1zM3 13h2v1h-2zM10 13h4v1h-4zM19 13h2v1h-2zM6 14h1v1h-1zM17 14h2v1h-2zM6 15h1v1h-1zM5 16h2v1h-2zM8 17h1v1h-1zM7 18h2v1h-2zM10 19h1v1h-1zM14 19h1v1h-1zM9 20h2v1h-2zM13 20h2v1h-2zM12 21h1v1h-1zM11 22h2v1h-2z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h1v1h-1zM17 16h5v1h-5zM23 16h1v1h-1zM15 17h2v1h-2zM18 17h3v1h-3zM22 17h2v1h-2zM15 18h3v1h-3zM19 18h1v1h-1zM21 18h3v1h-3zM15 19h4v1h-4zM20 19h4v1h-4zM15 20h3v1h-3zM19 20h1v1h-1zM21 20h3v1h-3zM15 21h2v1h-2zM18 21h3v1h-3zM22 21h2v1h-2zM15 22h1v1h-1zM17 22h5v1h-5zM23 22h1v1h-1zM15 23h9v1h-9z\"></path>"
+    },
+    "ramps": {
+      "earned": {
+        "ink": "#FEE761",
+        "deep": "#BD6C4A",
+        "chip": null
+      },
+      "locked": {
+        "ink": "#C0CBDC",
+        "deep": "#8B9BB4",
+        "chip": "minus"
+      },
+      "removed": {
+        "ink": "#8B9BB4",
+        "deep": "#5A6988",
+        "chip": "cross"
+      }
+    }
+  },
+  "week_warrior": {
+    "viewBox": "0 0 24 24",
+    "source": "pixelarticons:fire (MIT)",
+    "meaning": "streak = fire, the near-universal convention; revoked on withdrawal or when the streak drops below 7",
+    "revocable": true,
+    "reachableStates": [
+      "earned",
+      "locked",
+      "removed"
+    ],
+    "states": {
+      "earned": "<path fill=\"#FEE761\" shape-rendering=\"crispEdges\" d=\"M9 2h1v1h-1zM9 3h1v1h-1zM9 4h1v1h-1zM7 6h1v1h-1zM11 6h1v1h-1zM11 7h1v1h-1zM5 8h1v1h-1zM11 8h1v1h-1zM15 8h1v1h-1zM3 10h1v1h-1zM13 10h1v1h-1zM17 10h1v1h-1zM3 11h1v1h-1zM3 12h1v1h-1zM19 12h1v1h-1zM3 13h1v1h-1zM19 13h1v1h-1zM3 14h1v1h-1zM11 14h1v1h-1zM19 14h1v1h-1zM3 15h1v1h-1zM11 15h1v1h-1zM19 15h1v1h-1zM3 16h1v1h-1zM9 16h5v1h-5zM19 16h1v1h-1zM9 17h5v1h-5zM5 18h1v1h-1zM9 18h5v1h-5zM17 18h1v1h-1zM9 19h5v1h-5zM7 20h9v1h-9z\"></path><path fill=\"#BD6C4A\" shape-rendering=\"crispEdges\" d=\"M10 2h1v1h-1zM10 3h1v1h-1zM10 4h1v1h-1zM9 5h2v1h-2zM8 6h1v1h-1zM12 6h1v1h-1zM7 7h2v1h-2zM12 7h1v1h-1zM6 8h1v1h-1zM12 8h1v1h-1zM16 8h1v1h-1zM5 9h2v1h-2zM11 9h2v1h-2zM15 9h2v1h-2zM4 10h1v1h-1zM14 10h1v1h-1zM18 10h1v1h-1zM4 11h1v1h-1zM13 11h2v1h-2zM17 11h2v1h-2zM4 12h1v1h-1zM20 12h1v1h-1zM4 13h1v1h-1zM20 13h1v1h-1zM4 14h1v1h-1zM12 14h1v1h-1zM20 14h1v1h-1zM4 15h1v1h-1zM12 15h1v1h-1zM20 15h1v1h-1zM4 16h1v1h-1zM14 16h1v1h-1zM20 16h1v1h-1zM3 17h2v1h-2zM14 17h1v1h-1zM19 17h2v1h-2zM6 18h1v1h-1zM14 18h1v1h-1zM18 18h1v1h-1zM5 19h2v1h-2zM14 19h1v1h-1zM17 19h2v1h-2zM16 20h1v1h-1zM7 21h10v1h-10z\"></path>",
+      "locked": "<path fill=\"#C0CBDC\" shape-rendering=\"crispEdges\" d=\"M9 2h1v1h-1zM9 3h1v1h-1zM9 4h1v1h-1zM7 6h1v1h-1zM11 6h1v1h-1zM11 7h1v1h-1zM5 8h1v1h-1zM11 8h1v1h-1zM15 8h1v1h-1zM3 10h1v1h-1zM13 10h1v1h-1zM17 10h1v1h-1zM3 11h1v1h-1zM3 12h1v1h-1zM19 12h1v1h-1zM3 13h1v1h-1zM19 13h1v1h-1zM3 14h1v1h-1zM11 14h1v1h-1zM3 15h1v1h-1zM11 15h1v1h-1zM3 16h1v1h-1zM9 16h5v1h-5zM9 17h5v1h-5zM5 18h1v1h-1zM9 18h5v1h-5zM9 19h5v1h-5zM7 20h7v1h-7z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M10 2h1v1h-1zM10 3h1v1h-1zM10 4h1v1h-1zM9 5h2v1h-2zM8 6h1v1h-1zM12 6h1v1h-1zM7 7h2v1h-2zM12 7h1v1h-1zM6 8h1v1h-1zM12 8h1v1h-1zM16 8h1v1h-1zM5 9h2v1h-2zM11 9h2v1h-2zM15 9h2v1h-2zM4 10h1v1h-1zM14 10h1v1h-1zM18 10h1v1h-1zM4 11h1v1h-1zM13 11h2v1h-2zM17 11h2v1h-2zM4 12h1v1h-1zM20 12h1v1h-1zM4 13h1v1h-1zM20 13h1v1h-1zM4 14h1v1h-1zM12 14h1v1h-1zM19 14h2v1h-2zM4 15h1v1h-1zM12 15h1v1h-1zM4 16h1v1h-1zM14 16h1v1h-1zM3 17h2v1h-2zM14 17h1v1h-1zM6 18h1v1h-1zM14 18h1v1h-1zM5 19h2v1h-2zM14 19h1v1h-1zM14 20h1v1h-1zM7 21h8v1h-8z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h9v1h-9zM15 17h9v1h-9zM15 18h9v1h-9zM15 19h2v1h-2zM22 19h2v1h-2zM15 20h2v1h-2zM22 20h2v1h-2zM15 21h9v1h-9zM15 22h9v1h-9zM15 23h9v1h-9z\"></path>",
+      "removed": "<path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M9 2h1v1h-1zM9 3h1v1h-1zM9 4h1v1h-1zM7 6h1v1h-1zM11 6h1v1h-1zM11 7h1v1h-1zM5 8h1v1h-1zM11 8h1v1h-1zM15 8h1v1h-1zM3 10h1v1h-1zM13 10h1v1h-1zM17 10h1v1h-1zM3 11h1v1h-1zM3 12h1v1h-1zM19 12h1v1h-1zM3 13h1v1h-1zM19 13h1v1h-1zM3 14h1v1h-1zM11 14h1v1h-1zM3 15h1v1h-1zM11 15h1v1h-1zM3 16h1v1h-1zM9 16h5v1h-5zM9 17h5v1h-5zM5 18h1v1h-1zM9 18h5v1h-5zM9 19h5v1h-5zM7 20h7v1h-7z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M10 2h1v1h-1zM10 3h1v1h-1zM10 4h1v1h-1zM9 5h2v1h-2zM8 6h1v1h-1zM12 6h1v1h-1zM7 7h2v1h-2zM12 7h1v1h-1zM6 8h1v1h-1zM12 8h1v1h-1zM16 8h1v1h-1zM5 9h2v1h-2zM11 9h2v1h-2zM15 9h2v1h-2zM4 10h1v1h-1zM14 10h1v1h-1zM18 10h1v1h-1zM4 11h1v1h-1zM13 11h2v1h-2zM17 11h2v1h-2zM4 12h1v1h-1zM20 12h1v1h-1zM4 13h1v1h-1zM20 13h1v1h-1zM4 14h1v1h-1zM12 14h1v1h-1zM19 14h2v1h-2zM4 15h1v1h-1zM12 15h1v1h-1zM4 16h1v1h-1zM14 16h1v1h-1zM3 17h2v1h-2zM14 17h1v1h-1zM6 18h1v1h-1zM14 18h1v1h-1zM5 19h2v1h-2zM14 19h1v1h-1zM14 20h1v1h-1zM7 21h8v1h-8z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h1v1h-1zM17 16h5v1h-5zM23 16h1v1h-1zM15 17h2v1h-2zM18 17h3v1h-3zM22 17h2v1h-2zM15 18h3v1h-3zM19 18h1v1h-1zM21 18h3v1h-3zM15 19h4v1h-4zM20 19h4v1h-4zM15 20h3v1h-3zM19 20h1v1h-1zM21 20h3v1h-3zM15 21h2v1h-2zM18 21h3v1h-3zM22 21h2v1h-2zM15 22h1v1h-1zM17 22h5v1h-5zM23 22h1v1h-1zM15 23h9v1h-9z\"></path>"
+    },
+    "ramps": {
+      "earned": {
+        "ink": "#FEE761",
+        "deep": "#BD6C4A",
+        "chip": null
+      },
+      "locked": {
+        "ink": "#C0CBDC",
+        "deep": "#8B9BB4",
+        "chip": "minus"
+      },
+      "removed": {
+        "ink": "#8B9BB4",
+        "deep": "#5A6988",
+        "chip": "cross"
+      }
+    }
+  },
+  "iron_saver": {
+    "viewBox": "0 0 24 24",
+    "source": "pixelarticons:money (MIT)",
+    "meaning": "a savings challenge; revoked on withdrawal or when the streak drops below 28",
+    "revocable": true,
+    "reachableStates": [
+      "earned",
+      "locked",
+      "removed"
+    ],
+    "states": {
+      "earned": "<path fill=\"#FEE761\" shape-rendering=\"crispEdges\" d=\"M4 4h11v1h-11zM2 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM16 7h1v1h-1zM2 8h1v1h-1zM8 8h11v1h-11zM2 9h1v1h-1zM2 10h1v1h-1zM6 10h1v1h-1zM20 10h1v1h-1zM2 11h1v1h-1zM6 11h1v1h-1zM20 11h1v1h-1zM2 12h1v1h-1zM6 12h1v1h-1zM12 12h3v1h-3zM20 12h1v1h-1zM6 13h1v1h-1zM12 13h3v1h-3zM20 13h1v1h-1zM4 14h3v1h-3zM12 14h3v1h-3zM20 14h1v1h-1zM6 15h1v1h-1zM20 15h1v1h-1zM6 16h1v1h-1zM20 16h1v1h-1zM8 18h11v1h-11z\"></path><path fill=\"#BD6C4A\" shape-rendering=\"crispEdges\" d=\"M15 4h1v1h-1zM4 5h12v1h-12zM3 6h1v1h-1zM17 6h1v1h-1zM3 7h1v1h-1zM17 7h1v1h-1zM3 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM8 9h12v1h-12zM3 10h1v1h-1zM7 10h1v1h-1zM21 10h1v1h-1zM3 11h1v1h-1zM7 11h1v1h-1zM21 11h1v1h-1zM3 12h1v1h-1zM7 12h1v1h-1zM15 12h1v1h-1zM21 12h1v1h-1zM2 13h2v1h-2zM7 13h1v1h-1zM15 13h1v1h-1zM21 13h1v1h-1zM7 14h1v1h-1zM15 14h1v1h-1zM21 14h1v1h-1zM4 15h2v1h-2zM7 15h1v1h-1zM12 15h4v1h-4zM21 15h1v1h-1zM7 16h1v1h-1zM21 16h1v1h-1zM6 17h2v1h-2zM20 17h2v1h-2zM19 18h1v1h-1zM8 19h12v1h-12z\"></path>",
+      "locked": "<path fill=\"#C0CBDC\" shape-rendering=\"crispEdges\" d=\"M4 4h11v1h-11zM2 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM16 7h1v1h-1zM2 8h1v1h-1zM8 8h11v1h-11zM2 9h1v1h-1zM2 10h1v1h-1zM6 10h1v1h-1zM20 10h1v1h-1zM2 11h1v1h-1zM6 11h1v1h-1zM20 11h1v1h-1zM2 12h1v1h-1zM6 12h1v1h-1zM12 12h3v1h-3zM20 12h1v1h-1zM6 13h1v1h-1zM12 13h3v1h-3zM20 13h1v1h-1zM4 14h3v1h-3zM12 14h3v1h-3zM6 15h1v1h-1zM6 16h1v1h-1zM8 18h6v1h-6z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M15 4h1v1h-1zM4 5h12v1h-12zM3 6h1v1h-1zM17 6h1v1h-1zM3 7h1v1h-1zM17 7h1v1h-1zM3 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM8 9h12v1h-12zM3 10h1v1h-1zM7 10h1v1h-1zM21 10h1v1h-1zM3 11h1v1h-1zM7 11h1v1h-1zM21 11h1v1h-1zM3 12h1v1h-1zM7 12h1v1h-1zM15 12h1v1h-1zM21 12h1v1h-1zM2 13h2v1h-2zM7 13h1v1h-1zM15 13h1v1h-1zM21 13h1v1h-1zM7 14h1v1h-1zM15 14h1v1h-1zM20 14h2v1h-2zM4 15h2v1h-2zM7 15h1v1h-1zM12 15h3v1h-3zM7 16h1v1h-1zM6 17h2v1h-2zM14 18h1v1h-1zM8 19h7v1h-7z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h9v1h-9zM15 17h9v1h-9zM15 18h9v1h-9zM15 19h2v1h-2zM22 19h2v1h-2zM15 20h2v1h-2zM22 20h2v1h-2zM15 21h9v1h-9zM15 22h9v1h-9zM15 23h9v1h-9z\"></path>",
+      "removed": "<path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M4 4h11v1h-11zM2 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM16 7h1v1h-1zM2 8h1v1h-1zM8 8h11v1h-11zM2 9h1v1h-1zM2 10h1v1h-1zM6 10h1v1h-1zM20 10h1v1h-1zM2 11h1v1h-1zM6 11h1v1h-1zM20 11h1v1h-1zM2 12h1v1h-1zM6 12h1v1h-1zM12 12h3v1h-3zM20 12h1v1h-1zM6 13h1v1h-1zM12 13h3v1h-3zM20 13h1v1h-1zM4 14h3v1h-3zM12 14h3v1h-3zM6 15h1v1h-1zM6 16h1v1h-1zM8 18h6v1h-6z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M15 4h1v1h-1zM4 5h12v1h-12zM3 6h1v1h-1zM17 6h1v1h-1zM3 7h1v1h-1zM17 7h1v1h-1zM3 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM8 9h12v1h-12zM3 10h1v1h-1zM7 10h1v1h-1zM21 10h1v1h-1zM3 11h1v1h-1zM7 11h1v1h-1zM21 11h1v1h-1zM3 12h1v1h-1zM7 12h1v1h-1zM15 12h1v1h-1zM21 12h1v1h-1zM2 13h2v1h-2zM7 13h1v1h-1zM15 13h1v1h-1zM21 13h1v1h-1zM7 14h1v1h-1zM15 14h1v1h-1zM20 14h2v1h-2zM4 15h2v1h-2zM7 15h1v1h-1zM12 15h3v1h-3zM7 16h1v1h-1zM6 17h2v1h-2zM14 18h1v1h-1zM8 19h7v1h-7z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h1v1h-1zM17 16h5v1h-5zM23 16h1v1h-1zM15 17h2v1h-2zM18 17h3v1h-3zM22 17h2v1h-2zM15 18h3v1h-3zM19 18h1v1h-1zM21 18h3v1h-3zM15 19h4v1h-4zM20 19h4v1h-4zM15 20h3v1h-3zM19 20h1v1h-1zM21 20h3v1h-3zM15 21h2v1h-2zM18 21h3v1h-3zM22 21h2v1h-2zM15 22h1v1h-1zM17 22h5v1h-5zM23 22h1v1h-1zM15 23h9v1h-9z\"></path>"
+    },
+    "ramps": {
+      "earned": {
+        "ink": "#FEE761",
+        "deep": "#BD6C4A",
+        "chip": null
+      },
+      "locked": {
+        "ink": "#C0CBDC",
+        "deep": "#8B9BB4",
+        "chip": "minus"
+      },
+      "removed": {
+        "ink": "#8B9BB4",
+        "deep": "#5A6988",
+        "chip": "cross"
+      }
+    }
+  },
+  "steady_hand": {
+    "viewBox": "0 0 24 24",
+    "source": "pixelarticons:anchor (MIT)",
+    "meaning": "holds steady through 30 days of no withdrawal; no revoke path exists",
+    "revocable": false,
+    "reachableStates": [
+      "earned",
+      "locked"
+    ],
+    "states": {
+      "earned": "<path fill=\"#FEE761\" shape-rendering=\"crispEdges\" d=\"M10 2h3v1h-3zM8 4h1v1h-1zM14 4h1v1h-1zM8 5h1v1h-1zM14 5h1v1h-1zM8 6h1v1h-1zM14 6h1v1h-1zM10 8h3v1h-3zM11 9h2v1h-2zM11 10h1v1h-1zM11 11h1v1h-1zM3 12h3v1h-3zM11 12h1v1h-1zM17 12h3v1h-3zM3 13h2v1h-2zM11 13h1v1h-1zM19 13h1v1h-1zM3 14h1v1h-1zM11 14h1v1h-1zM19 14h1v1h-1zM3 15h1v1h-1zM11 15h1v1h-1zM19 15h1v1h-1zM3 16h1v1h-1zM11 16h1v1h-1zM19 16h1v1h-1zM3 17h1v1h-1zM11 17h1v1h-1zM19 17h1v1h-1zM3 18h1v1h-1zM11 18h1v1h-1zM19 18h1v1h-1zM11 19h1v1h-1zM5 20h13v1h-13z\"></path><path fill=\"#BD6C4A\" shape-rendering=\"crispEdges\" d=\"M13 2h1v1h-1zM10 3h4v1h-4zM9 4h1v1h-1zM15 4h1v1h-1zM9 5h1v1h-1zM15 5h1v1h-1zM9 6h1v1h-1zM15 6h1v1h-1zM8 7h2v1h-2zM14 7h2v1h-2zM13 8h1v1h-1zM10 9h1v1h-1zM13 9h1v1h-1zM12 10h1v1h-1zM12 11h1v1h-1zM6 12h1v1h-1zM12 12h1v1h-1zM20 12h1v1h-1zM5 13h2v1h-2zM12 13h1v1h-1zM17 13h2v1h-2zM20 13h1v1h-1zM4 14h1v1h-1zM12 14h1v1h-1zM20 14h1v1h-1zM4 15h1v1h-1zM12 15h1v1h-1zM20 15h1v1h-1zM4 16h1v1h-1zM12 16h1v1h-1zM20 16h1v1h-1zM4 17h1v1h-1zM12 17h1v1h-1zM20 17h1v1h-1zM4 18h1v1h-1zM12 18h1v1h-1zM20 18h1v1h-1zM3 19h2v1h-2zM12 19h1v1h-1zM19 19h2v1h-2zM18 20h1v1h-1zM5 21h14v1h-14z\"></path>",
+      "locked": "<path fill=\"#C0CBDC\" shape-rendering=\"crispEdges\" d=\"M10 2h3v1h-3zM8 4h1v1h-1zM14 4h1v1h-1zM8 5h1v1h-1zM14 5h1v1h-1zM8 6h1v1h-1zM14 6h1v1h-1zM10 8h3v1h-3zM11 9h2v1h-2zM11 10h1v1h-1zM11 11h1v1h-1zM3 12h3v1h-3zM11 12h1v1h-1zM17 12h3v1h-3zM3 13h2v1h-2zM11 13h1v1h-1zM19 13h1v1h-1zM3 14h1v1h-1zM11 14h1v1h-1zM3 15h1v1h-1zM11 15h1v1h-1zM3 16h1v1h-1zM11 16h1v1h-1zM3 17h1v1h-1zM11 17h1v1h-1zM3 18h1v1h-1zM11 18h1v1h-1zM11 19h1v1h-1zM5 20h9v1h-9z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M13 2h1v1h-1zM10 3h4v1h-4zM9 4h1v1h-1zM15 4h1v1h-1zM9 5h1v1h-1zM15 5h1v1h-1zM9 6h1v1h-1zM15 6h1v1h-1zM8 7h2v1h-2zM14 7h2v1h-2zM13 8h1v1h-1zM10 9h1v1h-1zM13 9h1v1h-1zM12 10h1v1h-1zM12 11h1v1h-1zM6 12h1v1h-1zM12 12h1v1h-1zM20 12h1v1h-1zM5 13h2v1h-2zM12 13h1v1h-1zM17 13h2v1h-2zM20 13h1v1h-1zM4 14h1v1h-1zM12 14h1v1h-1zM19 14h2v1h-2zM4 15h1v1h-1zM12 15h1v1h-1zM4 16h1v1h-1zM12 16h1v1h-1zM4 17h1v1h-1zM12 17h1v1h-1zM4 18h1v1h-1zM12 18h1v1h-1zM3 19h2v1h-2zM12 19h1v1h-1zM14 20h1v1h-1zM5 21h10v1h-10z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h9v1h-9zM15 17h9v1h-9zM15 18h9v1h-9zM15 19h2v1h-2zM22 19h2v1h-2zM15 20h2v1h-2zM22 20h2v1h-2zM15 21h9v1h-9zM15 22h9v1h-9zM15 23h9v1h-9z\"></path>",
+      "removed": "<path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M10 2h3v1h-3zM8 4h1v1h-1zM14 4h1v1h-1zM8 5h1v1h-1zM14 5h1v1h-1zM8 6h1v1h-1zM14 6h1v1h-1zM10 8h3v1h-3zM11 9h2v1h-2zM11 10h1v1h-1zM11 11h1v1h-1zM3 12h3v1h-3zM11 12h1v1h-1zM17 12h3v1h-3zM3 13h2v1h-2zM11 13h1v1h-1zM19 13h1v1h-1zM3 14h1v1h-1zM11 14h1v1h-1zM3 15h1v1h-1zM11 15h1v1h-1zM3 16h1v1h-1zM11 16h1v1h-1zM3 17h1v1h-1zM11 17h1v1h-1zM3 18h1v1h-1zM11 18h1v1h-1zM11 19h1v1h-1zM5 20h9v1h-9z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M13 2h1v1h-1zM10 3h4v1h-4zM9 4h1v1h-1zM15 4h1v1h-1zM9 5h1v1h-1zM15 5h1v1h-1zM9 6h1v1h-1zM15 6h1v1h-1zM8 7h2v1h-2zM14 7h2v1h-2zM13 8h1v1h-1zM10 9h1v1h-1zM13 9h1v1h-1zM12 10h1v1h-1zM12 11h1v1h-1zM6 12h1v1h-1zM12 12h1v1h-1zM20 12h1v1h-1zM5 13h2v1h-2zM12 13h1v1h-1zM17 13h2v1h-2zM20 13h1v1h-1zM4 14h1v1h-1zM12 14h1v1h-1zM19 14h2v1h-2zM4 15h1v1h-1zM12 15h1v1h-1zM4 16h1v1h-1zM12 16h1v1h-1zM4 17h1v1h-1zM12 17h1v1h-1zM4 18h1v1h-1zM12 18h1v1h-1zM3 19h2v1h-2zM12 19h1v1h-1zM14 20h1v1h-1zM5 21h10v1h-10z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h1v1h-1zM17 16h5v1h-5zM23 16h1v1h-1zM15 17h2v1h-2zM18 17h3v1h-3zM22 17h2v1h-2zM15 18h3v1h-3zM19 18h1v1h-1zM21 18h3v1h-3zM15 19h4v1h-4zM20 19h4v1h-4zM15 20h3v1h-3zM19 20h1v1h-1zM21 20h3v1h-3zM15 21h2v1h-2zM18 21h3v1h-3zM22 21h2v1h-2zM15 22h1v1h-1zM17 22h5v1h-5zM23 22h1v1h-1zM15 23h9v1h-9z\"></path>"
+    },
+    "ramps": {
+      "earned": {
+        "ink": "#FEE761",
+        "deep": "#BD6C4A",
+        "chip": null
+      },
+      "locked": {
+        "ink": "#C0CBDC",
+        "deep": "#8B9BB4",
+        "chip": "minus"
+      },
+      "removed": {
+        "ink": "#8B9BB4",
+        "deep": "#5A6988",
+        "chip": "cross"
+      }
+    }
+  },
+  "first_blade": {
+    "viewBox": "0 0 24 24",
+    "source": "pixelarticons:sword (MIT)",
+    "meaning": "first battle win; a win is never taken back, so no revoke path exists",
+    "revocable": false,
+    "reachableStates": [
+      "earned",
+      "locked"
+    ],
+    "states": {
+      "earned": "<path fill=\"#FEE761\" shape-rendering=\"crispEdges\" d=\"M11 2h1v1h-1zM9 4h1v1h-1zM13 4h1v1h-1zM9 5h1v1h-1zM13 5h1v1h-1zM9 6h1v1h-1zM13 6h1v1h-1zM9 7h1v1h-1zM13 7h1v1h-1zM9 8h1v1h-1zM13 8h1v1h-1zM9 9h1v1h-1zM13 9h1v1h-1zM9 10h1v1h-1zM13 10h1v1h-1zM9 11h1v1h-1zM13 11h1v1h-1zM9 12h1v1h-1zM13 12h1v1h-1zM9 13h1v1h-1zM13 13h1v1h-1zM9 14h1v1h-1zM13 14h1v1h-1zM9 15h1v1h-1zM13 15h1v1h-1zM7 16h9v1h-9zM11 17h2v1h-2zM11 18h1v1h-1zM11 19h1v1h-1zM11 20h1v1h-1z\"></path><path fill=\"#BD6C4A\" shape-rendering=\"crispEdges\" d=\"M12 2h1v1h-1zM11 3h2v1h-2zM10 4h1v1h-1zM14 4h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM10 6h1v1h-1zM14 6h1v1h-1zM10 7h1v1h-1zM14 7h1v1h-1zM10 8h1v1h-1zM14 8h1v1h-1zM10 9h1v1h-1zM14 9h1v1h-1zM10 10h1v1h-1zM14 10h1v1h-1zM10 11h1v1h-1zM14 11h1v1h-1zM10 12h1v1h-1zM14 12h1v1h-1zM10 13h1v1h-1zM14 13h1v1h-1zM10 14h1v1h-1zM14 14h1v1h-1zM10 15h1v1h-1zM14 15h1v1h-1zM16 16h1v1h-1zM7 17h4v1h-4zM13 17h4v1h-4zM12 18h1v1h-1zM12 19h1v1h-1zM12 20h1v1h-1zM11 21h2v1h-2z\"></path>",
+      "locked": "<path fill=\"#C0CBDC\" shape-rendering=\"crispEdges\" d=\"M11 2h1v1h-1zM9 4h1v1h-1zM13 4h1v1h-1zM9 5h1v1h-1zM13 5h1v1h-1zM9 6h1v1h-1zM13 6h1v1h-1zM9 7h1v1h-1zM13 7h1v1h-1zM9 8h1v1h-1zM13 8h1v1h-1zM9 9h1v1h-1zM13 9h1v1h-1zM9 10h1v1h-1zM13 10h1v1h-1zM9 11h1v1h-1zM13 11h1v1h-1zM9 12h1v1h-1zM13 12h1v1h-1zM9 13h1v1h-1zM13 13h1v1h-1zM9 14h1v1h-1zM13 14h1v1h-1zM9 15h1v1h-1zM13 15h1v1h-1zM7 16h7v1h-7zM11 17h2v1h-2zM11 18h1v1h-1zM11 19h1v1h-1zM11 20h1v1h-1z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M12 2h1v1h-1zM11 3h2v1h-2zM10 4h1v1h-1zM14 4h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM10 6h1v1h-1zM14 6h1v1h-1zM10 7h1v1h-1zM14 7h1v1h-1zM10 8h1v1h-1zM14 8h1v1h-1zM10 9h1v1h-1zM14 9h1v1h-1zM10 10h1v1h-1zM14 10h1v1h-1zM10 11h1v1h-1zM14 11h1v1h-1zM10 12h1v1h-1zM14 12h1v1h-1zM10 13h1v1h-1zM14 13h1v1h-1zM10 14h1v1h-1zM14 14h1v1h-1zM10 15h1v1h-1zM14 15h1v1h-1zM14 16h1v1h-1zM7 17h4v1h-4zM13 17h2v1h-2zM12 18h1v1h-1zM12 19h1v1h-1zM12 20h1v1h-1zM11 21h2v1h-2z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h9v1h-9zM15 17h9v1h-9zM15 18h9v1h-9zM15 19h2v1h-2zM22 19h2v1h-2zM15 20h2v1h-2zM22 20h2v1h-2zM15 21h9v1h-9zM15 22h9v1h-9zM15 23h9v1h-9z\"></path>",
+      "removed": "<path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M11 2h1v1h-1zM9 4h1v1h-1zM13 4h1v1h-1zM9 5h1v1h-1zM13 5h1v1h-1zM9 6h1v1h-1zM13 6h1v1h-1zM9 7h1v1h-1zM13 7h1v1h-1zM9 8h1v1h-1zM13 8h1v1h-1zM9 9h1v1h-1zM13 9h1v1h-1zM9 10h1v1h-1zM13 10h1v1h-1zM9 11h1v1h-1zM13 11h1v1h-1zM9 12h1v1h-1zM13 12h1v1h-1zM9 13h1v1h-1zM13 13h1v1h-1zM9 14h1v1h-1zM13 14h1v1h-1zM9 15h1v1h-1zM13 15h1v1h-1zM7 16h7v1h-7zM11 17h2v1h-2zM11 18h1v1h-1zM11 19h1v1h-1zM11 20h1v1h-1z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M12 2h1v1h-1zM11 3h2v1h-2zM10 4h1v1h-1zM14 4h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM10 6h1v1h-1zM14 6h1v1h-1zM10 7h1v1h-1zM14 7h1v1h-1zM10 8h1v1h-1zM14 8h1v1h-1zM10 9h1v1h-1zM14 9h1v1h-1zM10 10h1v1h-1zM14 10h1v1h-1zM10 11h1v1h-1zM14 11h1v1h-1zM10 12h1v1h-1zM14 12h1v1h-1zM10 13h1v1h-1zM14 13h1v1h-1zM10 14h1v1h-1zM14 14h1v1h-1zM10 15h1v1h-1zM14 15h1v1h-1zM14 16h1v1h-1zM7 17h4v1h-4zM13 17h2v1h-2zM12 18h1v1h-1zM12 19h1v1h-1zM12 20h1v1h-1zM11 21h2v1h-2z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h1v1h-1zM17 16h5v1h-5zM23 16h1v1h-1zM15 17h2v1h-2zM18 17h3v1h-3zM22 17h2v1h-2zM15 18h3v1h-3zM19 18h1v1h-1zM21 18h3v1h-3zM15 19h4v1h-4zM20 19h4v1h-4zM15 20h3v1h-3zM19 20h1v1h-1zM21 20h3v1h-3zM15 21h2v1h-2zM18 21h3v1h-3zM22 21h2v1h-2zM15 22h1v1h-1zM17 22h5v1h-5zM23 22h1v1h-1zM15 23h9v1h-9z\"></path>"
+    },
+    "ramps": {
+      "earned": {
+        "ink": "#FEE761",
+        "deep": "#BD6C4A",
+        "chip": null
+      },
+      "locked": {
+        "ink": "#C0CBDC",
+        "deep": "#8B9BB4",
+        "chip": "minus"
+      },
+      "removed": {
+        "ink": "#8B9BB4",
+        "deep": "#5A6988",
+        "chip": "cross"
+      }
+    }
+  },
+  "golden_crown": {
+    "viewBox": "0 0 24 24",
+    "source": "pixelarticons:crown (MIT)",
+    "meaning": "Gold bracket status, literally; revoked when the balance drops below Gold",
+    "revocable": true,
+    "reachableStates": [
+      "earned",
+      "locked",
+      "removed"
+    ],
+    "states": {
+      "earned": "<path fill=\"#FEE761\" shape-rendering=\"crispEdges\" d=\"M3 3h1v1h-1zM11 3h1v1h-1zM19 3h1v1h-1zM3 4h1v1h-1zM19 4h1v1h-1zM3 5h3v1h-3zM9 5h1v1h-1zM13 5h1v1h-1zM17 5h3v1h-3zM3 6h2v1h-2zM19 6h1v1h-1zM3 7h1v1h-1zM7 7h1v1h-1zM15 7h1v1h-1zM19 7h1v1h-1zM3 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM19 9h1v1h-1zM3 10h1v1h-1zM19 10h1v1h-1zM3 11h1v1h-1zM19 11h1v1h-1zM3 12h1v1h-1zM19 12h1v1h-1zM3 13h1v1h-1zM19 13h1v1h-1zM5 15h13v1h-13zM3 19h17v1h-17z\"></path><path fill=\"#BD6C4A\" shape-rendering=\"crispEdges\" d=\"M4 3h1v1h-1zM12 3h1v1h-1zM20 3h1v1h-1zM4 4h1v1h-1zM11 4h2v1h-2zM20 4h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM20 5h1v1h-1zM5 6h2v1h-2zM9 6h2v1h-2zM13 6h2v1h-2zM17 6h2v1h-2zM20 6h1v1h-1zM4 7h1v1h-1zM8 7h1v1h-1zM16 7h1v1h-1zM20 7h1v1h-1zM4 8h1v1h-1zM7 8h2v1h-2zM15 8h2v1h-2zM20 8h1v1h-1zM4 9h1v1h-1zM20 9h1v1h-1zM4 10h1v1h-1zM20 10h1v1h-1zM4 11h1v1h-1zM20 11h1v1h-1zM4 12h1v1h-1zM20 12h1v1h-1zM4 13h1v1h-1zM20 13h1v1h-1zM3 14h2v1h-2zM19 14h2v1h-2zM18 15h1v1h-1zM5 16h14v1h-14zM20 19h1v1h-1zM3 20h18v1h-18z\"></path>",
+      "locked": "<path fill=\"#C0CBDC\" shape-rendering=\"crispEdges\" d=\"M3 3h1v1h-1zM11 3h1v1h-1zM19 3h1v1h-1zM3 4h1v1h-1zM19 4h1v1h-1zM3 5h3v1h-3zM9 5h1v1h-1zM13 5h1v1h-1zM17 5h3v1h-3zM3 6h2v1h-2zM19 6h1v1h-1zM3 7h1v1h-1zM7 7h1v1h-1zM15 7h1v1h-1zM19 7h1v1h-1zM3 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM19 9h1v1h-1zM3 10h1v1h-1zM19 10h1v1h-1zM3 11h1v1h-1zM19 11h1v1h-1zM3 12h1v1h-1zM19 12h1v1h-1zM3 13h1v1h-1zM19 13h1v1h-1zM5 15h9v1h-9zM3 19h11v1h-11z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M4 3h1v1h-1zM12 3h1v1h-1zM20 3h1v1h-1zM4 4h1v1h-1zM11 4h2v1h-2zM20 4h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM20 5h1v1h-1zM5 6h2v1h-2zM9 6h2v1h-2zM13 6h2v1h-2zM17 6h2v1h-2zM20 6h1v1h-1zM4 7h1v1h-1zM8 7h1v1h-1zM16 7h1v1h-1zM20 7h1v1h-1zM4 8h1v1h-1zM7 8h2v1h-2zM15 8h2v1h-2zM20 8h1v1h-1zM4 9h1v1h-1zM20 9h1v1h-1zM4 10h1v1h-1zM20 10h1v1h-1zM4 11h1v1h-1zM20 11h1v1h-1zM4 12h1v1h-1zM20 12h1v1h-1zM4 13h1v1h-1zM20 13h1v1h-1zM3 14h2v1h-2zM19 14h2v1h-2zM14 15h1v1h-1zM5 16h10v1h-10zM14 19h1v1h-1zM3 20h12v1h-12z\"></path><path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h9v1h-9zM15 17h9v1h-9zM15 18h9v1h-9zM15 19h2v1h-2zM22 19h2v1h-2zM15 20h2v1h-2zM22 20h2v1h-2zM15 21h9v1h-9zM15 22h9v1h-9zM15 23h9v1h-9z\"></path>",
+      "removed": "<path fill=\"#8B9BB4\" shape-rendering=\"crispEdges\" d=\"M3 3h1v1h-1zM11 3h1v1h-1zM19 3h1v1h-1zM3 4h1v1h-1zM19 4h1v1h-1zM3 5h3v1h-3zM9 5h1v1h-1zM13 5h1v1h-1zM17 5h3v1h-3zM3 6h2v1h-2zM19 6h1v1h-1zM3 7h1v1h-1zM7 7h1v1h-1zM15 7h1v1h-1zM19 7h1v1h-1zM3 8h1v1h-1zM19 8h1v1h-1zM3 9h1v1h-1zM19 9h1v1h-1zM3 10h1v1h-1zM19 10h1v1h-1zM3 11h1v1h-1zM19 11h1v1h-1zM3 12h1v1h-1zM19 12h1v1h-1zM3 13h1v1h-1zM19 13h1v1h-1zM5 15h9v1h-9zM3 19h11v1h-11z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M4 3h1v1h-1zM12 3h1v1h-1zM20 3h1v1h-1zM4 4h1v1h-1zM11 4h2v1h-2zM20 4h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM20 5h1v1h-1zM5 6h2v1h-2zM9 6h2v1h-2zM13 6h2v1h-2zM17 6h2v1h-2zM20 6h1v1h-1zM4 7h1v1h-1zM8 7h1v1h-1zM16 7h1v1h-1zM20 7h1v1h-1zM4 8h1v1h-1zM7 8h2v1h-2zM15 8h2v1h-2zM20 8h1v1h-1zM4 9h1v1h-1zM20 9h1v1h-1zM4 10h1v1h-1zM20 10h1v1h-1zM4 11h1v1h-1zM20 11h1v1h-1zM4 12h1v1h-1zM20 12h1v1h-1zM4 13h1v1h-1zM20 13h1v1h-1zM3 14h2v1h-2zM19 14h2v1h-2zM14 15h1v1h-1zM5 16h10v1h-10zM14 19h1v1h-1zM3 20h12v1h-12z\"></path><path fill=\"#5A6988\" shape-rendering=\"crispEdges\" d=\"M15 15h9v1h-9zM15 16h1v1h-1zM17 16h5v1h-5zM23 16h1v1h-1zM15 17h2v1h-2zM18 17h3v1h-3zM22 17h2v1h-2zM15 18h3v1h-3zM19 18h1v1h-1zM21 18h3v1h-3zM15 19h4v1h-4zM20 19h4v1h-4zM15 20h3v1h-3zM19 20h1v1h-1zM21 20h3v1h-3zM15 21h2v1h-2zM18 21h3v1h-3zM22 21h2v1h-2zM15 22h1v1h-1zM17 22h5v1h-5zM23 22h1v1h-1zM15 23h9v1h-9z\"></path>"
+    },
+    "ramps": {
+      "earned": {
+        "ink": "#FEE761",
+        "deep": "#BD6C4A",
+        "chip": null
+      },
+      "locked": {
+        "ink": "#C0CBDC",
+        "deep": "#8B9BB4",
+        "chip": "minus"
+      },
+      "removed": {
+        "ink": "#8B9BB4",
+        "deep": "#5A6988",
+        "chip": "cross"
+      }
+    }
+  }
+}

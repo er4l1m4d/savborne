@@ -45,14 +45,20 @@ const pxAt = (x, y) => {
   const idx = P.out[y * P.stride + x]; const c = P.plte[idx] || [0, 0, 0];
   return [c[0], c[1], c[2], P.trns && P.trns[idx] !== undefined ? P.trns[idx] : 255];
 };
-function tileSvg(r, c, size) {
-  const byColor = new Map();
-  for (let y = 0; y < 16; y++) for (let x = 0; x < 16;) {
+function tileGrid(r, c) {
+  const g = [];
+  for (let y = 0; y < 16; y++) { const row = []; for (let x = 0; x < 16; x++) {
     const p = pxAt(c * 16 + x, r * 16 + y);
-    if (p[3] < 128) { x++; continue; }
-    const col = hexOf(p);
-    let run = 1;
-    while (x + run < 16) { const q = pxAt(c * 16 + x + run, r * 16 + y); if (q[3] < 128 || hexOf(q) !== col) break; run++; }
+    row.push(p[3] < 128 ? null : hexOf(p));
+  } g.push(row); }
+  return g;
+}
+function svgFromGrid(g, size) {
+  const byColor = new Map();
+  for (let y = 0; y < g.length; y++) for (let x = 0; x < g[y].length;) {
+    const col = g[y][x];
+    if (!col) { x++; continue; }
+    let run = 1; while (x + run < g[y].length && g[y][x + run] === col) run++;
     if (!byColor.has(col)) byColor.set(col, []);
     byColor.get(col).push(`M${x} ${y}h${run}v1h-${run}z`);
     x += run;
@@ -60,6 +66,46 @@ function tileSvg(r, c, size) {
   const paths = [...byColor].map(([col, ds]) => `<path fill="${col}" shape-rendering="crispEdges" d="${ds.join('')}"/>`).join('');
   return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" style="image-rendering:pixelated">${paths}</svg>`;
 }
+function tileSvg(r, c, size, remap) {
+  const g = tileGrid(r, c);
+  if (remap) for (const row of g) for (let i = 0; i < row.length; i++) if (row[i]) row[i] = remap(row[i]);
+  return svgFromGrid(g, size);
+}
+function bTile(k, size, extraMap) {
+  const [r, c] = B_TILES[k];
+  const base = k === '/home' ? stripWall : (x) => x;
+  let g = tileGrid(r, c).map((row) => row.map((v) => (v ? base(v) : null)));
+  g = centerContent(g, k);
+  if (extraMap) for (const row of g) for (let i = 0; i < row.length; i++) if (row[i]) row[i] = extraMap(row[i]);
+  return svgFromGrid(g, size);
+}
+// center-only normalization: crop content bbox, re-center in 16x16, no scaling (padding report per icon)
+function centerContent(g, key) {
+  let x0 = 99, y0 = 99, x1 = -1, y1 = -1;
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (g[y][x]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (x1 < 0) return g;
+  const w = x1 - x0 + 1, h = y1 - y0 + 1;
+  const ox = Math.floor((16 - w) / 2), oy = Math.floor((16 - h) / 2);
+  const out = Array.from({ length: 16 }, () => Array(16).fill(null));
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out[oy + y][ox + x] = g[y0 + y][x0 + x];
+  PAD[key] = { content: `${w}x${h}`, pad: `L${ox} R${16 - ox - w} T${oy} B${16 - oy - h}`, fits12: w <= 12 && h <= 12 };
+  return out;
+}
+const PAD = {};
+// --- recolor treatments (declared maps, bible §2b compliant) ---
+const lum2 = (hex) => { const n = parseInt(hex.slice(1), 16); const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const IDLE = ['#4B5A56', '#A9B8B2', '#F3EEDD'];    // off → muted → text (inactive tab)
+const ACTIVE = ['#25956A', '#6FD0AE', '#69FFD4'];  // pack mint ramp (active tab)
+const duotone = (ramp) => (hex) => { const L = lum2(hex); return ramp[L < 0.15 ? 0 : L < 0.5 ? 1 : 2]; };
+// product-hue treatment: keep shading structure, snap every color to nearest PRODUCT token (warm-safe, no near-blacks)
+const PRODUCT = ['#F3EEDD', '#C9C1A8', '#A9B8B2', '#6FD0AE', '#F2735A', '#FF6A4D', '#FF9C86', '#F6EFD9', '#2E4642', '#4B5A56', '#A8452F', '#0C3B35'];
+const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const nearestProduct = (hex) => {
+  const [r, g, b] = rgb(hex);
+  let best = PRODUCT[0], bd = 1e9;
+  for (const p of PRODUCT) { const [pr, pg, pb] = rgb(p); const d = (r - pr) ** 2 + (g - pg) ** 2 + (b - pb) ** 2; if (d < bd) { bd = d; best = p; } }
+  return best;
+};
 
 // --- option A: current hand-drawn icons, lifted verbatim from the handoff's first nav ---
 const h = fs.readFileSync('Savborne-handoff.html', 'utf8');
@@ -69,15 +115,42 @@ for (const m of h.matchAll(/<a href="(\/(?:home|missions|battle|ranks|profile))"
   if (!hand[m[1]]) hand[m[1]] = m[2];
 }
 const LABELS = { '/home': 'Home', '/missions': 'Missions', '/battle': 'Battle', '/ranks': 'Ranks', '/profile': 'Profile' };
-const B_TILES = { '/home': [6, 9, 'gate r6c9'], '/missions': [10, 10, 'scroll r10c10'], '/battle': [8, 10, 'sword r8c10'], '/ranks': [7, 0, 'wizard-hat r7c0 (contested)'], '/profile': [7, 1, 'youth head r7c1'] };
+const B_TILES = { '/home': [2, 5, 'banner r2c5'], '/missions': [7, 5, 'satchel r7c5'], '/battle': [8, 10, 'sword r8c10'], '/ranks': [5, 5, 'plaque r5c5'], '/profile': [7, 1, 'youth head r7c1'] };
+// banner tile sits on a stone wall — strip wall colors (declared map: cool grays -> transparent)
+const WALL = new Set(['#8B9BB4', '#52607C', '#262B44', '#AAB7CC', '#E4EDF9', '#C0CBDC', '#FFFFFF']);
+const stripWall = (hex) => (WALL.has(hex) ? null : hex);
 
 function strip(cells, activeIdx) {
   return `<div class="nav">${cells.map((c, i) => `<div class="tab${i === activeIdx ? ' active' : ''}">${c}<span>${LABELS[NAVORDER[i]]}</span></div>`).join('')}</div>`;
 }
+function duoStrip(size, mapFor) {
+  return strip(NAVORDER.map((k, i) => bTile(k, size, mapFor(i === 0))), 0);
+}
 const a24 = strip(NAVORDER.map((k) => hand[k] || '?'), 0);
 const a48 = strip(NAVORDER.map((k) => (hand[k] || '').replace(/width="\d+" height="\d+"/, 'width="48" height="48"')), 0);
-const b24 = strip(NAVORDER.map((k) => { const [r, c] = B_TILES[k]; return tileSvg(r, c, 24); }), 0);
-const b48 = strip(NAVORDER.map((k) => { const [r, c] = B_TILES[k]; return tileSvg(r, c, 48); }), 0);
+const b24 = strip(NAVORDER.map((k) => bTile(k, 24)), 0);
+const b48 = strip(NAVORDER.map((k) => bTile(k, 48)), 0);
+
+// --- option C: Shade 16x16 (CC0) extracted tiles ---
+function gridSvg(g, size) {
+  const byColor = new Map();
+  for (let y = 0; y < g.length; y++) for (let x = 0; x < g[y].length;) {
+    const col = g[y][x];
+    if (!col) { x++; continue; }
+    let run = 1; while (x + run < g[y].length && g[y][x + run] === col) run++;
+    if (!byColor.has(col)) byColor.set(col, []);
+    byColor.get(col).push(`M${x} ${y}h${run}v1h-${run}z`);
+    x += run;
+  }
+  const paths = [...byColor].map(([col, ds]) => `<path fill="${col}" shape-rendering="crispEdges" d="${ds.join('')}"/>`).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" style="image-rendering:pixelated">${paths}</svg>`;
+}
+let shade = null;
+try { shade = JSON.parse(fs.readFileSync('assets-raw/shade/tiles.json', 'utf8')); } catch { }
+const C_MAP = { '/home': null, '/missions': null, '/battle': 'battle', '/ranks': 'ranks', '/profile': 'profile' };
+const gapBox = (s) => `<div style="width:${s}px;height:${s}px;border:2px dashed #4B5A56;border-radius:2px"></div>`;
+const c24 = shade ? strip(NAVORDER.map((k) => { const t = C_MAP[k]; return t ? gridSvg(shade[t], 24) : gapBox(24); }), 0) : '';
+const c48 = shade ? strip(NAVORDER.map((k) => { const t = C_MAP[k]; return t ? gridSvg(shade[t], 48) : gapBox(48); }), 0) : '';
 
 fs.writeFileSync('assets-raw/nav-compare.html', `<!doctype html><html><head><meta charset="utf-8"><title>Nav icon comparison — A/B/C</title><style>
 body{background:#0C1211;color:#F3EEDD;font:600 14px system-ui;padding:24px;margin:0}
@@ -93,8 +166,19 @@ a{color:#6FD0AE}</style></head><body>
 ${a24}<div style="height:14px"></div>${a48}
 <h2>Option B — Tiny Dungeon tiles at nav size (16×16 pack art, mint underline marks active)</h2>
 ${b24}<div style="height:14px"></div>${b48}
-<p class="note">B mapping: Home=gate r6c9 · Missions=scroll r10c10 · Battle=sword r8c10 · Ranks=wizard r7c0 <b>(contested — no crown/trophy tile found; tell me a better one from the contact sheet)</b> · Profile=youth head r7c1. Watch legibility at 24px: pack tiles carry 5–11 colors in 16px; at tab size detail turns to mush — that is the known risk of this option.</p>
-<h2>Option C — CC0 pixel glyph packs (search log)</h2>
+<h2>Option B recolored — token duotone (L<0.15→off/#25956A, L<0.5→muted/#6FD0AE, else text/#69FFD4; Home shown active)</h2>
+${duoStrip(24, (act) => duotone(act ? ACTIVE : IDLE))}<div style="height:14px"></div>${duoStrip(48, (act) => duotone(act ? ACTIVE : IDLE))}
+<h2>Option B recolored — product hues, shading kept (every color snapped to nearest product token; Home shown active = mint-tinted)</h2>
+${duoStrip(24, (act) => (hex) => act ? nearestProduct(hex === '#E84537' || hex === '#FF706D' ? '#6FD0AE' : hex) : nearestProduct(hex))}<div style="height:14px"></div>${duoStrip(48, (act) => (hex) => act ? nearestProduct(hex === '#E84537' || hex === '#FF706D' ? '#6FD0AE' : hex) : nearestProduct(hex))}
+<p class="note">B mapping (per user): Home=banner r2c5 (wall chroma-keyed) · Missions=satchel r7c5 (bronze bag — r5c3 was a sign, not a chest) · Battle=sword r8c10 · Ranks=plaque r5c5 · Profile=youth head r7c1. Treatment chosen: <b>token duotone</b> (strip 2).</p>
+<table style="border-collapse:collapse;font-size:12px;color:#A9B8B2;margin:10px 0">${Object.entries(PAD).map(function (e) { return '<tr><td style="padding:2px 14px 2px 0">' + e[0] + '</td><td style="padding-right:14px">content ' + e[1].content + '</td><td style="padding-right:14px">pad ' + e[1].pad + '</td><td>' + (e[1].fits12 ? 'fits 12×12 ✓ (≥2px pad)' : 'exceeds 12 — centered, pad &lt; 2px (no downscale allowed)') + '</td></tr>'; }).join('')}</table>
+<h2>Option C — Shade "Free 16×16 Assorted RPG Icons" (CC0, author-confirmed) — live tiles from the real sheet</h2>
+${c24 ? `${c24}<div style="height:14px"></div>${c48}` : '<p class="note">run scripts/shade-strip.mjs first</p>'}
+<p class="note"><b>Coverage: 3/5.</b> Battle = steel sword (row1·c5), Ranks = gold-framed gem as medal (row5·c4), Profile = steel chestplate (row2·c0). <b>Home and Missions have NO tile</b> in this sheet (dashed boxes) — the pack is item-focused; house/scroll glyphs don't exist here.<br>
+<b>Style rubric verdict (measured):</b> outline color <code>#070707</code> neutral black vs Kenney's <code>#3F2631</code> warm plum → <b>fails outline-language match</b>; sheet ships flattened on <code>#2E2E2E</code> (chroma-keyed here); 221 colors across the sheet vs Kenney's disciplined 27. Side-by-side with Kenney tiles (option B strip) shows the difference: Shade = high-contrast arcade, Kenney = warm storybook.<br>
+<b>Provenance note:</b> tiles extracted from itch.io preview sheet; production adoption requires the actual zip via itch download (one manual click) + license screenshot. Recommended only if you value its crisper item art over family consistency with Tiny Dungeon.</p>
+<img src="/assets-raw/shade/sheet_4.png" alt="Shade sheet (source of option C tiles)" style="image-rendering:pixelated;width:464px;border:2px solid #2E4642">
+<h2>Search log (option C candidates)</h2>
 <p class="note">Searched 2026-10-16 (itch.io CC0 tag + OpenGameArt):<br>
 • <b>Shade — "Free 16×16 Assorted RPG Icons"</b> (merchant-shade.itch.io) — <b>CC0, author-confirmed in comments</b>. Strongest candidate; style is dark-outline 16×16, closest to Kenney's language.<br>
 • Kyrise's 16×16 RPG Icon Pack (OGA) — license page inconclusive (login-walled) → fails "verified license" rule.<br>

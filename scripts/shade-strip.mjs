@@ -40,11 +40,13 @@ const COLS = 7, ROWS = 6, CELL = 64, M = 8;
 // sanity: transparent margins?
 console.log(`sheet ${w}x${h}; grid ${COLS}x${ROWS} cells of ${CELL}px, margin ${M}px`);
 
+const BGCOL = '#2E2E2E'; // flattened sheet background — chroma-key out
 function tile(col, row) {
   const g = [];
   for (let y = 0; y < 16; y++) { const r = []; for (let x = 0; x < 16; x++) {
     const p = px(M + col * CELL + x * 4 + 2, M + row * CELL + y * 4 + 2);
-    r.push(p[3] > 128 ? hexOf(p) : null);
+    const hx = p[3] > 128 ? hexOf(p) : null;
+    r.push(hx === BGCOL ? null : hx);
   } g.push(r); }
   return g;
 }
@@ -58,7 +60,7 @@ console.log('darkest dominant (outline):', darkest && darkest[0], '— Kenney ou
 
 // selected tiles for the C strip + item candidates
 const PICKS = {
-  'battle': [1, 5],   // row1 c5 dark steel sword
+  'battle': [5, 1],   // row1 c5 dark steel sword
   'ranks':  [4, 5],   // row5 gold frame teal gem (medal stand-in)
   'profile': [0, 2],  // row2 steel chestplate (character stand-in)
   'sword_bronze': [0, 1], 'armor_row': [2, 2], 'chest_wood': [0, 4], 'chest_gold': [3, 4],
