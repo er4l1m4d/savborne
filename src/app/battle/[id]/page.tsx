@@ -282,7 +282,7 @@ export default function BattleScreen() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-silkscreen)' }}>
+            <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-silkscreen)' }}>
               Choose your move
             </h2>
             <div className="grid grid-cols-2 gap-2">
