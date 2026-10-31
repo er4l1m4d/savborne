@@ -218,7 +218,10 @@
     "arenaStatesRealisticPerScreen": "2026-10-30",
     "channelScopeNarrowedToBattleState": "2026-10-30",
     "damageCueAdoptedFromDoc": "2026-10-30",
-    "motionSpecRewrittenFromDocument": "2026-10-30"
+    "motionSpecRewrittenFromDocument": "2026-10-30",
+    "typeRuleConfirmed": "2026-10-30",
+    "numUtilityDefined": "2026-10-30",
+    "headersStayUppercase": "2026-10-30"
   },
   "turnState": {
     "decision": "SHIPPED 2026-10-30 into Savborne-handoff.html. Revises the art bible section 4 written 2026-10-17.",
@@ -272,5 +275,18 @@
       "arenasWithoutPlates": "A_ItemSheet, A_Win, A_Loss and A_Tie carry no nameplate, so handover and commit beats have nowhere to land."
     },
     "reducedMotion": "Implemented twice in the document and both are required: a CSS media query, and a JS reduce flag from matchMedia used inside the demo functions. The media query alone cannot express \"skip this beat but still drain the bar\"."
+  },
+  "typography": {
+    "decided": "2026-10-30",
+    "faces": {
+      "Silkscreen": "20px and above — titles, wordmark, display. No OpenType features at all, so no changing-value numerals.",
+      "Plus Jakarta Sans": "below 20px — body, labels, and every figure that updates."
+    },
+    "rejected": "Space Mono for numerals — a fourth download on a zero-budget mobile app, competing with Silkscreen for the same role. Tabular figures are a feature, not a typeface.",
+    "headers": "Uppercase with letter-spacing, as shipped. Sentence case was recommended and overruled by the user; recorded as their call.",
+    "bugFixed": ".num was applied in 14 places across 7 files and defined nowhere. HP readouts, Turn X of Y, the auto-defend countdown, the NIM balance, XP totals and leaderboard scores all rendered in proportional figures and re-flowed width as values changed.",
+    "fix": "src/app/globals.css gains a .num utility pinning the family to Jakarta and enabling tabular figures. tsc --noEmit clean.",
+    "verifiedNotAssumed": "font-variant-numeric is a silent no-op without a tnum feature, so scripts/font-features.mjs Brotli-decompresses the self-hosted woff2 and reads the feature tags. Result: Jakarta latin subset HAS tnum and pnum; two secondary Jakarta subsets do not; all four Silkscreen cuts have no OpenType features at all.",
+    "watchFor": "Digits are U+0030-0039, inside the latin unicode-range, so the tabulating cut is the one that serves them. Re-run font-features.mjs after any font or subset change, or numerals can silently go proportional again."
   }
 }

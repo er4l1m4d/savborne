@@ -227,3 +227,51 @@ Survives: `sv-fill` on HP and XP bars, all final values, plate border, plate tag
 
 `A_ItemSheet`, `A_Win`, `A_Loss` and `A_Tie` carry no nameplate, so the handover and commit beats have nowhere to land on those screens. §4 consequence 7 records it. This section specifies the beats; making them visible in four of the seven battle arenas needs the §5 backdrop or a plate on those screens, and that is a separate decision.
 
+## 7. Typography — two faces, one job each — DECIDED 2026-10-30
+
+### The rule
+
+| Face | Owns | Never owns |
+|---|---|---|
+| **Silkscreen** | **20px and above** — page and section titles, the wordmark, big result numerals | body copy, labels, any number that changes value on screen |
+| **Plus Jakarta Sans** | **below 20px** — body, labels, buttons, and every figure that updates | display headings at 20px+ |
+
+Both are self-hosted by `next/font/google` from `src/app/layout.tsx` and exposed as `--font-jakarta` and `--font-silkscreen`, aliased in `globals.css` to `--font-body` and `--font-display`.
+
+**No third font.** Space Mono was proposed for numerals and rejected: it is a fourth download on a zero-budget mobile app, it competes with Silkscreen for the same retro-digital attention rather than occupying a distinct role, and tabular figures are a *feature* you can switch on, not a typeface you have to ship. That last point is verified below, not assumed.
+
+### Numerals
+
+Every figure that updates on screen carries the `.num` utility: HP readouts, `Turn 2 of 5`, the auto-defend countdown, the NIM balance, XP totals, leaderboard scores.
+
+`.num` pins the family to Jakarta and turns on tabular figures:
+
+```
+font-family: var(--font-jakarta), system-ui, sans-serif;
+font-variant-numeric: tabular-nums;
+font-feature-settings: "tnum" 1;
+```
+
+**This was verified against the font binaries, not assumed.** `scripts/font-features.mjs` Brotli-decompresses the self-hosted woff2 files and reads the OpenType feature tags directly, because `font-variant-numeric: tabular-nums` is a silent no-op when a font has no `tnum` feature:
+
+```
+Plus Jakarta Sans  latin subset   56429B   tnum YES   pnum YES
+Plus Jakarta Sans  2nd subset     52273B   tnum no
+Plus Jakarta Sans  3rd subset     19664B   tnum no
+Silkscreen         all 4 cuts     —        tnum NO    no OpenType features at all
+```
+
+Two consequences worth stating out loud:
+
+1. **Google Fonts ships Jakarta as several unicode-range cuts and only the latin one carries `tnum`.** Digits are U+0030–0039, which is inside the latin range, so the tabulating cut is the one that serves them. If a future subset change ever drops the latin cut, numerals silently go proportional again — re-run `font-features.mjs` after any font or subset edit.
+2. **Silkscreen has no `tnum` and no feature table.** Its digits happen to be uniform because it is a pixel font, but that is construction, not a feature, and it is unmeasured here. So the rule stands: **numbers that change value are Jakarta, always.** A static decorative numeral in Silkscreen is fine; a countdown is not.
+
+### The bug this section closed
+
+`.num` was applied in **14 places across 7 files and defined nowhere in the codebase.** Every one of those numbers was rendering in whatever font cascaded, with proportional figures — so the auto-defend countdown re-flowed its own width once per second, and `Turn 2 of 5` shifted as the turn advanced. The class name existed as an intention with no implementation behind it.
+
+### Headers
+
+**Uppercase, with letter-spacing**, as shipped — `BADGES`, `MISSIONS`, `XP`. Considered and rejected: sentence case, on the grounds that it reads calmer and more adult for a savings product. The user's call stands: uppercase matches the terminal register the pixel art sets, and the two faces already provide the hierarchy that sentence case would have had to carry alone.
+
+Copy tone is governed separately and is not a typography matter: plain, calm, and it never shames a withdrawal.

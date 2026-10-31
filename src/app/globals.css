@@ -106,3 +106,21 @@ body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--surface-low); }
 ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+/* Numeric role — the class every figure in the app carries.
+ *
+ * This existed as a name only: `num` was applied in 14 places across 7 files and defined
+ * nowhere, so HP readouts, `Turn 2 of 5`, the auto-defend countdown and the NIM balance all
+ * rendered in proportional figures and re-flowed width every tick.
+ *
+ * Tabular figures are verified present, not assumed: the Plus Jakarta Sans latin subset
+ * carries the `tnum` and `pnum` OpenType features (checked by Brotli-decompressing the
+ * self-hosted woff2 and reading the feature tags — see scripts/font-features.mjs). The two
+ * secondary Jakarta subsets do NOT carry tnum, and Silkscreen carries no OpenType features
+ * at all, so this utility pins the family to the body font rather than letting a Silkscreen
+ * display context inherit it. */
+.num {
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
