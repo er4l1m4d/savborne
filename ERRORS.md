@@ -149,6 +149,34 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** `id=not.is.null`; any non-2xx delete now hard-exits with the response body. DB verified pristine (players: 1 = AI row only, battles: 0, queue: 0).
 **Prevention:** REST-filter scripts must assert response status — a 400 mid-chain looks identical to success in optimistic logs.
 
+### [2026-10-31] `canvas.measureText` reported Jakarta's tabular figures as broken
+**Symptom:** Measuring digit advances at 24px in a canvas gave Plus Jakarta Sans `tnum` a spread of 8.21px — identical to plain — i.e. "tabular figures do nothing". A pixel font read 3.00px spread, also not flat.
+**Context:** First version of `assets-raw/type-specimen.html`, measuring with `ctx.font = '500 24px "Plus Jakarta Sans"'` after `document.fonts.ready`.
+**Root cause:** `CanvasRenderingContext2D` has no `fontVariantNumeric`; the `font` shorthand only accepts CSS font properties (style, variant-caps, weight, size, family). Setting `ctx.fontVariantCaps` does not enable `tnum` either. The measurement was of the *default* figure set, no matter what was requested, so every tabular claim made that way is unfounded.
+**Fix:** Measure in the DOM: an off-screen span per digit, `getBoundingClientRect().width`, with `fontVariantNumeric: 'tabular-nums'` and `fontFeatureSettings: '"tnum" 1'` set as CSS. Result: Jakarta `.num` 14.41px flat (spread 0.00), plain 9.18–17.39px.
+**Prevention:** Never verify an OpenType feature through canvas. Features are CSS-only — measure computed layout, or decompress the woff2 and read the feature tags (`scripts/font-features.mjs`). A canvas measurement that "disproves" a feature is more likely to be measuring nothing.
+
+### [2026-10-31] "Silkscreen digits are uniform because it is a pixel font" was false
+**Symptom:** The art bible stated Silkscreen's digits were uniform by construction and explicitly noted it was unmeasured. Measured: `1` advances **15.00px**, every other digit **18.00px** — a 3.00px spread. A countdown set in Silkscreen re-flows by 3px whenever a `1` enters or leaves.
+**Context:** `docs/art-bible.md` §7 point 2, written 2026-10-30 while deciding numerals.
+**Root cause:** A plausible-sounding property of "pixel font" was treated as a fact. Pixel fonts share a *design grid*, not a uniform advance width: the glyph for `1` is simply narrower, exactly as in a proportional face, only in coarser steps.
+**Fix:** §7 corrected; the rule (changing numbers are Jakarta `.num`) survives, and is now stated for the right reason — it is the *only* thing that holds a digit column still.
+**Prevention:** Any sentence of the form "X is uniform/flat/exact because …" in a design doc is a measurement request. Measure it, then keep the sentence only if the number is in it.
+
+### [2026-10-31] A raster "is this font antialiased" test measured the screenshot pipeline
+**Symptom:** Rendering Silkscreen at 24/28/30/32/36px and counting mid-tone pixels suggested 32px was the only "exact" size (0.0% half-tone edges) while 24px showed 13.8% — contradicting measured advance widths, which are whole pixels at all of 24/28/32/36.
+**Context:** `assets-raw/aa-test.html` + a PNG decoder counting grey levels per text row, on this machine.
+**Root cause:** The browser's `devicePixelRatio` here is **1.5**, so every CSS pixel is 1.5 device pixels; no CSS font size can land on the device grid, and the screenshot is resampled on top of that. The test measured DPR, not the font.
+**Fix:** Discarded. The whole-pixel fact is established by advance widths in the DOM, which are DPR-independent. Font-size guidance now rests on that.
+**Prevention:** Before any device-pixel assertion, read `window.devicePixelRatio` and refuse to run unless it is 1 (or the ratio is accounted for). "Rendered crisply" is not measurable on a fractional-DPR host.
+
+### [2026-10-31] Text-prefix matching retitled the wrong element on 3 of 25 screens
+**Symptom:** After shipping pass 1, `A_UpdatePay` rendered a Silkscreen header above a Jakarta headline while `A_BalanceError` did the opposite; `A_HomeDone` showed its character-card name in Silkscreen while `A_Home` kept the same name in Jakarta — the same element in two faces across a before/after screen pair.
+**Context:** `scripts/type-pass1-ship.mjs`, first version. Titles were located by scanning a screen for the first element whose text started with a given string and whose style set Jakarta at ≥22px.
+**Root cause:** Two kinds of large text exist in the handoff — a top-bar label that names the screen, and a centred state headline inside a screen that already has one — and both start with similar words ("Update Nimiq Pay" / "Update Nimiq Pay to continue"). The matcher took document order, which is not role. `A_HomeDone`'s failure was the same bug one level down: a name inside a card has no title role at all.
+**Fix:** `git checkout -- Savborne-handoff.html` and re-ship from the clean file rather than layering corrections. The list now keys on `[screen, text, tag]`, refuses any element whose declared face is not Jakarta, and re-reads its own output to prove every title landed as Silkscreen at the claimed size before writing. Verified afterwards in the browser: 30 screens, 0 Silkscreen below 20px added, every title computed as expected.
+**Prevention:** When a selector can match two elements, make the key tuple include the thing that distinguishes them (here: tag and declared face), and add a post-condition that re-reads the output — not just a count of edits.
+
 ---
 
 ## Historical

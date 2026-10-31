@@ -287,6 +287,24 @@
     "bugFixed": ".num was applied in 14 places across 7 files and defined nowhere. HP readouts, Turn X of Y, the auto-defend countdown, the NIM balance, XP totals and leaderboard scores all rendered in proportional figures and re-flowed width as values changed.",
     "fix": "src/app/globals.css gains a .num utility pinning the family to Jakarta and enabling tabular figures. tsc --noEmit clean.",
     "verifiedNotAssumed": "font-variant-numeric is a silent no-op without a tnum feature, so scripts/font-features.mjs Brotli-decompresses the self-hosted woff2 and reads the feature tags. Result: Jakarta latin subset HAS tnum and pnum; two secondary Jakarta subsets do not; all four Silkscreen cuts have no OpenType features at all.",
-    "watchFor": "Digits are U+0030-0039, inside the latin unicode-range, so the tabulating cut is the one that serves them. Re-run font-features.mjs after any font or subset change, or numerals can silently go proportional again."
+    "watchFor": "Digits are U+0030-0039, inside the latin unicode-range, so the tabulating cut is the one that serves them. Re-run font-features.mjs after any font or subset change, or numerals can silently go proportional again.",
+    "measured": {
+      "date": "2026-10-31",
+      "method": "Live DOM at 24px after document.fonts.ready, each digit's width read individually and fonts confirmed loaded with document.fonts.check. Canvas measureText was tried first and discarded — it cannot apply font-variant-numeric, so it reported Jakarta tnum as an 8.21px spread when the DOM measures it flat at 0.00.",
+      "silkscreenDigits": "NOT uniform: '1' advances 15.00px, every other digit 18.00px — a 3.00px spread. The art bible's claim that Silkscreen digits are uniform because it is a pixel font was false, and is corrected.",
+      "jakartaDigits": "14.41px flat with .num (spread 0.00); 9.18–17.39px without (spread 8.21).",
+      "grid": "Silkscreen advance widths are whole pixels at 12/16/20/24/28/32/36/40/44/48 and fractional at 14/18/21/26/29/30/51, so a Silkscreen size that is not a multiple of 4 is a bug. text-3xl (30px) is the one shipped size that is off the grid.",
+      "boundary": "The 20px line decides who may own display; it is not a ban on Jakarta at size. Reading text — paragraphs, labels, status lines — stays Jakarta at any size.",
+      "counts": "Before pass 1 the artefact held 47 Silkscreen instances below 20px and 21 at or above, plus 60 Jakarta at 20px or more."
+    },
+    "pass1": {
+      "date": "2026-10-31",
+      "scope": "25 screen titles in Savborne-handoff.html: the element that names the screen — a top-bar label, or the sole heading on a screen with no top bar.",
+      "change": "Face to Silkscreen 400, letter-spacing normal, size snapped to the nearest multiple of 4 with ties up (34->36 x2, 30->32, 22->24 x2); 21 titles unchanged, none shrank.",
+      "kept": "State headlines sitting under an existing title, turn counters, status lines, menu labels, names inside cards (which keeps A_Home and A_HomeDone in the same face), decorative glyphs, and all 47 sub-20px Silkscreen sites.",
+      "script": "scripts/type-pass1-ship.mjs — keys on [screen, text, tag], refuses an element that is not already Jakarta, re-reads its own output to prove each title landed as Silkscreen at the claimed size before writing.",
+      "defect": "The first run keyed on a text prefix and took the wrong element on three screens: A_BalanceError laid its centred headline in Silkscreen while its header stayed Jakarta, and A_HomeDone retitled a name inside the character card. Re-shipped from a clean file rather than patched on top.",
+      "pending": "Pass 2: the 47 sub-20px Silkscreen instances become Jakarta .num. Separately, the app sets titles at text-3xl (30px), which is off the 4px grid; that change needs a build and has not been made."
+    }
   }
 }

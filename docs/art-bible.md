@@ -236,6 +236,8 @@ Survives: `sv-fill` on HP and XP bars, all final values, plate border, plate tag
 | **Silkscreen** | **20px and above** — page and section titles, the wordmark, big result numerals | body copy, labels, any number that changes value on screen |
 | **Plus Jakarta Sans** | **below 20px** — body, labels, buttons, and every figure that updates | display headings at 20px+ |
 
+Read the 20px line as **who may own display**, not as a size ban on Jakarta: reading text — paragraphs, labels, status lines — stays Jakarta at any size, and only display (titles, wordmark, big numerals) is Silkscreen's. See correction 3 below for why the distinction had to be written down.
+
 Both are self-hosted by `next/font/google` from `src/app/layout.tsx` and exposed as `--font-jakarta` and `--font-silkscreen`, aliased in `globals.css` to `--font-body` and `--font-display`.
 
 **No third font.** Space Mono was proposed for numerals and rejected: it is a fourth download on a zero-budget mobile app, it competes with Silkscreen for the same retro-digital attention rather than occupying a distinct role, and tabular figures are a *feature* you can switch on, not a typeface you have to ship. That last point is verified below, not assumed.
@@ -264,7 +266,39 @@ Silkscreen         all 4 cuts     —        tnum NO    no OpenType features at 
 Two consequences worth stating out loud:
 
 1. **Google Fonts ships Jakarta as several unicode-range cuts and only the latin one carries `tnum`.** Digits are U+0030–0039, which is inside the latin range, so the tabulating cut is the one that serves them. If a future subset change ever drops the latin cut, numerals silently go proportional again — re-run `font-features.mjs` after any font or subset edit.
-2. **Silkscreen has no `tnum` and no feature table.** Its digits happen to be uniform because it is a pixel font, but that is construction, not a feature, and it is unmeasured here. So the rule stands: **numbers that change value are Jakarta, always.** A static decorative numeral in Silkscreen is fine; a countdown is not.
+2. **Silkscreen has no `tnum` and no feature table.** Its digits were assumed to be uniform because it is a pixel font. That assumption was measured on 2026-10-31 and is **false** — see "Measured corrections" below. The rule stands (numbers that change value are Jakarta, always), but its stated reason did not.
+
+### Measured corrections — 2026-10-31
+
+Three claims in this section were written before anything measured them. All three are now measured in the DOM at 24px, after `document.fonts.ready`, with `document.fonts.check` confirming each face had loaded (`assets-raw/type-specimen.html`).
+
+**1. Silkscreen's digits are not uniform.** `1` advances **15.00px**; every other digit advances **18.00px** — a **3.00px spread**. Jakarta plain digits span 9.18–17.39px (8.21px spread); Jakarta `.num` measures **14.41px flat, spread 0.00**. So Silkscreen numerals jitter exactly as a proportional face does, only in coarser steps, and `.num` is the only thing in this system that holds a column still. The conclusion above is *more* right than its reason was.
+
+**2. Silkscreen advances on a 4px grid.** Total advance for a mixed string is a whole number of pixels at 12/16/20/24/28/32/36/40/44/48 and fractional at 14/18/21/26/29/30/51. A pixel face should only be set at sizes where its em divides into whole pixels, so **a Silkscreen size that is not a multiple of 4 is a bug, not a preference** — at 30px a string lands on a half pixel and the browser antialiases the edges the font exists to keep hard. Accepted sizes therefore snap to the nearest multiple of 4, ties rounding up so a heading never shrinks. **`text-3xl` is 30px and is the one shipped size that breaks this.**
+
+**3. The 20px boundary decides display, not all text.** The table above reads as though Jakarta is banned at 20px and above, but the artefact has 60 Jakarta instances at 20px or more — every body paragraph, menu label and status line among them. The boundary is about *who may own display*: Silkscreen owns titles, the wordmark and big numerals; Jakarta owns reading text at any size. A 26px status line in Jakarta is the rule working, not an exception. What *is* a violation is Silkscreen below 20px, of which the artefact carried **47 instances** (14px × 35, 12px × 9, 10px × 1, 18px × 1, 19px × 1) — almost all of them ranks, ratings, `Lv 14` and the `23h 58m left` countdown, i.e. the changing numbers this section forbids.
+
+### Pass 1 — screen titles, shipped 2026-10-31
+
+The artefact and the app disagreed about who draws a page title: `A_Missions` set "Missions" in Jakarta 800 at 28px while `src/app/(tabs)/missions/page.tsx:80` sets it in Silkscreen at `text-3xl`. Applying the rule, pass 1 retitled **25 screens** in `Savborne-handoff.html`:
+
+- face → Silkscreen 400; letter-spacing → `normal` (negative tracking breaks a pixel grid)
+- size → nearest multiple of 4, ties up: 34→36 (FirstCheckin, BracketClimb), 30→32 (FriendWait), 22→24 (the UpdatePay and BalanceError headers); 21 unchanged, none shrank
+- weight 800 → 400 — Silkscreen ships 400 and 700 only. Every screen title in the app is already 400 except the three battle result headlines (`src/app/battle/[id]/page.tsx:164,182,193`), which set `font-bold`; that mismatch is left for a later pass rather than folded into this one silently.
+
+**What counts as a title** had to be decided, because the file contains two kinds of large text:
+
+| kind | example | pass 1 |
+|---|---|---|
+| top-bar label — names the screen | `A_Settings` "Settings" 28px, `A_BalanceError` "Couldn't read balance" 22px | **retitled** |
+| sole heading, screen has no top bar | `A_Welcome` 36px, `A_Win` "You win!" 44px, `A_Withdrawal` 32px | **retitled** |
+| state headline under an existing title | `A_BalanceError` "Couldn't read your balance" 32px, `A_UpdatePay` "…to continue" 32px | kept Jakarta |
+| name inside a card | `A_Home` / `A_HomeDone` "Kemi" 28px | kept Jakarta |
+| turn counter, status line, menu label, glyph | `Turn 2 of 5` 26px, "No match yet." 26px, "Ranked" 24px, "?" 64px | kept Jakarta |
+
+The first attempt keyed on a text prefix and took the wrong element on three screens — `A_BalanceError`'s centred headline instead of its header, and `A_HomeDone`'s card name as a title, which left the same element in two faces across a before/after pair. It was re-shipped from a clean file. `scripts/type-pass1-ship.mjs` now keys on `[screen, text, tag]`, refuses an element that is not already Jakarta, and re-reads its own output before writing.
+
+**Still outstanding:** the 47 sub-20px Silkscreen instances are pass 2 (they become Jakarta `.num`), and the app's `text-3xl` title size is a separate change because it needs a build.
 
 ### The bug this section closed
 
