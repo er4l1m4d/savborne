@@ -276,7 +276,7 @@ Three claims in this section were written before anything measured them. All thr
 
 **2. Silkscreen advances on a 4px grid.** Total advance for a mixed string is a whole number of pixels at 12/16/20/24/28/32/36/40/44/48 and fractional at 14/18/21/26/29/30/51. A pixel face should only be set at sizes where its em divides into whole pixels, so **a Silkscreen size that is not a multiple of 4 is a bug, not a preference** — at 30px a string lands on a half pixel and the browser antialiases the edges the font exists to keep hard. Accepted sizes therefore snap to the nearest multiple of 4, ties rounding up so a heading never shrinks. **`text-3xl` is 30px and is the one shipped size that breaks this.**
 
-**3. The 20px boundary decides display, not all text.** The table above reads as though Jakarta is banned at 20px and above, but the artefact has 60 Jakarta instances at 20px or more — every body paragraph, menu label and status line among them. The boundary is about *who may own display*: Silkscreen owns titles, the wordmark and big numerals; Jakarta owns reading text at any size. A 26px status line in Jakarta is the rule working, not an exception. What *is* a violation is Silkscreen below 20px, of which the artefact carried **47 instances** (14px × 35, 12px × 9, 10px × 1, 18px × 1, 19px × 1) — almost all of them ranks, ratings, `Lv 14` and the `23h 58m left` countdown, i.e. the changing numbers this section forbids.
+**3. The 20px boundary decides display, not all text.** The table above reads as though Jakarta is banned at 20px and above, but the artefact has 60 Jakarta instances at 20px or more — every body paragraph, menu label and status line among them. The boundary is about *who may own display*: Silkscreen owns titles, the wordmark and big numerals; Jakarta owns reading text at any size. A 26px status line in Jakarta is the rule working, not an exception. What *is* a violation is Silkscreen below 20px, of which the artefact carried **47 instances** (14px × 36, 12px × 9, 10px × 1, 19px × 1 — 44 declarations plus 3 `NIM` units that inherit Silkscreen from the number they sit inside) — almost all of them ranks, ratings, `Lv 14` and the `23h 58m left` countdown, i.e. the changing numbers this section forbids.
 
 ### Pass 1 — screen titles, shipped 2026-10-31
 
@@ -298,7 +298,32 @@ The artefact and the app disagreed about who draws a page title: `A_Missions` se
 
 The first attempt keyed on a text prefix and took the wrong element on three screens — `A_BalanceError`'s centred headline instead of its header, and `A_HomeDone`'s card name as a title, which left the same element in two faces across a before/after pair. It was re-shipped from a clean file. `scripts/type-pass1-ship.mjs` now keys on `[screen, text, tag]`, refuses an element that is not already Jakarta, and re-reads its own output before writing.
 
-**Still outstanding:** the 47 sub-20px Silkscreen instances are pass 2 (they become Jakarta `.num`), and the app's `text-3xl` title size is a separate change because it needs a build.
+**Still outstanding after pass 2:** the app's `text-3xl` title size is a separate change because it needs a build — 30px is off Silkscreen's 4px grid. The off-grid Silkscreen sizes 21/29/51 and the `balance-read` conflict are recorded in the pass-2 section above.
+
+### Pass 2 — sub-20px Silkscreen, shipped 2026-10-31
+
+Pass 2 retyped every Silkscreen instance below 20px in `Savborne-handoff.html`: **47 rendered sites** — 44 declarations plus 3 spans that declare only a size and inherit Silkscreen from the 24px number they sit inside (`A_FirstCheckin` ×1, `A_Withdrawal` ×2, the `NIM` units). The source count is 44; the browser count is 47. Both are kept, because no style-attribute scan can see an inherited face — that difference is exactly what the pass got wrong first.
+
+The treatment is a role, not a size:
+
+| role | n | change | why |
+|---|---|---|---|
+| figure — own text contains a digit | 39 | Jakarta 700 + `tabular-nums` + `tnum` | the app's `.num font-bold` recipe; a column that shifts when a `1` enters is what this section forbids |
+| unit — the sole text is `NIM` | 4 | Jakarta 600, no tabular | a qualifier, not a value |
+| section label — ALL-CAPS, 4+ chars | 3 | Jakarta 700 + `0.1em` | the app's `tracking-widest` |
+| chip label — `Silver` | 1 | Jakarta 700 | no digit, so no tabular |
+
+Sizes are kept exactly, with **one named change**: the `1-week streak` chip goes **10 → 12px**. 10px was legible only because a pixel face is square at any size; Jakarta at 10px would be the smallest text in the product, and the app already ships that chip at `text-xs`.
+
+Tabular figures are declared **inline, not through a class**. The artefact has no `.num` utility, and an inline `font-family` beats a class rule — a `.num`-based fix here would look right in the source and do nothing in the browser. `globals.css` owns `.num`; the handoff can only show the measurement.
+
+**Measured on the shipped bytes** (30 screens, after `document.fonts.ready`): 0 Silkscreen instances below 20px, 39 tabular figures, section-label tracking `1.2px`, 0 clipped fixed-width cells, 0 console errors. Pass 1 still holds: `You win!` is 44px Silkscreen, the balance 36px.
+
+**The defect this pass found.** `retype()` replaced a `font-family` that existed but never inserted one, so the 3 inherited `NIM` units came back unchanged; and the post-check could not see them because `findDeclarations()` searches for a Silkscreen declaration and those spans have none. The browser caught it, not the script. `scripts/type-pass2-ship.mjs` now inserts the family for the inherited list and post-condition 4 asserts the old markup is gone from those three spans.
+
+**Prose corrected with it.** The pass edited the claims it had falsified — the fonts card, the components paragraph, the Chips and Stat tile rows, three figcaptions, the text-scaling row and the type-scale specimens — and, while reading those tables, four pre-existing inaccuracies: the Move button row (ships a 24px icon + 18/700 label; only Special Move adds a 12/600 cooldown note), the Stat tile's "M 26" (ships Silkscreen 21 + a 12/700 label), the 10px exception line (the streak chip is no longer 10px and the cooldown note is 12px; the real 10px text is the battle state label), and the Number M specimen (26 → 24, since 26 is a named off-grid size). It also corrected the Display/Heading/Title specimens, which still described screen titles as Jakarta 800 after pass 1 had retitled them.
+
+**Left in place, deliberately.** The handoff's own chrome (`.h3.grp` 14px, `.tag` 12px) stays Silkscreen — document wayfinding, not product UI. The remaining Silkscreen sizes are 21, 24, 28, 29, 32, 36, 44 and 51; **21, 29 and 51 are off the 4px grid** (the A_Profile stat numbers, the A_Queue timer, the A_QueueTimeout result), untouched by either pass. And the motion table's `balance-read` still counts the 36px balance in Silkscreen: true of the artefact, but it contradicts "never owns a number that changes value", and the app renders that balance as `.num text-3xl` Jakarta 30px. That conflict is recorded, not resolved here.
 
 ### The bug this section closed
 

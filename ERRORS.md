@@ -177,6 +177,13 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** `git checkout -- Savborne-handoff.html` and re-ship from the clean file rather than layering corrections. The list now keys on `[screen, text, tag]`, refuses any element whose declared face is not Jakarta, and re-reads its own output to prove every title landed as Silkscreen at the claimed size before writing. Verified afterwards in the browser: 30 screens, 0 Silkscreen below 20px added, every title computed as expected.
 **Prevention:** When a selector can match two elements, make the key tuple include the thing that distinguishes them (here: tag and declared face), and add a post-condition that re-reads the output — not just a count of edits.
 
+### [2026-10-31] Pass 2 reported "47 retyped, 0 skipped" while 3 inherited units were untouched
+**Symptom:** After the first pass-2 ship, `A_FirstCheckin` and `A_Withdrawal` still rendered their `NIM` units in Silkscreen 14px, while the script printed `47 sites retyped, 0 skipped` and its leftover check found none.
+**Context:** `scripts/type-pass2-ship.mjs`. The 47 rendered sites are 44 declarations that name Silkscreen plus 3 spans that declare only a size and inherit the face from the 24px number they sit inside.
+**Root cause:** Two errors with one blind spot. (1) `retype()` only *replaced* an existing `font-family`; for a site that never declared one it silently did nothing, and the guard that compared "family present" to "is inherited" used `===` and passed the wrong branch. (2) `findDeclarations()` locates sites by searching for the literal string `font-family: 'Silkscreen'`, so an inherited site can never appear — and the post-check asserted "zero leftovers" with that same blind query. The script's evidence and the script's assertion shared the assumption that failed.
+**Fix:** `retype()` now inserts the family when the site is in the explicit inherited list and throws if a non-inherited site declares no family; post-condition 4 asserts the three old span markups are *absent* from the output. The browser caught the defect, not the script: 3 `NIM` units still computed Silkscreen 14px after the "clean" ship.
+**Prevention:** A check that reuses the query it is checking proves nothing. Assert the absence of the old markup (or the presence of the new one), not a zero result from the same blind query. When a transform can legally be a no-op, that is a bug in the transform, not a skipped input.
+
 ---
 
 ## Historical

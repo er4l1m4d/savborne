@@ -305,6 +305,18 @@
       "script": "scripts/type-pass1-ship.mjs — keys on [screen, text, tag], refuses an element that is not already Jakarta, re-reads its own output to prove each title landed as Silkscreen at the claimed size before writing.",
       "defect": "The first run keyed on a text prefix and took the wrong element on three screens: A_BalanceError laid its centred headline in Silkscreen while its header stayed Jakarta, and A_HomeDone retitled a name inside the character card. Re-shipped from a clean file rather than patched on top.",
       "pending": "Pass 2: the 47 sub-20px Silkscreen instances become Jakarta .num. Separately, the app sets titles at text-3xl (30px), which is off the 4px grid; that change needs a build and has not been made."
+    },
+    "pass2": {
+      "date": "2026-10-31",
+      "scope": "47 rendered Silkscreen sites below 20px in Savborne-handoff.html — 44 declarations plus 3 NIM units that inherit Silkscreen from the number they sit inside (A_FirstCheckin x1, A_Withdrawal x2).",
+      "roles": "39 figures -> Jakarta 700 + tabular-nums + tnum; 4 NIM units -> 600; 3 section labels -> 700 + 0.1em; 1 chip label (Silver) -> 700.",
+      "sizeChange": "1-week streak 10 -> 12px, the only resize. 10px was legible because a pixel face is square at any size; Jakarta at 10px would be the smallest text in the product, and the app already ships that chip at text-xs.",
+      "inline": "Tabular figures declared inline, not through a class: the artefact has no .num utility and an inline font-family beats a class rule, so a class-based fix would look right in the source and do nothing.",
+      "measured": "Shipped bytes, 30 screens: 0 Silkscreen below 20px, 39 tabular figures, section-label tracking 1.2px, 0 clipped fixed-width cells, 0 console errors. Pass 1 holds: You win! 44px Silkscreen, balance 36px.",
+      "script": "scripts/type-pass2-ship.mjs — --preview (default) writes assets-raw/type-pass2-preview.html; --ship rewrites the artefact. Classifies by role, asserts 47 sites and the 39/4/3/1 tallies, checks tag balance, feature counts as deltas, and asserts the 3 inherited spans' old markup is gone.",
+      "defect": "retype() replaced a font-family but never inserted one, so the 3 inherited units came back unchanged; findDeclarations() searches for a Silkscreen declaration and cannot see inherited sites, so the leftover check missed them. Browser measurement caught it. Fixed by inserting the family for the inherited list and adding post-condition 4.",
+      "prose": "Corrected claims pass 2 falsified (fonts card, components paragraph, Chips and Stat tile rows, three figcaptions, text-scaling row, type-scale specimens) and four pre-existing inaccuracies found while reading (Move button row, Stat tile M 26, the 10px exception line, Number M 26 -> 24). Also corrected the Display/Heading/Title specimens, which still described screen titles as Jakarta 800 after pass 1 retitled them.",
+      "leftInPlace": "Silkscreen 21/29/51 remain off the 4px grid (A_Profile stats, A_Queue timer, A_QueueTimeout result). The balance-read motion row still counts the 36px balance in Silkscreen: true of the artefact, but it contradicts the rule and the app renders that balance as .num text-3xl Jakarta 30px. Recorded, not resolved."
     }
   }
 }
