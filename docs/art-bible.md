@@ -233,7 +233,7 @@ Survives: `sv-fill` on HP and XP bars, all final values, plate border, plate tag
 
 | Face | Owns | Never owns |
 |---|---|---|
-| **Silkscreen** | **20px and above** — page and section titles, the wordmark, big result numerals | body copy, labels, any number that changes value on screen |
+| **Silkscreen** | **20px and above** — page and section titles, the wordmark, big numerals whether or not their value changes | body copy, labels, data figures (any number that updates) |
 | **Plus Jakarta Sans** | **below 20px** — body, labels, buttons, and every figure that updates | display headings at 20px+ |
 
 Read the 20px line as **who may own display**, not as a size ban on Jakarta: reading text — paragraphs, labels, status lines — stays Jakarta at any size, and only display (titles, wordmark, big numerals) is Silkscreen's. See correction 3 below for why the distinction had to be written down.
@@ -323,7 +323,37 @@ Tabular figures are declared **inline, not through a class**. The artefact has n
 
 **Prose corrected with it.** The pass edited the claims it had falsified — the fonts card, the components paragraph, the Chips and Stat tile rows, three figcaptions, the text-scaling row and the type-scale specimens — and, while reading those tables, four pre-existing inaccuracies: the Move button row (ships a 24px icon + 18/700 label; only Special Move adds a 12/600 cooldown note), the Stat tile's "M 26" (ships Silkscreen 21 + a 12/700 label), the 10px exception line (the streak chip is no longer 10px and the cooldown note is 12px; the real 10px text is the battle state label), and the Number M specimen (26 → 24, since 26 is a named off-grid size). It also corrected the Display/Heading/Title specimens, which still described screen titles as Jakarta 800 after pass 1 had retitled them.
 
-**Left in place, deliberately.** The handoff's own chrome (`.h3.grp` 14px, `.tag` 12px) stays Silkscreen — document wayfinding, not product UI. The remaining Silkscreen sizes are 21, 24, 28, 29, 32, 36, 44 and 51; **21, 29 and 51 are off the 4px grid** (the A_Profile stat numbers, the A_Queue timer, the A_QueueTimeout result), untouched by either pass. And the motion table's `balance-read` still counts the 36px balance in Silkscreen: true of the artefact, but it contradicts "never owns a number that changes value", and the app renders that balance as `.num text-3xl` Jakarta 30px. That conflict is recorded, not resolved here.
+**Left in place, deliberately.** The handoff's own chrome (`.h3.grp` 14px, `.tag` 12px) stays Silkscreen — document wayfinding, not product UI. The remaining Silkscreen sizes are 21, 24, 28, 29, 32, 36, 44 and 51; **21, 29 and 51 are off the 4px grid** (the A_Profile stat numbers, the A_Queue timer, the A_QueueTimeout result), untouched by either pass — *superseded by pass 3 below, which snapped all three and left every Silkscreen size a multiple of 4*. And the motion table's `balance-read` still counts the 36px balance in Silkscreen: true of the artefact, but it contradicts "never owns a number that changes value", and the app renders that balance as `.num text-3xl` Jakarta 30px. That conflict is recorded, not resolved here.
+
+### Pass 3 — close the document, shipped 2026-11-01
+
+Two jobs in one pass: the two gate screens, and the last off-grid Silkscreen sizes.
+
+**The numbering rule**, decided this session after the size-snapping debate:
+
+> **Silkscreen draws display and numerals at 20px and up. Jakarta draws everything below 20px, numerals included. One face per size.**
+
+That is a correction to this section, not an addition to it. The rule as first written split numerals by *behaviour* — "a number that changes value on screen" is Jakarta's — which put the 28px queue timer (`0:42`, ticking every second) and the 24px `+20 XP` in different faces **by design**. Reading that back in `A_FirstCheckin` — `2.00` in one face beside `+20 XP` in the other, inside one card — is what made the behaviour split indefensible. A numeral's face is decided by its size. The Silkscreen row of the table above now reads "any number that changes value on screen" as *data figures*, i.e. below 20px; a display numeral at 20px or more is Silkscreen whether or not its value ticks.
+
+An intermediate proposal — retype balances, profile tiles and the queue timer to Jakarta 700 with tabular figures, so that every changing number was Jakarta at any size — was measured, previewed and **overruled by the user** as inconsistent numbering ("i actually want a consistent numbering rather than changing the fonts here and there"). What shipped therefore changes **no face at all**: 0 Silkscreen declarations removed for a face change, 0 tabular figures added. Sub-20px numerals stay Jakarta from pass 2.
+
+Seven numerals snapped onto the 4px grid. Size only; face, weight, letter-spacing and line-height carried through:
+
+| screen | value | from | to | note |
+|---|---|---|---|---|
+| A_Profile | 1042 / 7 / 12 | 21 | 20 | three stat tiles, one rule |
+| A_Withdrawal | 12.55 | 21 | 20 | the coral 6.20 keeps `color: #FF9C86` |
+| A_Withdrawal | 6.20 | 21 | 20 | |
+| A_Queue | 0:42 | 29 | 28 | display numeral; Silkscreen stays, per the rule |
+| A_QueueTimeout | 3:05 | 51 | 52 | the only site that grows — ties round up so a heading never shrinks |
+
+Already on the grid and untouched: `12.40` @36, `12.55` @32, `2.00` @24, every `+XP` @24, the 44px result titles, and all 24/28/32/36 word instances. **Every Silkscreen size in the document is now a multiple of 4.**
+
+Result titles stay 44px Silkscreen 400. They are the design of record, and under the rule they are no longer an exception carved out for drama — they are the same rule applied to a display numeral. The app renders those three headlines at 24px/700, which is a recorded build gap, not a typography decision.
+
+The two gate screens (`A_Gate`, `A_Preparing`) took the document from 30 to 32. They are logged here only because they are the other half of this pass; their own rationale lives with `src/components/VersionGate.tsx`.
+
+`scripts/close-document-ship.mjs` proves the claims above rather than stating them: the Silkscreen declaration count moves by exactly +1 (the new gate header) and the tabular-figure count by 0, the result-title markup is byte-identical, every snap's old style is *absent* from its screen, and no Silkscreen size outside the 4px grid survives anywhere in a screen frame. It also generates the `A_Gate` phone icon from a 24x24 pixel map and re-runs `art-gates`' own 4-neighbour orphan test over its emitted markup before writing — the ERRORS entry records why that was necessary.
 
 ### The bug this section closed
 
