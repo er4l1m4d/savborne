@@ -74,7 +74,15 @@ export async function pollAndSettle(
     return expire(db, transfer, verdict.reason)
   }
 
-  // 5. Settle. Conditional on pending so concurrent polls agree on one winner.
+  // 5. Read the vault's post-settlement balance BEFORE flipping the row to
+  //    `included`. Order matters: if the RPC fails here, the transfer stays
+  //    `pending` and the next poll retries it. Reading after the update would
+  //    strand the row as `included` with its side effects permanently skipped,
+  //    because the `status !== 'pending'` guard would short-circuit every retry.
+  const account = await getAccount(vault.address, vault.network, opts?.rpc)
+  const newBracket = bracketFromLuna(account.balanceLuna)
+
+  // 6. Settle. Conditional on pending so concurrent polls agree on one winner.
   const { data: updated, error } = await db
     .from('transfers')
     .update({
@@ -97,10 +105,7 @@ export async function pollAndSettle(
 
   const settled = updated as TransferRow
 
-  // 6. Side effects, only for the winner.
-  const account = await getAccount(vault.address, vault.network, opts?.rpc)
-  const newBracket = bracketFromLuna(account.balanceLuna)
-
+  // 7. Side effects, only for the winner.
   const playerUpdate: Record<string, unknown> = {
     current_balance_luna: Math.floor(account.balanceLuna),
     bracket: newBracket,
