@@ -244,7 +244,9 @@ Both are self-hosted by `next/font/google` from `src/app/layout.tsx` and exposed
 
 ### Numerals
 
-Every figure that updates on screen carries the `.num` utility: HP readouts, `Turn 2 of 5`, the auto-defend countdown, the NIM balance, XP totals, leaderboard scores.
+Every updating figure **below 20px** carries the `.num` utility: HP readouts, `Turn 2 of 5`, the auto-defend countdown, XP totals, leaderboard scores. The size rule above decides the face; `.num` decides whether a figure holds its column.
+
+The NIM balance is the one updating figure **at 20px or more** (Silkscreen 36 in the artefact), so `.num` does not apply to it — Silkscreen has no `tnum` feature at all, so `.num` on it would be a silent no-op. **The app is the exception and is a build gap, not a typography decision:** `src/app/(tabs)/page.tsx` renders the balance as `.num text-3xl`, i.e. Jakarta 30px, which also makes it the one shipped size off the 4px grid. It is recorded here the way the 44px→24px result titles are, rather than resolved by the documentation. The `balance-read` count-up the motion table specifies is likewise not implemented in the app.
 
 `.num` pins the family to Jakarta and turns on tabular figures:
 

@@ -279,8 +279,8 @@
   "typography": {
     "decided": "2026-10-30",
     "faces": {
-      "Silkscreen": "20px and above — titles, wordmark, display. No OpenType features at all, so no changing-value numerals.",
-      "Plus Jakarta Sans": "below 20px — body, labels, and every figure that updates."
+      "Silkscreen": "20px and above — titles, wordmark, display numerals at 20px or more, whether or not the value changes. No OpenType features at all, so it can never carry tabular figures.",
+      "Plus Jakarta Sans": "below 20px — body, labels, and every figure that updates below 20px."
     },
     "rejected": "Space Mono for numerals — a fourth download on a zero-budget mobile app, competing with Silkscreen for the same role. Tabular figures are a feature, not a typeface.",
     "headers": "Uppercase with letter-spacing, as shipped. Sentence case was recommended and overruled by the user; recorded as their call.",
@@ -330,6 +330,8 @@
       "script": "scripts/close-document-ship.mjs --preview writes assets-raw/close-document-preview.html; --ship rewrites the artefact. Asserts 30 -> 32 screens with A_Gate and A_Preparing immediately before A_UpdatePay, each snap's old style absent and new style present, result-title markup byte-identical, no off-grid Silkscreen size survives in a screen frame, tag balance, and the Welcome icon+wordmark pair extracted and asserted byte-identical exactly twice.",
       "phoneIcon": "The A_Gate phone icon is generated from a 24x24 pixel map and emitted as the 1px-tall run form art-gates parses. A hand-written first draft shipped and art-gates found 2 ORPHANS in it, because it wrote vertical strips as h1v18h-1z, which the gate cannot read. The script now rebuilds the bitmap from its own emitted markup and re-runs the 4-neighbour test before writing.",
       "measured": "Shipped bytes on :4174 with a fresh query string: 32 screens, A_Gate/A_Preparing at 23/24 immediately before A_UpdatePay at 25, 18 Silkscreen numerals all at sizes 20/24/28/32/36/52 with 0 off-grid, the phone icon 3 paths rendering crispEdges, 0 buttons inside A_Gate, 0 console errors. art-gates 189/189, structure-check 32 figures / 66 ids, glyph-provenance 0 drift, palette-census and type-audit at baseline, grid-census exit 1 by design with +2 expected lines (the new 36px icon and one 82x7 wordmark)."
-    }
+    },
+    "numScope": "Corrected 2026-11-02: .num applies to updating figures BELOW 20px only. A numeral at 20px or more is Silkscreen by the pass-3 size rule, and .num on Silkscreen is a silent no-op because it has no tnum feature. The NIM balance is 36px Silkscreen in the artefact, so it is not a .num site in the design of record.",
+    "balanceBuildGap": "The app renders the balance as .num text-3xl (Jakarta 30px) in src/app/(tabs)/page.tsx. That is a build gap, not a typography decision — it is also the one shipped size off the 4px grid — recorded here the way the 44px->24px result titles are. The balance-read count-up is likewise not implemented in the app."
   }
 }

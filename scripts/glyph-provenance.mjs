@@ -11,7 +11,13 @@ import fs from 'node:fs';
 
 const N = 24;
 const G = JSON.parse(fs.readFileSync('assets/glyphs.json', 'utf8'));
-const SRC = 'node_modules/pixelarticons/svg';
+// Prefer the vendored, committed copy. `node_modules/pixelarticons` was never a
+// declared dependency, so a clean install (or the environment restart that
+// exposed this) silently removes it and every glyph reports "SOURCE MISSING".
+// The gate must read a source that is in the repo, not an undeclared package.
+const SRC = fs.existsSync('assets-raw/pixelarticons/svg')
+  ? 'assets-raw/pixelarticons/svg'
+  : 'node_modules/pixelarticons/svg';
 const key = (x, y) => y * N + x;
 const sig = (s) => [...s].sort((a, b) => a - b).join(',');
 

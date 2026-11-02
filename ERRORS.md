@@ -198,6 +198,13 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** All seven snapped onto the grid (21→20 ×5, 29→28, 51→52), and `close-document-ship.mjs` now asserts that **no** Silkscreen size outside the 4px grid survives anywhere in a screen frame. The technique that made the snaps reliable is recorded too: a bare style string is ambiguous because the plain 21px style is a literal substring of the coral variant, so every snap is anchored to the value text it sets and the old style is asserted *absent* afterwards.
 **Prevention:** A rule stated as absolute ("a Silkscreen size that is not a multiple of 4 is a bug") needs a check that is equally absolute. Scope-limited passes leave the complement unaudited, so when a pass fixes "all X below a threshold", add the whole-set assertion for the property, not just the slice it touched.
 
+### [2026-11-02] `bible-typography.mjs` silently deleted the typography pass history from `assets/manifest.json`
+**Symptom:** Running the script after a documentation edit rewrote `assets/manifest.json` and dropped `typography.measured`, `typography.pass1`, `typography.pass2` and `typography.pass3` — roughly 45 lines of recorded rationale, measurements and defects. The script printed `manifest updated and re-parsed OK` throughout, because a valid JSON file with fewer keys still parses.
+**Context:** `scripts/bible-typography.mjs:25`. The script was written once, when `typography` held only the initial decision. Every later pass appended its own record to the same object.
+**Root cause:** It assigned a fresh object (`j.typography = { ... }`) instead of merging. Assignment to an object key is a total replacement, so any key unknown to this script was destroyed. Nothing in the script compared key counts before and after.
+**Fix:** It now spreads the existing object first (`{ ...j.typography, ... }`) and only overwrites the keys it owns. Verified by running it and asserting `pass1`/`pass2`/`pass3`/`measured` still exist afterwards (14 keys before and after). The two rule strings it does own were also corrected to the pass-3 size rule, and it now records the balance build gap.
+**Prevention:** A script that regenerates one section of a shared document must merge into it, not replace it — and should assert that the key count did not shrink. "The file re-parsed" proves syntax, not data. This is the same failure shape as the post-checks in the pass-2 and off-grid entries above: the assertion shared the blind spot of the code that made the change.
+
 ---
 
 ## Historical
