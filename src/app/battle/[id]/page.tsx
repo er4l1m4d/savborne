@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
+import { Glyph } from '@/components/Glyphs'
 
 type MoveInfo = { move: string; itemKey: string | null; damage: number } | null
 
@@ -288,24 +289,29 @@ export default function BattleScreen() {
             <div className="grid grid-cols-2 gap-2">
               <MoveButton
                 label="Attack"
+                glyph="attack"
                 onClick={() => submitMove('attack')}
                 disabled={submitting}
                 accent="var(--coral)"
               />
               <MoveButton
                 label="Defend"
+                glyph="defend"
                 onClick={() => submitMove('defend')}
                 disabled={submitting}
                 accent="var(--silver)"
               />
               <MoveButton
-                label={viewer.specialAvailable ? 'Special Move' : 'Special Move (cooldown: 1 turn)'}
+                label="Special Move"
+                glyph="special"
+                note={viewer.specialAvailable ? undefined : 'cooldown 1'}
                 onClick={() => submitMove('special')}
                 disabled={submitting || !viewer.specialAvailable}
                 accent="var(--butter)"
               />
               <MoveButton
                 label="Use item"
+                glyph="useItem"
                 onClick={() => setShowItems((s) => !s)}
                 disabled={submitting || viewer.ownedInactiveItems.length === 0}
                 accent="var(--mint)"
@@ -461,11 +467,16 @@ function TurnLog({
 
 function MoveButton({
   label,
+  note,
+  glyph,
   onClick,
   disabled,
   accent,
 }: {
   label: string
+  /** Small corner note, e.g. the Special Move cooldown. Keeps the disabled state from reflowing the label. */
+  note?: string
+  glyph: 'attack' | 'defend' | 'special' | 'useItem'
   onClick: () => void
   disabled: boolean
   accent: string
@@ -474,10 +485,16 @@ function MoveButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="vpx-soft bg-surface py-3 px-2 text-sm font-bold hover:bg-surface-hi active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+      className="vpx-soft relative bg-surface h-21 px-4 flex flex-col items-start justify-center gap-1.5 text-lg font-bold hover:bg-surface-hi active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
       style={{ color: accent }}
     >
-      {label}
+      <Glyph name={glyph} size={24} />
+      <span>{label}</span>
+      {note && (
+        <span className="absolute top-1.5 right-2 text-[10px] font-bold opacity-70">
+          {note}
+        </span>
+      )}
     </button>
   )
 }

@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
-import { BRACKETS, LUNA_PER_NIM, type Bracket } from '@/lib/constants'
+import { BRACKETS, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeKey } from '@/lib/game/badges'
 
@@ -190,24 +190,32 @@ function IdentityStrip({ data }: { data: ProfileData }) {
 
 function StatGrid({ data }: { data: ProfileData }) {
   const { player } = data
-  const nim = player.balanceLuna / LUNA_PER_NIM
   return (
-    <section className="grid grid-cols-3 gap-2">
-      <Stat label="Rating" value={player.rating} />
-      <Stat label="Balance" value={`${nim.toFixed(2)} NIM`} />
-      <Stat label="Streak" value={`${player.streakCurrent}d`} />
-      <Stat label="Wins" value={player.wins} />
-      <Stat label="Losses" value={player.losses} />
-      <Stat label="Ties" value={player.ties} />
+    <section className="flex flex-col gap-2">
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="Rating" value={player.rating} />
+        <Stat label="Wins" value={player.wins} />
+        <Stat label="Check-ins" value={player.checkInCount} />
+      </div>
+      {/* Wins/Losses/Ties used to be three tiles of their own. The documented profile shows
+          three tiles total, so the record collapses to one line rather than being dropped. */}
+      <p className="text-[11px] font-bold tracking-wide text-fg-muted num text-right">
+        {player.wins}W · {player.losses}L · {player.ties}T
+      </p>
     </section>
   )
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="vpx-soft bg-surface p-2 flex flex-col gap-0.5">
-      <span className="text-[10px] uppercase tracking-widest text-fg-faint">{label}</span>
-      <span className="num text-base font-bold truncate">{value}</span>
+    <div className="vpx bg-surface-low p-3 flex flex-col gap-1">
+      <span
+        className="text-xl leading-none"
+        style={{ fontFamily: 'var(--font-silkscreen)' }}
+      >
+        {value}
+      </span>
+      <span className="text-xs font-bold text-fg-muted">{label}</span>
     </div>
   )
 }
