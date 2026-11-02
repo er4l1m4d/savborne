@@ -131,6 +131,57 @@ export async function getBlockNumber(): Promise<number> {
 }
 
 /**
+ * Send `valueLuna` from the player's wallet to `recipient` and return the
+ * transaction hash.
+ *
+ * The SDK documents the return as "the serialized transaction" but the value
+ * observed in the WebView is the hash. `normalizeTxHash` accepts both: 64 hex
+ * characters is a hash, anything longer is deserialized and hashed here.
+ */
+export async function sendDeposit(args: {
+  recipient: string
+  valueLuna: number
+  feeLuna?: number
+}): Promise<string> {
+  const provider = await initProvider()
+  if (typeof provider.sendBasicTransaction !== 'function') {
+    throw new WalletError(
+      'UNKNOWN_REQUEST',
+      'sendBasicTransaction is not available in this Nimiq Pay version',
+    )
+  }
+  try {
+    const raw = await provider.sendBasicTransaction({
+      recipient: args.recipient,
+      value: args.valueLuna,
+      fee: args.feeLuna ?? 0,
+    })
+    if (typeof raw !== 'string') {
+      throw new WalletError('INVALID_TRANSACTION', 'The wallet returned no transaction')
+    }
+    return await normalizeTxHash(raw)
+  } catch (err) {
+    throw normaliseError(err)
+  }
+}
+
+/**
+ * Accept either a 64-character hash or a serialized transaction. The Nimiq
+ * WASM is imported lazily and only on the long-hex branch, so the common path
+ * pays nothing for it.
+ */
+async function normalizeTxHash(raw: string): Promise<string> {
+  const trimmed = raw.trim()
+  if (/^[0-9a-f]{64}$/i.test(trimmed)) return trimmed.toLowerCase()
+
+  const { Transaction } = await import('@nimiq/core/web')
+  // `fromAny` is the SDK's parser for a hex string (and other shapes);
+  // `Transaction` has no `fromHex`.
+  const tx = Transaction.fromAny(trimmed)
+  return tx.hash()
+}
+
+/**
  * Disconnect the mini app from the wallet. Clears cached accounts so the
  * user is prompted again if they reconnect.
  */

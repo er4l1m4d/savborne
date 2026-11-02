@@ -22,6 +22,7 @@ const TABS: Tab[] = [
   { href: '/', label: 'Home', icon: '⛰' },
   { href: '/missions', label: 'Missions', icon: '📜' },
   { href: '/battle', label: 'Battle', icon: '⚔' },
+  { href: '/vault', label: 'Vault', icon: '⛁' },
   { href: '/profile', label: 'Profile', icon: '☰' },
   { href: '/leaderboard', label: 'Ranks', icon: '★' },
 ]
@@ -40,6 +41,7 @@ export function BottomTabBar() {
           <Link
             key={t.href}
             href={t.href}
+            data-tour={t.href === '/' ? 'home' : undefined}
             aria-current={active ? 'page' : undefined}
             className={`flex flex-col items-center justify-center gap-1 flex-1 no-underline transition-colors ${
               active ? 'text-mint' : 'text-fg-muted hover:text-foreground'
@@ -48,7 +50,7 @@ export function BottomTabBar() {
             <span className="text-xl leading-none" aria-hidden>
               {t.icon}
             </span>
-            <span className="text-[10px] uppercase tracking-widest font-bold">
+            <span className="text-[9px] uppercase tracking-wider font-bold">
               {t.label}
             </span>
           </Link>

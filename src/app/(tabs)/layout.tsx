@@ -10,10 +10,12 @@
  */
 
 import { BottomTabBar } from '@/components/BottomTabBar'
+import { VaultGuard } from '@/components/VaultGuard'
 
 export default function TabsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-dvh">
+      <VaultGuard />
       <div
         className="flex-1 flex flex-col"
         style={{ paddingBottom: 'calc(var(--nav-h) + env(safe-area-inset-bottom, 0px))' }}
