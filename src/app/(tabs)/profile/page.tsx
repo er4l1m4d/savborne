@@ -15,6 +15,7 @@ import { BRACKETS, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeKey } from '@/lib/game/badges'
 import { BadgeArt } from '@/components/Glyphs'
+import { TOUR_FLAG_KEY } from '@/components/VaultTour'
 
 type ProfileData = {
   player: {
@@ -158,6 +159,23 @@ export default function ProfilePage() {
       </section>
 
       <ShareCardSection cardToken={data.cardToken} />
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Help</h2>
+        <button
+          onClick={() => {
+            try {
+              window.localStorage.removeItem(TOUR_FLAG_KEY)
+            } catch {
+              // Non-fatal.
+            }
+            router.push('/vault')
+          }}
+          className="vpx-soft bg-surface py-3 px-4 font-bold text-sm text-left"
+        >
+          Show tour again
+        </button>
+      </section>
 
       <p className="text-[10px] text-fg-faint text-center leading-relaxed pt-2 border-t border-line">
         Your address: <span className="font-mono">{short(data.player.address)}</span>

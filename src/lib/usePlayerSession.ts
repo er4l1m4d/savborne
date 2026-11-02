@@ -16,6 +16,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { readSession, writeSession, authHeaders, type Session } from '@/lib/session'
 import { listAccounts, WalletError } from '@/lib/nimiq'
+import { playLevelUp } from '@/lib/level-up-sound'
+import { buzz } from '@/lib/haptics'
+import { observeLevel } from '@/lib/level-up'
 
 export type PlayerMe = {
   address: string
@@ -119,6 +122,7 @@ export function usePlayerSession(): UsePlayerSessionResult {
         }
       } else {
         const json = (await res.json()) as { player: PlayerMe }
+        detectLevelUp(json.player)
         setPlayer(json.player)
         setError(null)
       }
@@ -142,4 +146,15 @@ export function usePlayerSession(): UsePlayerSessionResult {
   }, [])
 
   return { session, player, loading, needsReconnect, error, refresh, signOut }
+}
+
+/**
+ * Fire the level-up effect exactly once per level, across every mounted hook.
+ * `observeLevel` holds the shared memory and stays silent on first sight.
+ */
+function detectLevelUp(player: PlayerMe): void {
+  if (observeLevel(player.address, player.level)) {
+    playLevelUp()
+    buzz([30, 40, 30])
+  }
 }
