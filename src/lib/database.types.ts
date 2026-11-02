@@ -201,6 +201,51 @@ export type Database = {
         Insert: Database['public']['Tables']['daily_xp']['Row']
         Update: Partial<Database['public']['Tables']['daily_xp']['Row']>
       }
+      vaults: {
+        Row: {
+          address: string
+          player_address: string
+          network: 'mainnet' | 'testnet'
+          card_token: string
+          backup_verified_at: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['vaults']['Row'], 'created_at'> & {
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['vaults']['Row']>
+      }
+      transfers: {
+        Row: {
+          id: number
+          player_address: string
+          vault_address: string
+          direction: 'in' | 'out'
+          amount_luna: number
+          fee_luna: number
+          tx_hash: string
+          status: 'pending' | 'included' | 'expired'
+          block_height: number | null
+          failure_reason: string | null
+          created_at: string
+          confirmed_at: string | null
+        }
+        Insert: Omit<
+          Database['public']['Tables']['transfers']['Row'],
+          'id' | 'fee_luna' | 'status' | 'block_height' | 'failure_reason' | 'created_at' | 'confirmed_at'
+        > & {
+          fee_luna?: number
+          status?: 'pending' | 'included' | 'expired'
+          block_height?: number | null
+          failure_reason?: string | null
+          confirmed_at?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['transfers']['Row']>
+      }
     }
   }
 }
+
+export type PlayerRow = Database['public']['Tables']['players']['Row']
+export type VaultRow = Database['public']['Tables']['vaults']['Row']
+export type TransferRow = Database['public']['Tables']['transfers']['Row']

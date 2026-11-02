@@ -1,40 +1,52 @@
 /**
  * POST /api/players
  *
- * Creates the player row at the end of onboarding. Idempotent: if the same
- * address is submitted again with the same savings account, we return the
- * existing record so a user can re-consent or reload without duplicates.
+ * Creates the player row and the vault row in one atomic call at the end of
+ * onboarding. The vault phrase never reaches the server; only the derived
+ * address and the declared backup state do.
  *
  * Body:
  *   {
- *     address:           string   // the player's Nimiq address (identity key)
- *     savingsAddress:    string   // the connected savings account address
- *     displayName:       string   // 1–32 chars, shown on leaderboard
- *     initialBalanceLuna: number  // client-supplied first read; server does not re-fetch
+ *     address:       string   // the player's Nimiq address (identity key)
+ *     displayName:   string   // 1–32 chars, shown on leaderboard
+ *     vaultAddress:  string   // the vault the client generated on device
+ *     network:       'mainnet' | 'testnet'
+ *     backupVerified: boolean // a declared claim; the gate is enforced on deposit
  *   }
  *
  * Response:
- *   201 { player: PlayerRow, created: true }
- *   200 { player: PlayerRow, created: false }  // already existed, idempotent
- *   400 { error }                              // bad inputs
+ *   201 { player, vault, created: true }
+ *   200 { player, vault, created: false }   // this wallet already had a vault
+ *   400 { error }                           // bad inputs
+ *   409 { error: 'vault_taken' | 'vault_exists' }
+ *
+ * The old `savingsAddress` / `initialBalanceLuna` fields are ignored, not
+ * rejected: the client ships in the same build, but an in-flight tab must not 400.
  */
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { bracketFromLuna } from '@/lib/constants'
-import { itemsToUnlock, type ItemKey } from '@/lib/game/items'
+import { isPlausibleAddress } from '@/lib/vault/address'
+import { toVaultDto } from '@/lib/vault/dto'
+import { isNetwork } from '@/lib/vault/network'
+import type { PlayerRow, VaultRow } from '@/lib/database.types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 type Body = {
   address?: unknown
-  savingsAddress?: unknown
   displayName?: unknown
-  initialBalanceLuna?: unknown
+  vaultAddress?: unknown
+  network?: unknown
+  backupVerified?: unknown
 }
 
-const ADDRESS_RE = /^[NQ][A-Za-z0-9]{10,}$/
+type CreateResult = {
+  player: PlayerRow
+  vault: VaultRow
+  created: boolean
+}
 
 export async function POST(req: Request) {
   let body: Body
@@ -44,13 +56,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { address, savingsAddress, displayName, initialBalanceLuna } = body
+  const { address, displayName, vaultAddress, network, backupVerified } = body
 
-  if (typeof address !== 'string' || !ADDRESS_RE.test(address)) {
+  if (typeof address !== 'string' || !isPlausibleAddress(address)) {
     return NextResponse.json({ error: 'Invalid player address' }, { status: 400 })
   }
-  if (typeof savingsAddress !== 'string' || !ADDRESS_RE.test(savingsAddress)) {
-    return NextResponse.json({ error: 'Invalid savings address' }, { status: 400 })
+  if (typeof vaultAddress !== 'string' || !isPlausibleAddress(vaultAddress)) {
+    return NextResponse.json({ error: 'Invalid vault address' }, { status: 400 })
   }
   if (
     typeof displayName !== 'string' ||
@@ -59,55 +71,40 @@ export async function POST(req: Request) {
   ) {
     return NextResponse.json({ error: 'Display name must be 1–32 characters' }, { status: 400 })
   }
-  if (typeof initialBalanceLuna !== 'number' || !Number.isFinite(initialBalanceLuna)) {
-    return NextResponse.json({ error: 'Initial balance must be a number of Luna' }, { status: 400 })
+  if (!isNetwork(network)) {
+    return NextResponse.json({ error: 'Invalid network' }, { status: 400 })
+  }
+  if (typeof backupVerified !== 'boolean') {
+    return NextResponse.json({ error: 'backupVerified must be a boolean' }, { status: 400 })
   }
 
   const db = supabaseAdmin()
+  // Server-minted: nothing is persisted before this point anyway, and a
+  // client-minted token buys no privacy while allowing two clients to collide.
+  const cardToken = crypto.randomUUID()
 
-  // Idempotency: if a row already exists for this address, return it.
-  const existing = await db.from('players').select('*').eq('address', address).maybeSingle()
-  if (existing.data) {
-    return NextResponse.json({ player: existing.data, created: false })
-  }
+  const { data, error } = await db.rpc('create_player_with_vault', {
+    p_address: address,
+    p_display_name: displayName.trim(),
+    p_vault_address: vaultAddress,
+    p_network: network,
+    p_card_token: cardToken,
+    p_backup_verified: backupVerified,
+  })
 
-  const insert = {
-    address,
-    savings_account_address: savingsAddress,
-    display_name: displayName.trim(),
-    current_balance_luna: Math.floor(initialBalanceLuna),
-    bracket: bracketFromLuna(initialBalanceLuna),
-    level: 1,
-    xp: 0,
-    rating: 1000,
-    check_in_count: 0,
-    streak_current: 0,
-    streak_best: 0,
-    wins: 0,
-    losses: 0,
-    ties: 0,
-    grace_used_this_week: false,
-    withdrawal_in_progress: false,
-    steady_hand_started_at: new Date().toISOString(),
-  }
-
-  const { data, error } = await db.from('players').insert(insert).select().single()
   if (error) {
+    if (error.message.includes('vault_taken')) {
+      return NextResponse.json({ error: 'vault_taken' }, { status: 409 })
+    }
+    if (error.message.includes('vault_exists')) {
+      return NextResponse.json({ error: 'vault_exists' }, { status: 409 })
+    }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Immediately unlock items whose bracket threshold is already met at signup.
-  const initialBracket = bracketFromLuna(Math.floor(initialBalanceLuna))
-  const unlockList = itemsToUnlock(new Set<ItemKey>(), initialBracket)
-  if (unlockList.length > 0) {
-    const rows = unlockList.map((k) => ({
-      player_address: address,
-      item_key: k,
-      unlocked_at: new Date().toISOString(),
-    }))
-    const { error: itemErr } = await db.from('player_items').insert(rows)
-    if (itemErr) console.error('Failed to unlock initial items:', itemErr.message)
-  }
-
-  return NextResponse.json({ player: data, created: true, unlockedItems: unlockList }, { status: 201 })
+  const result = data as CreateResult
+  return NextResponse.json(
+    { player: result.player, vault: toVaultDto(result.vault), created: result.created },
+    { status: result.created ? 201 : 200 },
+  )
 }
