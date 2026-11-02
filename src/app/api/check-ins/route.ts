@@ -5,14 +5,11 @@
  * pipeline against that snapshot. Returns the updated player row plus a
  * summary of what was awarded and any level/bracket change.
  *
- * The client sends the balance it read from `getBalance()` on-device, since
- * the server cannot reach the wallet. This is a trust-based model — a
- * malicious user could lie about their balance to farm XP — but per the
- * spec, Savborne never holds money, so the game's value is social/status
- * rather than financial. A future version can verify the balance by calling
- * the Nimiq public RPC independently.
+ * The balance is read from the chain, not from the client. The request body is
+ * ignored entirely: it neither supplies nor can influence the snapshot. A
+ * player without a vault gets `409 vault_required` rather than a fallback to a
+ * client-reported number, which is the hole this build exists to close.
  *
- * Body: { balanceLuna: number }
  * Header: X-Player-Address: <address>
  *
  * Steps performed inside this handler (kept linear; a real Postgres
@@ -38,6 +35,8 @@ import { computeStreak, alreadyCheckedInToday, alreadyCheckedInThisWeek } from '
 import { utcDayOf, utcWeekStart, utcDaysBetween } from '@/lib/game/time'
 import { itemsToUnlock, type ItemKey } from '@/lib/game/items'
 import { computeBadgeActions, type BadgeKey } from '@/lib/game/badges'
+import type { Network } from '@/lib/nimiq'
+import { getAccount, RpcError } from '@/lib/vault/rpc'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -48,23 +47,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
   }
 
-  let body: { balanceLuna?: unknown }
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
-  const balanceLuna = body.balanceLuna
-  if (typeof balanceLuna !== 'number' || !Number.isFinite(balanceLuna) || balanceLuna < 0) {
-    return NextResponse.json({ error: 'balanceLuna must be a non-negative number' }, { status: 400 })
-  }
-
   const db = supabaseAdmin()
   const now = new Date()
   const today = utcDayOf(now)
   const weekStart = utcWeekStart(now)
 
-  // 1. Load player + recent history.
+  // 1. Load player + their vault. The body is deliberately unread: there is
+  //    nothing a client can send that changes the balance.
   const { data: player, error: playerErr } = await db
     .from('players')
     .select('*')
@@ -72,6 +61,33 @@ export async function POST(req: Request) {
     .maybeSingle()
   if (playerErr) return NextResponse.json({ error: playerErr.message }, { status: 500 })
   if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
+
+  const { data: vault, error: vaultErr } = await db
+    .from('vaults')
+    .select('address, network')
+    .eq('player_address', address)
+    .maybeSingle()
+  if (vaultErr) return NextResponse.json({ error: vaultErr.message }, { status: 500 })
+  if (!vault) {
+    // No vault, no trusted balance. Never fall back to a client-reported one.
+    return NextResponse.json({ error: 'vault_required' }, { status: 409 })
+  }
+
+  // 2. Read the balance from the chain. No fallback: an RPC outage is a
+  //    check-in outage, surfaced honestly rather than hidden behind a cache.
+  let account: Awaited<ReturnType<typeof getAccount>>
+  try {
+    account = await getAccount(vault.address, vault.network as Network)
+  } catch (err) {
+    if (err instanceof RpcError) {
+      return NextResponse.json(
+        { error: 'rpc_unreachable', reason: err.message },
+        { status: 503 },
+      )
+    }
+    throw err
+  }
+  const balanceLuna = account.balanceLuna
 
   const { data: history } = await db
     .from('check_ins')
@@ -106,7 +122,9 @@ export async function POST(req: Request) {
   const weekOpening = thisWeekRows.length > 0 ? Number(thisWeekRows[thisWeekRows.length - 1].balance_luna) : null
 
   // Detect withdrawals within this week: any consecutive pair where the later
-  // balance is strictly less than the earlier one.
+  // balance is strictly less than the earlier one, OR a settled outgoing
+  // transfer this week. A non-custodial vault can be drained outside Savborne,
+  // and the balance delta is the only trace of that. Both feed the mission.
   let anyWithdrawalThisWeek = false
   for (let i = thisWeekRows.length - 1; i > 0; i--) {
     const later = Number(thisWeekRows[i - 1].balance_luna)
@@ -116,6 +134,24 @@ export async function POST(req: Request) {
       break
     }
   }
+  const { count: settledOutThisWeek } = await db
+    .from('transfers')
+    .select('id', { count: 'exact', head: true })
+    .eq('player_address', address)
+    .eq('direction', 'out')
+    .eq('status', 'included')
+    .gte('confirmed_at', weekStart.toISOString())
+  if ((settledOutThisWeek ?? 0) > 0) anyWithdrawalThisWeek = true
+
+  // First-deposit mission input: at least one settled (included) deposit ever.
+  // A pending claim must never unlock it.
+  const { count: includedDeposits } = await db
+    .from('transfers')
+    .select('id', { count: 'exact', head: true })
+    .eq('player_address', address)
+    .eq('direction', 'in')
+    .eq('status', 'included')
+  const hasIncludedDeposit = (includedDeposits ?? 0) > 0
 
   const newBracket: Bracket | null = bracketFromLuna(balanceLuna)
   const currentBracket: Bracket | null = (player.bracket as Bracket | null) ?? null
@@ -132,9 +168,7 @@ export async function POST(req: Request) {
     alreadyCheckedInThisWeek: alreadyWeek,
     totalCheckInsBefore: player.check_in_count,
     currentBracket: newBracket,
-    // Filled in by the chain-reading check-in (next task). Until then, no
-    // transfer has ever been settled, so the honest value is false.
-    hasIncludedDeposit: false,
+    hasIncludedDeposit,
   }
   const qualified = evaluateForCheckIn(snapshot)
 
@@ -335,6 +369,8 @@ export async function POST(req: Request) {
     newXp,
     xpToNext: xpToNextLevel(newLevel),
     streakCurrent: streak.current,
+    shields: streak.shields,
+    shieldsEarned: streak.shieldsEarned,
     bracket: newBracket,
     bracketChanged: newBracket !== currentBracket,
     withdrawalDetected: priorMostRecent !== null && balanceLuna < priorMostRecent,

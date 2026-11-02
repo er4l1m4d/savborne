@@ -28,6 +28,9 @@ export type PlayerMe = {
   balanceLuna: number
   streakCurrent: number
   streakBest: number
+  shields: number
+  shieldsEarned: number
+  hasVault: boolean
   checkInCount: number
   rating: number
   wins: number

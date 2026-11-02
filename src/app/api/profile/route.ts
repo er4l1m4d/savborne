@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   }
 
   const db = supabaseAdmin()
-  const [{ data: player, error: playerErr }, { data: items }, { data: badges }] =
+  const [{ data: player, error: playerErr }, { data: items }, { data: badges }, { data: vault }] =
     await Promise.all([
       db.from('players').select('*').eq('address', address).maybeSingle(),
       db.from('player_items').select('item_key').eq('player_address', address),
@@ -33,6 +33,7 @@ export async function GET(req: Request) {
         .select('badge_key')
         .eq('player_address', address)
         .is('revoked_at', null),
+      db.from('vaults').select('card_token').eq('player_address', address).maybeSingle(),
     ])
 
   if (playerErr) {
@@ -53,6 +54,8 @@ export async function GET(req: Request) {
       balanceLuna: Number(player.current_balance_luna),
       streakCurrent: player.streak_current,
       streakBest: player.streak_best,
+      shields: player.shields,
+      shieldsEarned: player.shields_earned,
       checkInCount: player.check_in_count,
       wins: player.wins,
       losses: player.losses,
@@ -60,5 +63,6 @@ export async function GET(req: Request) {
     },
     ownedItems: (items ?? []).map((r) => r.item_key as ItemKey),
     activeBadges: (badges ?? []).map((r) => r.badge_key as BadgeKey),
+    cardToken: (vault?.card_token as string | undefined) ?? null,
   })
 }
