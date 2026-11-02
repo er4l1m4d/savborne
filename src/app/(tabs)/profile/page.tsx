@@ -14,6 +14,7 @@ import { authHeaders } from '@/lib/session'
 import { BRACKETS, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeKey } from '@/lib/game/badges'
+import { BadgeArt } from '@/components/Glyphs'
 
 type ProfileData = {
   player: {
@@ -97,13 +98,13 @@ export default function ProfilePage() {
               <div
                 key={b.key}
                 className={`vpx-soft p-2 flex flex-col items-center gap-1 text-center ${
-                  active ? 'bg-surface-hi' : 'bg-surface opacity-40'
+                  active ? 'bg-surface-hi' : 'bg-surface'
                 }`}
                 title={b.description}
               >
-                <span className="text-xl leading-none" aria-hidden>
-                  {active ? '◈' : '◇'}
-                </span>
+                {/* The locked drawing is already a muted two-tone, so no extra dimming here —
+                    an opacity-40 on top of it double-dims a state the art already carries. */}
+                <BadgeArt badge={b.key} state={active ? 'earned' : 'locked'} size={32} />
                 <span className="text-[10px] font-bold leading-tight">{b.name}</span>
               </div>
             )

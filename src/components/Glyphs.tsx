@@ -16,6 +16,7 @@
  */
 
 import glyphs from '../../assets/glyphs.json'
+import badges from '../../assets/badges.json'
 
 type GlyphName = keyof typeof glyphs
 
@@ -50,6 +51,64 @@ export function Glyph({
       role={title ? 'img' : undefined}
       aria-label={title}
       dangerouslySetInnerHTML={{ __html: glyph.paths }}
+    />
+  )
+}
+
+type BadgeName = keyof typeof badges
+type BadgeState = 'earned' | 'locked' | 'removed'
+
+/**
+ * Badge art from assets/badges.json.
+ *
+ * The app used to show badges as `◈` / `◇`, which collapsed three designed states into two
+ * characters and used none of the real art. Each badge ships an earned, locked and removed
+ * pixel drawing on the same 24x24 grid as the glyphs, so it is rendered the same way and from
+ * the same kind of source.
+ *
+ * The `reachableStates` guard is the reason this component exists rather than a bare lookup.
+ * Every gate passed a "removed" drawing for badges the game can never revoke, because
+ * reachability is not a pixel property — a screen that draws an impossible state looks fine
+ * to a pixel test. Enforcing it here is the one place that knows both the art and the rules.
+ */
+export function BadgeArt({
+  badge,
+  state,
+  size = 32,
+  className,
+  title,
+}: {
+  badge: BadgeName
+  state: BadgeState
+  size?: number
+  className?: string
+  title?: string
+}) {
+  const badgeArt = badges[badge]
+  if (!badgeArt) throw new Error(`Badge "${String(badge)}" is not in assets/badges.json`)
+  if (badgeArt.viewBox !== GLYPH_GRID) {
+    throw new Error(`Badge "${String(badge)}" is ${badgeArt.viewBox}, expected ${GLYPH_GRID}`)
+  }
+  if (!badgeArt.reachableStates.includes(state)) {
+    throw new Error(
+      `Badge "${String(badge)}" cannot be "${state}" — the game can only produce ` +
+        `${badgeArt.reachableStates.join(', ')}. See ERRORS.md drawing-a-state-the-game-cannot-produce.`,
+    )
+  }
+  const markup = badgeArt.states[state]
+  if (!markup) throw new Error(`Badge "${String(badge)}" has no "${state}" artwork`)
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={badgeArt.viewBox}
+      className={className}
+      focusable="false"
+      aria-hidden={title ? undefined : true}
+      role={title ? 'img' : undefined}
+      aria-label={title}
+      dangerouslySetInnerHTML={{ __html: markup }}
     />
   )
 }

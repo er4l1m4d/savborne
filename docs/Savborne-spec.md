@@ -380,7 +380,7 @@ Eight items, two per bracket. Items stay in the inventory after a withdrawal.
 | First Blade | First battle win | No |
 | Golden Crown | Gold bracket status (an item-linked badge) | No |
 
-Badge descriptions and icons are not yet written.
+Badge names and descriptions are in `src/lib/game/badges.ts`; each badge's icon is in `assets/badges.json` as three pixel drawings (`earned`, `locked`, `removed`) on a 24x24 grid. Not every badge has a reachable `removed` state — `badges.json` records which do, and the app refuses to draw a state the game cannot produce.
 
 ---
 
