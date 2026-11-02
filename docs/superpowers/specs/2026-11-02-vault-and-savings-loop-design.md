@@ -1,7 +1,8 @@
 # Savborne — Non-custodial vault and the real savings loop
 
 **Date:** 2 November 2026
-**Status:** Design approved in conversation, awaiting spec review
+**Status:** Approved. Implementation plan:
+`docs/superpowers/plans/2026-11-02-vault-and-savings-loop.md`
 **Deadline:** 8 November 2026 (submission), 11 November 2026 (Cycle III close)
 
 ---
@@ -81,9 +82,34 @@ RPC endpoints, chosen from `getHostNetwork()`:
 Both send `Access-Control-Allow-Origin: *`; both answered from a real browser origin
 (testnet 453 ms, mainnet 1121 ms).
 
+**The RPC surface, verified against the live nodes on 2 November 2026** (these are the
+method names the shipping code must use — the obvious guesses are not allowed):
+
+| Need | Method | Shape |
+|---|---|---|
+| Balance | `getAccountByAddress(address)` | `result.data.balance` (luna), `result.data.type` |
+| Transaction | `getTransactionByHash(hash)` | `result.data.blockNumber`, `from`, `to`, `value`, `fee`, `networkId`, `executionResult` |
+| Broadcast | `sendRawTransaction(hex)` | `result.data` is the transaction hash string |
+| Head height | `getBlockNumber()` | `result.data` is the height |
+
+`getBalance` is **not** available on these nodes — it returns `Method not allowed`, exactly
+like `getNetworkInfo` and `getNetworkId`. Balance reads must go through
+`getAccountByAddress`.
+
+**Network ids, measured rather than assumed.** Sampling 40 mainnet transactions and 32
+testnet transactions returned **24 on every mainnet transaction** and **5 on every testnet
+transaction**. The earlier assumption of 42 / 1 was wrong. `TransactionBuilder.newBasic`
+must be given 24 or 5 accordingly.
+
+**Explorer format, checked against a real hash.** `https://nimiq.watch/#<hash>` renders a
+mainnet transaction page and `https://test.nimiq.watch/#<hash>` renders a testnet one;
+`https://nimiq.watch/tx/<hash>` returns 404. Receipts must use the network-appropriate `#`
+form, so a testnet receipt never links to a mainnet explorer.
+
 **A transaction hash is not a receipt.** The spike proved this: the node returned a hash
 for nine unfunded transactions and for transactions built with the wrong network id, and
-`getTransactionByHash` then reported "not found" for every one.
+`getTransactionByHash` then reported "not found" for every one. `sendRawTransaction`
+returning a hash is therefore never sufficient.
 
 Therefore every transfer moves through an explicit state machine:
 
@@ -114,7 +140,20 @@ The withdraw check compares against `players.address` — the identity account t
 player row — because that is the only account the server can verify. The client may hold
 several wallet accounts; the server cannot enumerate them and must not pretend to.
 
-An unverifiable claim is rejected with `422` and nothing is written to `transfers`.
+**The timing consequence, stated honestly.** `getTransactionByHash` only returns a
+transaction once it is included; a freshly broadcast transaction is "not found". So `POST
+/api/transfers` cannot always verify immediately. The rule is therefore:
+
+- a hash-shaped claim with a positive amount is recorded as `pending` — the claimed amount
+  is stored but **never credited**;
+- every poll re-reads the chain; on inclusion the amount, fee and counterparty are taken
+  from the chain, not from the claim;
+- a claim that resolves but fails a check becomes `expired` with a `failure_reason`
+  (`wrong_recipient`, `wrong_sender`, `wrong_amount`, `wrong_network`);
+- a claim that never resolves within two minutes becomes `expired` with `not_included`.
+
+`422` is reserved for malformed input (bad hash shape, non-positive amount), not for a
+transaction that has not landed yet.
 
 ## 5. Data model
 
@@ -142,6 +181,7 @@ create table if not exists transfers (
   status         text not null default 'pending'
                    check (status in ('pending','included','expired')),
   block_height   int,
+  failure_reason text,
   created_at     timestamptz not null default now(),
   confirmed_at   timestamptz
 );
@@ -397,22 +437,29 @@ New, because pure logic is now load-bearing and there is no test framework in th
 
 - `node --test` (built into Node 20+) for `computeStreak` with shields, the shield earn/spend
   rules, and the transfer state machine (`broadcast → pending → included | expired`).
-- One integration check against testnet RPC for inclusion polling.
+  `tsx` is added as a dev dependency so the runner can follow the app's extensionless
+  TypeScript imports; there is no other test framework.
+- One integration check against testnet RPC for inclusion polling. **This has now been run
+  end to end without a phone** (§17): a throwaway key was funded from
+  `https://faucet.pos.nimiq-testnet.com/tapit`, a 139-byte transaction was built with network
+  id 5, signed, broadcast with `sendRawTransaction`, and appeared in block 15698237 with
+  `confirmations: 1` on the first poll.
 - Manual, on the phone: check 4 of the spike — a real deposit into the vault, then a real
-  withdrawal out. **This is the gate that has not been run**, and it blocks shipping the
-  vault even though it does not block building it.
+  withdrawal out. **This is the only gate that still needs the device**, and it blocks
+  shipping the wallet-signed deposit path, not building it.
 
 ## 16. Known risks
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| Network id (mainnet 42 / testnet 1) unproven — nodes do not validate it at submission | Medium | Confirmed on-device in check 4; inclusion polling means a wrong id fails visibly, not silently |
+| Network id | **Resolved** | Measured from live chain data: mainnet 24, testnet 5. Was wrongly assumed to be 42 / 1. |
 | Lost phrase = lost funds | High | Backup gate, re-display in settings, one-time warning, 1 NIM default |
 | Six days for twelve items | High | Explicit cut line (§14) with the vault as the floor |
 | RPC outage blocks check-in | Medium | Surfaced as a fail state with retry; no stale-balance fallback |
 | Vault key in a WebView | Medium | AES-GCM-256 + PBKDF2 (spike-proven), key never transmitted |
+| `sendBasicTransaction` return type | Low | It is documented as "the serialized transaction" but observed as a hash; the client normalises both (64-hex = hash, longer hex = deserialize and hash) |
 
-## 17. Spike artefacts
+## 17. Spike artefacts and proof
 
 Kept in the tree only until check 4 runs:
 
@@ -421,3 +468,18 @@ Kept in the tree only until check 4 runs:
   Product routes unaffected. **Must be removed before shipping.**
 
 Both are deleted once the real flows exist.
+
+**What was proven on 2 November 2026, from this machine, with no phone:**
+
+| Check | Result |
+|---|---|
+| Testnet faucet funds an arbitrary address | `POST https://faucet.pos.nimiq-testnet.com/tapit` → `{"success":true}`; balance read 11,000,000,000 luna |
+| Local key generation in Node | 24-word phrase → address, deterministic |
+| Build + sign offline | 139-byte transaction, network id 5 |
+| Broadcast | `sendRawTransaction` returned the same hash the local transaction computed |
+| Inclusion | Block 15698237, `confirmations: 1` on the first poll |
+| Balance read | `getAccountByAddress` returned the funded balance |
+| Network ids | 40/40 mainnet txs = 24; 32/32 testnet txs = 5 |
+| Explorer link | `https://nimiq.watch/#<hash>` rendered the transaction page |
+
+The only remaining unknown is the wallet-signed deposit path inside Nimiq Pay itself.
