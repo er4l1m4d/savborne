@@ -2,7 +2,7 @@
 
 A savings RPG that runs inside [Nimiq Pay](https://nimiq.com) as a Mini App. Enter for the [Nimiq Mini Apps Competition, Cycle III](https://miniappscompetition.com) — Save track.
 
-**Never holds, moves, or controls your money.** Connect one dedicated NIM savings account. Every time you open the app and check in, Savborne reads that account's balance via `getBalance` and turns your saving progress into XP, items, missions, badges, and rank.
+**Never holds, moves, or controls your money.** Onboarding generates a 24-word phrase on your device and derives a vault address from it. Deposits are signed by your Nimiq Pay wallet and withdrawals are signed in-browser by that phrase; the server can read the vault address on chain but cannot move a single luna. If you lose the phrase and your device, the NIM in the vault is unrecoverable — Savborne cannot restore it. Check in daily and Savborne reads the vault balance over Nimiq's RPC and turns your saving progress into XP, items, missions, badges, and rank.
 
 ## The loop
 
@@ -56,18 +56,20 @@ Then open the URL inside Nimiq Pay, or via a deeplink:
 | Path | Purpose |
 |---|---|
 | `src/app/` | Next.js App Router pages + API routes |
-| `src/lib/` | Supabase + Nimiq SDK wrappers, game logic (constants, awards, missions, streaks, time) |
-| `src/components/` | Shared UI (VersionGate, later the tab shell and battle widgets) |
+| `src/lib/` | Supabase + Nimiq SDK wrappers, vault crypto/signing, game logic (constants, awards, missions, streaks, time) |
+| `src/lib/vault/` | Vault: address, RPC, verification, settlement, phrase crypto, receipts, card data |
+| `src/components/` | Shared UI (VersionGate, VaultGuard, VaultTour, tab shell, battle widgets) |
 | `supabase/migrations/` | SQL schema and RPC functions |
-| `docs/` | Product spec, UI direction, type & colour specimen |
-| `savborne-spike/` | Standalone proof-of-concept for `getBalance` — gitignored, not part of the app |
+| `docs/` | Product spec, plans, handoff notes |
+| `scripts/vault-e2e.mjs` | Testnet end-to-end probe for the money path (`npm run vault:e2e`) |
 | `ERRORS.md` | Running log of every build-time and runtime error and its fix |
 
 ## Competition context
 
 - **Cycle III window:** 14 October 2026 → 11 November 2026
 - **Track:** Save (individual savings with a game layer)
-- **Early access checkpoint:** 28 October 2026 — the live URL must work inside Nimiq Pay for real users by then
+- **Vault build:** 2 November 2026 — non-custodial vault (deposit, on-chain proof,
+  check-in against the real balance, withdraw) live on testnet; device pass pending
 - **Target submission:** 8 November 2026
 
 ## Licence

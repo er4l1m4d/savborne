@@ -87,13 +87,38 @@ npx tsc --noEmit && npm run lint
 div 648/648 · svg 166/166 · span 411/411 · ids 66
 32 screens (A_Gate and A_Preparing added in pass 3); grid-census exits 1 by
   design at 108 non-whole scales
-tsc clean · next build already run and green · eslint 0 errors, 37 pre-existing
-  warnings (one is the user's own page.tsx)
+tsc clean · next build green · eslint 0 errors, 40 pre-existing warnings (one
+  is the user's own page.tsx)
 working tree: src/app/(tabs)/page.tsx modified (user's own daily-missions work —
-  do NOT commit it under your messages); AGENTS.md untracked (written by next dev);
-  and an in-progress vault spike (src/app/vault-spike/, @nimiq/core, tsconfig
-  ES2020, a SPIKE ONLY bypass in VersionGate.tsx) that is also the user's
+  do NOT commit it under your messages); AGENTS.md untracked (written by next dev).
+The vault spike (src/app/vault-spike/) and the SPIKE ONLY bypass in
+VersionGate.tsx were removed in the vault build (task 18); no longer present.
 ```
+
+### Vault build — device pass pending
+
+The non-custodial vault shipped on 2026-11-02 (deposit, on-chain proof, check-in against the
+real balance, withdraw). Everything provable without a phone is green:
+
+```
+npm test             60 pass / 0 fail
+npx tsc --noEmit     clean
+npm run lint         0 errors, 40 pre-existing warnings
+npm run build        green
+npm run vault:e2e    ALL PASS (testnet, block 15709831) — phrase → address → faucet →
+                     sign → sendRawTransaction → inclusion → executionResult true
+```
+
+The device checklist (plan §5) has **not** been run yet. Fill in the observed values here when
+it is:
+
+| Unknown | Expected | Observed |
+|---|---|---|
+| `sendBasicTransaction` return shape | hash (a 64-hex string) | _pending_ |
+| `listAccounts()` first-call approval | one prompt, then silent | _pending_ |
+| `getHostNetwork()` value | `'mainnet'` \| `'testnet'` exactly | _pending_ |
+| `sendRawTransaction` from the WebView origin | accepted (CORS is open) | _pending_ |
+| Level-up sound + haptics | one arpeggio, one buzz | _pending_ |
 
 Two grids only: **16×16 game art**, **24×24 chrome and badges**. `8×8` and `12×12` are fully retired. Glyphs and badges now render as real SVG in the app, not unicode — see §"App wiring".
 

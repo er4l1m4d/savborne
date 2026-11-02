@@ -16,9 +16,6 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import { isGetBalanceAvailable, isInsideNimiqPay, WalletError } from '@/lib/nimiq'
 
-// SPIKE ONLY — remove before shipping. Lets /vault-spike run in a plain browser.
-const SPIKE_BYPASS = '/vault-spike'
-
 /**
  * Paths that must render outside Nimiq Pay: they are opened by link, not by a
  * player inside the wallet. A shared flex card is the whole point of the card
@@ -61,9 +58,6 @@ export function VersionGate({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [])
-
-  // SPIKE ONLY — remove before shipping.
-  if (pathname?.startsWith(SPIKE_BYPASS)) return <>{children}</>
 
   // Public routes render anywhere: they are opened by shared link, outside the
   // wallet, and gating them on Nimiq Pay would defeat their purpose.

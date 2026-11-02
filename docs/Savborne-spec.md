@@ -12,9 +12,9 @@ Handover document for building Savborne, a savings RPG for Nimiq Pay, entered in
 
 Savborne is a savings RPG that runs inside Nimiq Pay as a Mini App. Players connect one dedicated flexible NIM savings account, and their saving progress earns XP, items, missions, badges, and status. Players battle other characters using chosen moves, against other players through a ranked queue, or against an AI opponent.
 
-**Core principle:** Savborne never holds, moves, or controls user money. It only reads the balance of the savings account the player chooses.
+**Core principle:** Savborne never holds, moves, or controls user money. A 24-word phrase generated on the player's device controls a vault address; deposits are signed by the player's Nimiq Pay wallet, withdrawals are signed in-browser by that phrase, and the server can read the vault address on chain but cannot move funds. If the player loses the phrase and their device, the NIM is unrecoverable — Savborne cannot restore it.
 
-**Core loop:** Connect savings account → check in → earn XP and streaks → unlock items by bracket → battle → climb the leaderboard.
+**Core loop:** Create vault → check in → earn XP and streaks → unlock items by bracket → battle → climb the leaderboard.
 
 ---
 
@@ -829,7 +829,7 @@ We keep your data while your account is active. You can delete your account and 
 By tapping "Continue," you agree to this notice and to Savborne storing your savings account address, balance snapshots, and game data as described above.
 
 **Questions**
-Contact `[email address]`.
+Contact `damilareogooluwade@outlook.com`.
 
 ---
 

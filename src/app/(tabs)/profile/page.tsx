@@ -16,6 +16,10 @@ import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeKey } from '@/lib/game/badges'
 import { BadgeArt } from '@/components/Glyphs'
 import { TOUR_FLAG_KEY } from '@/components/VaultTour'
+import { BackupSettings } from '@/components/vault/BackupSettings'
+
+/** Single definition; the footer and the mailto both read it. */
+const CONTACT_EMAIL = 'damilareogooluwade@outlook.com'
 
 type ProfileData = {
   player: {
@@ -160,6 +164,8 @@ export default function ProfilePage() {
 
       <ShareCardSection cardToken={data.cardToken} />
 
+      <BackupSettings />
+
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Help</h2>
         <button
@@ -177,11 +183,18 @@ export default function ProfilePage() {
         </button>
       </section>
 
-      <p className="text-[10px] text-fg-faint text-center leading-relaxed pt-2 border-t border-line">
-        Your address: <span className="font-mono">{short(data.player.address)}</span>
-        <br />
-        Items stay yours even if your balance drops.
-      </p>
+      <footer className="flex flex-col items-center gap-1 pt-4 border-t border-line text-[11px] text-fg-faint">
+        <a href={`mailto:${CONTACT_EMAIL}`} className="text-mint underline underline-offset-4">
+          {CONTACT_EMAIL}
+        </a>
+        <p className="text-center leading-relaxed">
+          Savborne never holds your NIM. A 24-word phrase generated on your device controls your
+          vault. Balances are read from the chain, never stored by us.
+        </p>
+        <p>
+          Your address: <span className="font-mono">{short(data.player.address)}</span>
+        </p>
+      </footer>
     </main>
   )
 }
