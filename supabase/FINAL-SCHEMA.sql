@@ -50,7 +50,9 @@ create table if not exists players (
   ties                    int not null default 0,
   withdrawal_in_progress  boolean not null default false,
   last_withdrawal_at      timestamptz,
-  steady_hand_started_at  timestamptz default now()
+  steady_hand_started_at  timestamptz default now(),
+  shields                 int not null default 1,
+  shields_earned          int not null default 0
 );
 
 create table if not exists check_ins (
@@ -169,6 +171,53 @@ create table if not exists daily_xp (
   primary key (player_address, utc_date)
 );
 
+-- ─── Vault and savings loop (additive, spec §5) ─────────────────────────────
+-- The vault address is derived on the player's device from a 24-word phrase.
+-- The server stores the mapping only: it never holds a key and never signs.
+-- UNIQUE(player_address) makes a second vault, or a claim on someone else's,
+-- structurally impossible.
+create table if not exists vaults (
+  address            text primary key,
+  player_address     text not null unique
+                       references players(address) on delete cascade,
+  network            text not null check (network in ('mainnet','testnet')),
+  card_token         text unique not null,
+  backup_verified_at timestamptz,
+  created_at         timestamptz not null default now()
+);
+
+-- A claimed transfer is only credited after the server verifies it on chain.
+-- tx_hash is unique so a retried POST records the movement exactly once.
+create table if not exists transfers (
+  id             bigint generated always as identity primary key,
+  player_address text not null references players(address) on delete cascade,
+  vault_address  text not null references vaults(address),
+  direction      text not null check (direction in ('in','out')),
+  amount_luna    bigint not null check (amount_luna > 0),
+  fee_luna       bigint not null default 0,
+  tx_hash        text unique not null,
+  status         text not null default 'pending'
+                   check (status in ('pending','included','expired')),
+  block_height   int,
+  failure_reason text,
+  created_at     timestamptz not null default now(),
+  confirmed_at   timestamptz
+);
+
+create index if not exists transfers_player_idx
+  on transfers (player_address, created_at desc);
+
+-- Streak shields replace the deprecated weekly grace (spec §7). The ALTER makes
+-- this file safe on a database created before the vault build.
+alter table players add column if not exists shields        int not null default 1;
+alter table players add column if not exists shields_earned int not null default 0;
+
+-- One-time mission for the first settled vault deposit (spec §6.2).
+insert into missions (key, name, description, type, xp_reward, bracket_required)
+values ('first_deposit', 'Vault Opened', 'Make your first deposit into your vault.',
+        'onetime', 20, null)
+on conflict (key) do nothing;
+
 -- ─── Indexes ─────────────────────────────────────────────────────────────────
 create index if not exists players_savings_account_idx on players (savings_account_address);
 create index if not exists players_rating_idx          on players (rating desc);
@@ -262,6 +311,8 @@ alter table battle_moves    enable row level security;
 alter table queue           enable row level security;
 alter table daily_battles   enable row level security;
 alter table daily_xp        enable row level security;
+alter table vaults          enable row level security;
+alter table transfers       enable row level security;
 
 -- Drop every policy this file owns (legacy + current), then recreate current.
 drop policy if exists "players_public_read"    on players;
@@ -380,6 +431,10 @@ grant all privileges on all sequences in schema public to service_role;
 -- growth_luna = current balance − the FIRST-ever check-in balance (spec 4.5
 -- "balance growth between check-ins", net since joining). Normalisation to
 -- 0–100 happens in the API route (it needs the whole cohort's max).
+-- A function's return type cannot be changed by CREATE OR REPLACE, so the drop
+-- is required for an already-applied database to gain the has_vault column.
+drop function if exists leaderboard_stats();
+
 create or replace function leaderboard_stats()
 returns table (
   player_address  text,
@@ -392,7 +447,8 @@ returns table (
   ties            int,
   streak_current  int,
   streak_best     int,
-  growth_luna     bigint
+  growth_luna     bigint,
+  has_vault       boolean
 )
 language sql
 security definer
@@ -416,15 +472,75 @@ as $$
         order by ci.recorded_at asc
         limit 1),
       p.current_balance_luna
-    ) as growth_luna
+    ) as growth_luna,
+    (v.address is not null) as has_vault
   from players p
+  left join vaults v on v.player_address = p.address
   where p.address <> 'ai-savborne'
 $$;
 
 revoke all on function leaderboard_stats() from public;
 grant execute on function leaderboard_stats() to service_role;
 
--- ─── Verification (optional — paste separately, expect 10|8|6|≥1|13|3|true) ─
+-- ─── Player + vault creation (atomic onboarding) ────────────────────────────
+-- The Supabase JS client cannot span two inserts in one transaction, so
+-- onboarding goes through one security-definer function. Any raised exception
+-- rolls back the player insert too: a player and their vault exist together or
+-- not at all. Both error paths use 23505 so the route can distinguish them by
+-- message, not by inspecting Postgres internals.
+create or replace function create_player_with_vault(
+  p_address         text,
+  p_display_name    text,
+  p_vault_address   text,
+  p_network         text,
+  p_card_token      text,
+  p_backup_verified boolean
+) returns jsonb
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_existed boolean;
+  v_player  players%rowtype;
+  v_vault   vaults%rowtype;
+begin
+  select exists(select 1 from players p where p.address = p_address) into v_existed;
+
+  insert into players (address, savings_account_address, display_name, current_balance_luna)
+  values (p_address, p_vault_address, p_display_name, 0)
+  on conflict (address) do nothing;
+
+  select * into v_player from players where address = p_address;
+
+  if exists (select 1 from vaults v
+              where v.player_address = p_address and v.address <> p_vault_address) then
+    raise exception 'vault_exists' using errcode = '23505';
+  end if;
+
+  insert into vaults (address, player_address, network, card_token, backup_verified_at)
+  values (p_vault_address, p_address, p_network, p_card_token,
+          case when p_backup_verified then now() else null end)
+  on conflict (address) do nothing;
+
+  select * into v_vault
+    from vaults v
+   where v.address = p_vault_address and v.player_address = p_address;
+
+  if v_vault.address is null then
+    raise exception 'vault_taken' using errcode = '23505';
+  end if;
+
+  return jsonb_build_object(
+    'player', to_jsonb(v_player),
+    'vault',  to_jsonb(v_vault),
+    'created', not v_existed
+  );
+end;
+$$;
+
+revoke all on function create_player_with_vault(text,text,text,text,text,boolean) from public;
+grant execute on function create_player_with_vault(text,text,text,text,text,boolean) to service_role;
+
+-- ─── Verification (optional — paste separately, expect 11|8|6|≥1|15|3|true) ─
 -- select (select count(*) from missions) as missions,
 --        (select count(*) from items) as items,
 --        (select count(*) from badges) as badges,
