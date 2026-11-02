@@ -1,99 +1,108 @@
 /**
  * Savborne — Streak logic
  *
- * Rules (spec 4.4):
+ * Rules (spec §7):
  * - Daily: a check-in on a UTC calendar day counts.
  * - Weekly: at least one check-in in the current UTC week (Mon 00:00 – next Mon 00:00).
- * - Grace: ONE missed day per UTC week is forgiven; the grace does not stack
- *   and resets at Monday 00:00 UTC.
- * - Week resets on Monday 00:00 UTC.
+ * - Shields: the invisible weekly grace is gone. A player starts with 1 shield,
+ *   earns +1 per 7 consecutive days (capped at 3), and spends shields only here,
+ *   at check-in, to bridge missed days. A bridge may cross a week boundary.
  *
  * The pure functions below take already-fetched inputs so they can be unit
  * tested without touching the DB.
  */
 
-import {
-  isSameUtcDay,
-  isSameUtcWeek,
-  utcDayOf,
-  utcDaysBetween,
-  utcWeekStart,
-} from './time'
+import { isSameUtcDay, isSameUtcWeek, utcDayOf, utcDaysBetween, utcWeekStart } from './time'
+
+const SHIELD_CAP = 3
 
 export type StreakInput = {
   /** UTC timestamps of all check-ins for the player, ascending. */
   checkInsAt: Date[]
   /** Server time at the moment of evaluation. */
   now: Date
+  /** Current shield count from `players.shields`. */
+  shields: number
+  /** Lifetime 7-day blocks already awarded, from `players.shields_earned`. */
+  shieldsEarned: number
 }
 
 export type StreakResult = {
-  /** Consecutive-day count including today, honoring the grace rule. */
+  /** Consecutive-day count including today, after bridging with shields. */
   current: number
-  /** Longest ever reached, updated by the caller if current > previous best. */
   isThisWeekFirstCheckIn: boolean
-  /** Whether the player has used this week's grace day already. */
-  graceUsedThisWeek: boolean
+  /** Shield count after spending and earning. */
+  shields: number
+  /** Lifetime 7-day blocks awarded, updated. */
+  shieldsEarned: number
 }
 
 /**
- * Walk the sorted check-in dates backwards from `now` and count how many
- * UTC days in a row the player checked in, tolerating one missed day per
- * week. Any miss beyond the grace resets the streak to the days since the
- * most recent gap.
+ * Walk the sorted check-in days backwards from `now`, spending shields to
+ * bridge missed days. The first gap that cannot be bridged ends the streak.
  */
 export function computeStreak(input: StreakInput): StreakResult {
-  const { checkInsAt, now } = input
+  const { checkInsAt, now, shields, shieldsEarned } = input
+  const isThisWeekFirstCheckIn = !hadCheckInThisWeek(checkInsAt, now)
+
   if (checkInsAt.length === 0) {
-    return { current: 0, isThisWeekFirstCheckIn: true, graceUsedThisWeek: false }
+    return { current: 0, isThisWeekFirstCheckIn: true, shields, shieldsEarned }
   }
 
   // Distinct UTC day strings, sorted descending (most recent first).
   const daySet = new Set(checkInsAt.map((d) => utcDayOf(d)))
   const days = Array.from(daySet).sort((a, b) => (a < b ? 1 : -1))
 
-  const lastCheckInDay = days[0]
-
-  // If the player has NOT checked in today or yesterday, streak is broken.
-  const daysSinceLast = utcDaysBetween(new Date(lastCheckInDay), now)
-  if (daysSinceLast > 1) {
-    return { current: 0, isThisWeekFirstCheckIn: !hadCheckInThisWeek(checkInsAt, now), graceUsedThisWeek: false }
-  }
-
-  // Walk backwards from the most recent check-in day, counting a streak.
-  // One gap (a missing day) is allowed if it falls inside the current week.
-  const weekStart = utcWeekStart(now)
   let current = 0
-  let graceUsed = false
-  let cursor = lastCheckInDay
+  let remaining = shields
+  let cursor = utcDayOf(now)
+
+  // Leading gap: days missed between the most recent check-in and today. In
+  // practice the check-in route has already inserted today's row; this branch
+  // is for direct callers and tests.
+  const lastCheckInDay = days[0]
+  if (lastCheckInDay !== cursor) {
+    const leadingGap = utcDaysBetween(new Date(lastCheckInDay), now) - 1
+    if (leadingGap > remaining) {
+      return finish(0, remaining, shieldsEarned, isThisWeekFirstCheckIn)
+    }
+    remaining -= leadingGap
+    current += leadingGap
+    cursor = lastCheckInDay
+  }
 
   for (const day of days) {
     const gap = utcDaysBetween(new Date(day), new Date(cursor))
     if (gap > 1) {
-      // There is at least one missed day between `day` and `cursor`.
-      const missedDaysBetween = gap - 1
-      if (missedDaysBetween >= 2 || graceUsed) {
-        // Two-miss, or an additional miss after grace was used — streak broken.
-        break
-      }
-      // Single missed day inside the week → grace applies.
-      const missedDayStart = new Date(day)
-      missedDayStart.setUTCDate(missedDayStart.getUTCDate() + 1)
-      if (missedDayStart < weekStart) {
-        // The gap crosses into a previous week — cannot use current week's grace.
-        break
-      }
-      graceUsed = true
-      current += missedDaysBetween
+      const missed = gap - 1
+      if (missed > remaining) break
+      remaining -= missed
+      current += missed
     }
     current += 1
     cursor = day
   }
 
+  return finish(current, remaining, shieldsEarned, isThisWeekFirstCheckIn)
+}
+
+/**
+ * Earnings come from the resulting streak. `remaining + gained` — not
+ * `shields + gained` — so a shield spent this check-in is not refunded.
+ */
+function finish(
+  current: number,
+  remaining: number,
+  shieldsEarned: number,
+  isThisWeekFirstCheckIn: boolean,
+): StreakResult {
+  const blocks = Math.floor(current / 7)
+  const gained = Math.max(0, blocks - shieldsEarned)
   return {
     current,
-    isThisWeekFirstCheckIn: !hadCheckInThisWeek(checkInsAt, now),
-    graceUsedThisWeek: graceUsed,
+    isThisWeekFirstCheckIn,
+    shields: Math.min(SHIELD_CAP, remaining + gained),
+    shieldsEarned: Math.max(shieldsEarned, blocks),
   }
 }
 

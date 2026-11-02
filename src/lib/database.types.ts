@@ -26,6 +26,8 @@ export type Database = {
           streak_current: number
           streak_best: number
           grace_used_this_week: boolean
+          shields: number
+          shields_earned: number
           week_started_at: string | null
           check_in_count: number
           wins: number

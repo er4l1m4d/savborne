@@ -195,7 +195,12 @@ export async function POST(req: Request) {
 
   // 5. Recompute streak.
   const allCheckInDates = [now, ...prior.map((r) => new Date(r.recorded_at))]
-  const streak = computeStreak({ checkInsAt: allCheckInDates, now })
+  const streak = computeStreak({
+    checkInsAt: allCheckInDates,
+    now,
+    shields: player.shields ?? 1,
+    shieldsEarned: player.shields_earned ?? 0,
+  })
 
   // 6-7. Write player row + ledger rows + mission credits.
   const newXp = running.xp
@@ -209,7 +214,8 @@ export async function POST(req: Request) {
     level: newLevel,
     streak_current: streak.current,
     streak_best: Math.max(player.streak_best, streak.current),
-    grace_used_this_week: streak.graceUsedThisWeek,
+    shields: streak.shields,
+    shields_earned: streak.shieldsEarned,
     bracket: newBracket,
   }
   // Withdrawal detection: a lower balance than the last snapshot flips the
