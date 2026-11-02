@@ -19,6 +19,11 @@ const silkscreen = Silkscreen({
 });
 
 export const metadata: Metadata = {
+  // Absolute base for OG/Twitter image URLs. Vercel provides VERCEL_URL; the
+  // localhost fallback keeps dev quiet instead of emitting a build warning.
+  metadataBase: new URL(
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000",
+  ),
   title: "Savborne — Savings RPG for Nimiq Pay",
   description:
     "Connect a NIM savings account. Check in daily. Earn XP, items, badges. Battle other Savborne players.",

@@ -34,6 +34,8 @@ type ProfileData = {
   }
   ownedItems: ItemKey[]
   activeBadges: BadgeKey[]
+  /** Minted once, server-side, at vault creation. `null` for a player with no vault. */
+  cardToken: string | null
 }
 
 export default function ProfilePage() {
@@ -155,12 +157,63 @@ export default function ProfilePage() {
         </ul>
       </section>
 
+      <ShareCardSection cardToken={data.cardToken} />
+
       <p className="text-[10px] text-fg-faint text-center leading-relaxed pt-2 border-t border-line">
         Your address: <span className="font-mono">{short(data.player.address)}</span>
         <br />
         Items stay yours even if your balance drops.
       </p>
     </main>
+  )
+}
+
+/**
+ * The share entry. The token is minted once, server-side, at vault creation —
+ * the card page never invents one. `navigator.share()` is used where the
+ * platform offers it; copy-to-clipboard is the fallback.
+ */
+function ShareCardSection({ cardToken }: { cardToken: string | null }) {
+  const [copied, setCopied] = useState(false)
+
+  const url = cardToken && typeof window !== 'undefined'
+    ? `${window.location.origin}/card/${cardToken}`
+    : null
+
+  async function share() {
+    if (!url) return
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        await navigator.share({ title: 'My Savborne card', url })
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      // A cancelled share is not an error worth showing.
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Share</h2>
+      <button
+        onClick={share}
+        disabled={!url}
+        className="vpx bg-surface-hi py-3 px-4 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed text-left"
+      >
+        {cardToken
+          ? copied
+            ? 'Link copied to clipboard'
+            : 'Share my card'
+          : 'Create a vault to share your card'}
+      </button>
+      {url && <p className="text-[10px] font-mono text-fg-faint break-all">{url}</p>}
+      <p className="text-[11px] text-fg-faint">
+        Your card shows your name, level, streak and bracket — never your balance.
+      </p>
+    </section>
   )
 }
 
