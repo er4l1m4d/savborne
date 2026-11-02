@@ -27,6 +27,7 @@ export type MissionKey =
   | 'weekly_check_in'
   | 'steady_saver'
   | 'weekly_strategist'
+  | 'first_deposit'
 
 export type CompletedMission = {
   key: MissionKey
@@ -52,6 +53,8 @@ export type CheckInSnapshot = {
   totalCheckInsBefore: number
   /** Current bracket after this check-in (may be null if below 1 NIM). */
   currentBracket: Bracket | null
+  /** Whether this player has at least one settled (included) vault deposit. */
+  hasIncludedDeposit: boolean
 }
 
 /** Missions newly qualified by a check-in. Returns [] if nothing earned. */
@@ -83,6 +86,12 @@ export function evaluateForCheckIn(snap: CheckInSnapshot): CompletedMission[] {
     snap.currentBalanceLuna >= snap.weekOpeningBalanceLuna
   ) {
     earned.push({ key: 'steady_saver', xp: XP_VALUES.steadySaver, isOnetime: false })
+  }
+
+  // First deposit into the vault. Awarded here, at the first check-in after a
+  // settled deposit, so all XP stays in one pipeline (caps, ledger, level-up).
+  if (snap.hasIncludedDeposit) {
+    earned.push({ key: 'first_deposit', xp: XP_VALUES.firstDeposit, isOnetime: true })
   }
 
   if (snap.currentBracket === 'bronze' || snap.currentBracket === 'silver' || snap.currentBracket === 'gold') {

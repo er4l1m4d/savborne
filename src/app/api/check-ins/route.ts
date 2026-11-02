@@ -132,6 +132,9 @@ export async function POST(req: Request) {
     alreadyCheckedInThisWeek: alreadyWeek,
     totalCheckInsBefore: player.check_in_count,
     currentBracket: newBracket,
+    // Filled in by the chain-reading check-in (next task). Until then, no
+    // transfer has ever been settled, so the honest value is false.
+    hasIncludedDeposit: false,
   }
   const qualified = evaluateForCheckIn(snapshot)
 

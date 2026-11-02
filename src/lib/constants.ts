@@ -76,6 +76,7 @@ export const XP_VALUES = {
   firstBlood: 30,
   tactician: 25,
   bracketClimb: 50,
+  firstDeposit: 20,
   // Battles
   battleWin: 30,
   battleLoss: 10,
