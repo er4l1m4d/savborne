@@ -247,5 +247,6 @@ export type Database = {
 }
 
 export type PlayerRow = Database['public']['Tables']['players']['Row']
+export type CheckInRow = Database['public']['Tables']['check_ins']['Row']
 export type VaultRow = Database['public']['Tables']['vaults']['Row']
 export type TransferRow = Database['public']['Tables']['transfers']['Row']

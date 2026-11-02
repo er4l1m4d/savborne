@@ -44,6 +44,19 @@ export default function VaultPage() {
   const networkMismatch = vault !== null && vault.network !== host
   const identityAddress = readSession()?.playerAddress ?? null
 
+  // "Try again" on an expired receipt links here with the amount pre-filled.
+  // An expired hash is terminal, so the only correct action is a fresh
+  // transaction with the same intent — never a re-submit of the old hash.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const amount = params.get('amount')
+    const direction = params.get('direction')
+    if (!amount) return
+    if (direction === 'out') setWithdrawNim(amount)
+    else setDepositNim(amount)
+  }, [])
+
   async function handleDeposit() {
     if (!vault) return
     setActionError(null)
