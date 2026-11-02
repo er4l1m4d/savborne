@@ -23,6 +23,7 @@ type Row = {
   consistencyScore: number | null
   streak: number
   isMe: boolean
+  verifiedSaver: boolean
 }
 
 export default function LeaderboardPage() {
@@ -118,6 +119,15 @@ export default function LeaderboardPage() {
                         {r.displayName}
                         {r.isMe && <span className="text-fg-faint"> (you)</span>}
                       </span>
+                      {r.verifiedSaver && (
+                        <span
+                          title="Verified saver — funds held in their own vault"
+                          aria-label="Verified saver — funds held in their own vault"
+                          className="text-mint shrink-0 text-sm leading-none"
+                        >
+                          ⟡
+                        </span>
+                      )}
                       {r.bracket && (
                         <span
                           className="text-[10px] font-bold uppercase tracking-wider shrink-0"
@@ -142,6 +152,7 @@ export default function LeaderboardPage() {
           <p className="text-[10px] text-fg-faint text-center">
             {total} player{total === 1 ? '' : 's'} · balances and addresses are never shown
           </p>
+          <p className="text-[10px] text-fg-faint text-center">⟡ marks a verified saver — funds in their own vault</p>
         </>
       )}
     </main>

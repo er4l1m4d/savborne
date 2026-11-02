@@ -34,6 +34,8 @@ type StatsRow = {
   streak_current: number
   streak_best: number
   growth_luna: number | string
+  /** Derived in `leaderboard_stats()` from the vaults mapping, never a client flag. */
+  has_vault: boolean
 }
 
 export async function GET(req: Request) {
@@ -97,6 +99,8 @@ export async function GET(req: Request) {
     consistencyScore: board === 'unranked' ? r.ties : null,
     streak: r.streak_current,
     isMe: r.player_address === address,
+    // A badge, not a ranking input: `rows` is already sorted before this map.
+    verifiedSaver: r.has_vault === true,
   }))
 
   return NextResponse.json({ board, friendsOnly, rows: top, total: rows.length })
