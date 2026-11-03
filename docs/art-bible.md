@@ -238,7 +238,7 @@ Survives: `sv-fill` on HP and XP bars, all final values, plate border, plate tag
 
 Read the 20px line as **who may own display**, not as a size ban on Jakarta: reading text — paragraphs, labels, status lines — stays Jakarta at any size, and only display (titles, wordmark, big numerals) is Silkscreen's. See correction 3 below for why the distinction had to be written down.
 
-Both are self-hosted by `next/font/google` from `src/app/layout.tsx` and exposed as `--font-jakarta` and `--font-silkscreen`, aliased in `globals.css` to `--font-body` and `--font-display`.
+Both are **vendored** as woff2 under `src/app/fonts/`, loaded by `next/font/local` from `src/app/layout.tsx` (`Plus Jakarta Sans` 200–800 and `Silkscreen` 400/700, latin subset) and exposed as `--font-jakarta` and `--font-silkscreen`, aliased in `globals.css` to `--font-body` and `--font-display`. They are not fetched from Google at build time — see `ERRORS.md` (2026-11-03) for the Vercel build that failed on that fetch. Re-vendor with `npm run fonts:vendor`.
 
 **No third font.** Space Mono was proposed for numerals and rejected: it is a fourth download on a zero-budget mobile app, it competes with Silkscreen for the same retro-digital attention rather than occupying a distinct role, and tabular figures are a *feature* you can switch on, not a typeface you have to ship. That last point is verified below, not assumed.
 

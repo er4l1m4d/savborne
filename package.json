@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
-    "vault:e2e": "node scripts/vault-e2e.mjs"
+    "vault:e2e": "node scripts/vault-e2e.mjs",
+    "fonts:vendor": "node scripts/vendor-fonts.mjs"
   },
   "dependencies": {
     "@nimiq/core": "^2.22.0",

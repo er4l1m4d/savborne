@@ -1,20 +1,27 @@
 import type { Metadata, Viewport } from "next";
 import type { PropsWithChildren } from "react";
-import { Plus_Jakarta_Sans, Silkscreen } from "next/font/google";
+import localFont from "next/font/local";
 import { VersionGate } from "@/components/VersionGate";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
+// Fonts are vendored under ./fonts instead of imported from `next/font/google`.
+// See ERRORS.md (2026-11-03) — the Google import fetches stylesheets and woff2
+// files at build time, and a Vercel build failed on it with no code change.
+// Re-vendor with `npm run fonts:vendor` if a family or weight is added.
+const jakarta = localFont({
+  src: "./fonts/plus-jakarta-sans-latin-var.woff2",
   variable: "--font-jakarta",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: "200 800",
+  style: "normal",
   display: "swap",
 });
 
-const silkscreen = Silkscreen({
+const silkscreen = localFont({
+  src: [
+    { path: "./fonts/silkscreen-400-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/silkscreen-700-latin.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-silkscreen",
-  subsets: ["latin"],
-  weight: ["400", "700"],
   display: "swap",
 });
 
