@@ -205,6 +205,55 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** It now spreads the existing object first (`{ ...j.typography, ... }`) and only overwrites the keys it owns. Verified by running it and asserting `pass1`/`pass2`/`pass3`/`measured` still exist afterwards (14 keys before and after). The two rule strings it does own were also corrected to the pass-3 size rule, and it now records the balance build gap.
 **Prevention:** A script that regenerates one section of a shared document must merge into it, not replace it — and should assert that the key count did not shrink. "The file re-parsed" proves syntax, not data. This is the same failure shape as the post-checks in the pass-2 and off-grid entries above: the assertion shared the blind spot of the code that made the change.
 
+### [2026-11-02] `Transaction.fromHex` does not exist in `@nimiq/core` 2.x
+**Symptom:** Deserializing the wallet's broadcast result failed: `Transaction.fromHex` is not a function (and no `fromHex` appears in the installed type definitions), even though guides and older snippets use it.
+**Context:** `normalizeTxHash` in `src/lib/nimiq.ts`, needed because `sendBasicTransaction` is documented as returning "the serialized transaction" but has been observed returning a plain hash.
+**Root cause:** The 2.x SDK renamed its parser. The correct entry point is `Transaction.fromAny(...)`, which accepts a hex string. The similarly named `fromHex` from 1.x was removed.
+**Fix:** The 64-hex branch short-circuits without loading WASM; anything longer lazily imports `@nimiq/core/web` and calls `Transaction.fromAny(trimmed).hash()`.
+**Prevention:** Read the installed `.d.ts` (`node_modules/@nimiq/core/types/...`) before calling an SDK method you have only seen in docs. `npm run build` catches the JS case, but only if the import is static — this one is dynamic by design.
+
+### [2026-11-02] `getBalance` is not a Nimiq node RPC method; use `getAccountByAddress`
+**Symptom:** `getBalance` against `rpc.nimiqwatch.com` returned `Method not allowed`, so every server-side balance read failed.
+**Context:** `src/lib/vault/rpc.ts`, the runtime-agnostic client used by check-ins and settlement.
+**Root cause:** Two different APIs were conflated. The **wallet provider** (`window.nimiq.getBalance`) exposes `getBalance`; the **node JSON-RPC** exposes `getAccountByAddress`, whose result carries `balance` in Luna. The server never has a wallet provider.
+**Fix:** `getAccount()` calls `getAccountByAddress` with `params: [address]` and maps `data.balance`. A unit test asserts the client never calls `getBalance`.
+**Prevention:** When moving logic from the WebView to a server route, re-probe the transport. Wallet method names are not node method names.
+
+### [2026-11-02] An unfunded address is not a 404 — it is HTTP 200 with `balance: 0`
+**Symptom:** Probing a never-used testnet address returned `{"data":{"balance":0,"type":"basic"}}` at HTTP 200. Any "address not found" branch built on an error response would never fire, and any balance path that treated an empty account as an outage would 503 for a brand-new user.
+**Context:** `src/lib/vault/rpc.ts` and every caller of `getAccount` (check-ins, settlement).
+**Root cause:** Nodes materialise a basic account view for any well-formed address. Absence of funds is a valid state, not an error.
+**Fix:** An unfunded vault settles to `balanceLuna: 0` and a null bracket; only a transport/RPC failure is `RpcError('unreachable')` and a 503. Verified live: an unfunded address returns `balance: 0` at HTTP 200, and the balance path treats that as zero rather than as an outage.
+**Prevention:** Distinguish "no data" from "zero data" by probing the live service once and encoding the observed shape, not the assumed one.
+
+### [2026-11-02] Settling before reading the balance stranded money side effects
+**Symptom:** Found in review, before it shipped: if `getAccount` failed after the transfer row was flipped to `included`, every later poll short-circuited on `status !== 'pending'`, so the player's bracket, balance, withdrawal flags, badge revocations and item unlocks were **permanently** skipped for a transfer the chain had accepted.
+**Context:** `pollAndSettle` in `src/lib/vault/settle.ts`, step 5–7.
+**Root cause:** Ordering. The terminal-state write happened before the last read it depended on. The state machine correctly refuses to re-settle, which turns any post-transition failure into an unrecoverable one.
+**Fix:** Read the vault account first, then perform the conditional `status = 'pending'` update, then run the side effects. A failure before the update leaves the row pending and retryable. Three fake-DB tests lock the ordering in (`settle.test.ts`).
+**Prevention:** In a state machine with a terminal state and side effects, do every read before the transition. Ask: "if the process dies on the next line, can a retry still finish the job?" If not, the transition is in the wrong place.
+
+### [2026-11-03] `node:test` + `tsx` cannot mock modules: no top-level await, no `mock.module`, sealed exports
+**Symptom:** Four failed probes in a row: `Top-level await is currently not supported with the "cjs" output format`; `mock.module is not a function`; `Cannot set property supabaseAdmin of #<Object> which has only a getter`; `Cannot redefine property: supabaseAdmin`.
+**Context:** Writing route-level tests (`src/app/api/**/route.test.ts`) that need a fake database, with the harness command `node --import tsx --test "src/**/*.test.ts"`.
+**Root cause:** `package.json` has no `"type": "module"`, so tsx emits CJS. `node:test`'s module mocking requires ESM, and tsx compiles named exports into accessor properties that are neither writable nor configurable.
+**Fix:** Do not mock modules. Install a fake at `globalThis.fetch` — the seam supabase-js and the Nimiq RPC client both use, resolved lazily at call time (verified across multiple tests in one process). `src/test/fake-net.ts` provides `installFakeNet(handler)`, `nodeTx()`, `rows()` and call recording. Production code needed no injection seam.
+**Prevention:** Before designing test seams, spend five minutes proving which ones the harness actually supports. Prefer an existing global boundary over a new abstraction; the fake is stricter (unmatched calls throw) and works on real route handlers.
+
+### [2026-11-03] A fake PostgREST must answer `.single()` with a bare object
+**Symptom:** `POST /api/vaults` returned 201 but the serialized vault fields were `undefined`; 14 of 15 tests passed, so the failure looked like a route bug.
+**Context:** The first version of `src/test/fake-net.ts` always replied with a JSON array.
+**Root cause:** supabase-js sends `accept: application/vnd.pgrst.object+json` when the builder ends in `.single()`, and PostgREST answers with a bare object. `.maybeSingle()` sends no such header and unwraps an array itself. Serving an array to `.single()` yields `data` = the array, so `row.card_token` is `undefined`.
+**Fix:** `FakeCall.wantsSingleObject` records the header, and the fake normalizes a one-element array to a bare object on 2xx replies. Tests can then always describe results as row arrays.
+**Prevention:** When faking a wire protocol, reproduce the *request* headers that change the response shape, not just the URL and body. Two builders that look interchangeable in TypeScript are different protocols here.
+
+### [2026-11-03] PowerShell and the test runner read `[hash]` in a path as a wildcard
+**Symptom:** `node --test "src/app/api/transfers/[hash]/route.test.ts"` reported zero tests from that file and ran the others; `Copy-Item`/`Get-Content` on the same path failed with "Cannot find path".
+**Context:** Testing Next.js dynamic routes on Windows/PowerShell, and mutation-testing them by copying the file to a temp backup.
+**Root cause:** `[...]` is a character class to both PowerShell's path resolution and the Node test runner's argument globbing, so the literal filename is not found.
+**Fix:** Run via a glob that consumes the brackets (`src/app/api/transfers/**/route.test.ts`; the project's `npm test` pattern already does this) and use `-LiteralPath` for every file operation.
+**Prevention:** On Windows, never pass a bracketed path as a literal argument. After a "passing" test run, check the reported test count — a silently skipped file looks like success.
+
 ---
 
 ## Historical
