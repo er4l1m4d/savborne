@@ -61,3 +61,33 @@ npm run vault:e2e   ALL PASS — testnet, block 15713788
 - Pre-existing lint warnings (40) are unchanged in character from the 37 baseline: the
   three added are the same `setState`-in-effect data-loading pattern the repo already
   carries in `usePlayerSession` and the other tab pages.
+
+## Post-build hardening (2026-11-03)
+
+Device-free work done after the 18 tasks, each committed and pushed:
+
+| Work | Commit |
+|---|---|
+| Route-level tests: vaults, transfers, transfers/[hash], check-ins | `2252209` |
+| ERRORS.md gotchas + `supabase/README.md` migration workflow | `4bc6d1a` |
+| Settle expiry, race and withdrawal side-effect tests | `5713763` |
+
+Test evidence at this point:
+
+```
+npm test            117 pass / 0 fail
+npx tsc --noEmit    clean
+npm run lint        0 errors, 41 warnings (pre-existing character)
+npm run build       green
+```
+
+Tests for pre-existing code were mutation-tested rather than trusted: each money
+guard was removed or inverted and exactly the intended test failed, then the
+production file was restored byte-identical (`git diff` = 0). Guards verified this
+way: card-token trust, has_vault, PATCH `.is()`, backup gate, hash ownership,
+network match, hash lowercasing, player scope on `[hash]`, chain-vs-body balance,
+vault address for the balance read, 120s expiry boundary, `execution_failed`, chain
+fee, withdrawal side effects, missing-vault guard.
+
+Still outstanding: the two items above (schema paste, device pass). Nothing in this
+hardening changed production behaviour.
