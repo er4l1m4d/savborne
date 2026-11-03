@@ -268,6 +268,8 @@ Silkscreen         all 4 cuts     —        tnum NO    no OpenType features at 
 Two consequences worth stating out loud:
 
 1. **Google Fonts ships Jakarta as several unicode-range cuts and only the latin one carries `tnum`.** Digits are U+0030–0039, which is inside the latin range, so the tabulating cut is the one that serves them. If a future subset change ever drops the latin cut, numerals silently go proportional again — re-run `font-features.mjs` after any font or subset edit.
+
+*Since 2026-11-03 the app vendors the latin cut only (see §7), so `font-features.mjs` scans one Jakarta file and two Silkscreen files: Jakarta latin still reports `tnum YES / pnum YES`, Silkscreen 400 and 700 still report no OpenType features at all. The 2nd/3rd Jakarta cuts and the latin-ext Silkscreen cuts are no longer in the repo; the measurement above stands, and the shipped cut is the one that carries `tnum`.*
 2. **Silkscreen has no `tnum` and no feature table.** Its digits were assumed to be uniform because it is a pixel font. That assumption was measured on 2026-10-31 and is **false** — see "Measured corrections" below. The rule stands (numbers that change value are Jakarta, always), but its stated reason did not.
 
 ### Measured corrections — 2026-10-31
