@@ -14,12 +14,20 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getBalance, WalletError } from '@/lib/nimiq'
+import { WalletError } from '@/lib/nimiq'
 import { authHeaders } from '@/lib/session'
 import { usePlayerSession, type PlayerMe } from '@/lib/usePlayerSession'
 import { BRACKETS, LUNA_PER_NIM, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeAction } from '@/lib/game/badges'
+import { SHIELD_CAP } from '@/lib/game/streaks'
+
+type MissionStatus = {
+  key: string
+  name: string
+  completed: boolean
+  xpReward: number
+}
 
 type AwardSummary = {
   awarded: { key: string; xpApplied: number; xpCapped: number; onetime: boolean }[]
@@ -38,6 +46,7 @@ export default function HomePage() {
   const [checking, setChecking] = useState(false)
   const [awards, setAwards] = useState<AwardSummary | null>(null)
   const [checkError, setCheckError] = useState<string | null>(null)
+  const [dailyMissions, setDailyMissions] = useState<MissionStatus[] | null>(null)
 
   // Redirect rules — kept here (not in middleware) because the session lives
   // in localStorage and cannot be read server-side.
@@ -52,11 +61,9 @@ export default function HomePage() {
     setCheckError(null)
     setAwards(null)
     try {
-      const luna = await getBalance(session.savingsAddress)
       const res = await fetch('/api/check-ins', {
         method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ balanceLuna: luna }),
+        headers: authHeaders(),
       })
       if (!res.ok) {
         const text = await res.text().catch(() => '')
@@ -65,12 +72,34 @@ export default function HomePage() {
       const json = (await res.json()) as AwardSummary & { ok: true }
       setAwards(json)
       await refresh()
+      void fetchDailyMissions()
     } catch (err) {
       setCheckError(describeError(err))
     } finally {
       setChecking(false)
     }
   }
+
+  async function fetchDailyMissions() {
+    try {
+      const res = await fetch('/api/missions', { headers: authHeaders() })
+      if (!res.ok) return
+      const json = (await res.json()) as {
+        missions: { key: string; name: string; completed: boolean; xp_reward: number }[]
+        counters: { dailyXpEarned: number }
+      }
+      const filtered = (json.missions ?? [])
+        .filter((m) => m.key === 'daily_check_in' || m.key === 'quick_duel')
+        .map((m) => ({ key: m.key, name: m.name, completed: m.completed, xpReward: m.xp_reward }))
+      setDailyMissions(filtered)
+    } catch {
+      /* non-fatal — daily missions are supplementary */
+    }
+  }
+
+  useEffect(() => {
+    void fetchDailyMissions()
+  }, [])
 
   if (loading || !player) {
     return (
@@ -94,6 +123,7 @@ export default function HomePage() {
       <Chips player={player} />
       <XpBar player={player} />
       <BalanceCard player={player} />
+      {dailyMissions && <DailyMissions missions={dailyMissions} />}
 
       {awards && <AwardsPanel awards={awards} />}
       {checkError && (
@@ -150,6 +180,23 @@ function Chips({ player }: { player: PlayerMe }) {
       <span className="vpx-soft inline-flex items-center gap-1 h-8 px-3 text-xs font-bold bg-surface text-butter-text">
         🔥 {player.streakCurrent} day{player.streakCurrent === 1 ? '' : 's'}
       </span>
+      <span
+        className="vpx-soft inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold bg-surface"
+        aria-label={`${player.shields} of ${SHIELD_CAP} streak shields`}
+        title="Each shield absorbs one missed day"
+      >
+        <span aria-hidden className="flex items-center gap-0.5">
+          {Array.from({ length: SHIELD_CAP }, (_, i) => (
+            <span
+              key={i}
+              className={i < player.shields ? 'text-mint' : 'text-fg-faint opacity-40'}
+            >
+              ◈
+            </span>
+          ))}
+        </span>
+        <span className="uppercase tracking-wider text-[10px] text-fg-faint">Shields</span>
+      </span>
       <span className="vpx-soft inline-flex items-center gap-1 h-8 px-3 text-xs font-bold bg-surface text-fg-muted">
         {player.checkInCount} check-in{player.checkInCount === 1 ? '' : 's'}
       </span>
@@ -197,6 +244,43 @@ function BalanceCard({ player }: { player: PlayerMe }) {
         {nim.toFixed(5)} <span className="text-base text-fg-muted">NIM</span>
       </p>
       <p className="text-[11px] text-fg-faint">Last check-in: {last} UTC</p>
+    </section>
+  )
+}
+
+function DailyMissions({ missions }: { missions: MissionStatus[] }) {
+  const completed = missions.filter((m) => m.completed).length
+  const total = missions.reduce((s, m) => s + m.xpReward, 0)
+  const earned = missions.filter((m) => m.completed).reduce((s, m) => s + m.xpReward, 0)
+  const pct = Math.min(100, Math.round((earned / total) * 100))
+  return (
+    <section className="vpx bg-surface p-4 flex flex-col gap-3">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-[11px] uppercase tracking-widest text-fg-faint font-bold">
+          Daily missions
+        </h2>
+        <span className="num text-xs text-fg-muted">
+          {completed}/{missions.length} · {earned} / {total} XP
+        </span>
+      </div>
+      <div className="flex flex-col gap-2">
+        {missions.map((m) => (
+          <div key={m.key} className="flex items-center justify-between gap-3">
+            <span className={`text-sm ${m.completed ? 'text-mint font-bold' : 'text-fg-muted'}`}>
+              {m.completed ? '✓' : '·'} {m.name}
+            </span>
+            <span className={`num text-xs font-bold ${m.completed ? 'text-mint' : 'text-butter-text'}`}>
+              +{m.xpReward}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="h-1.5 bg-surface-low overflow-hidden">
+        <div
+          className="h-full bg-mint transition-[width] duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </section>
   )
 }

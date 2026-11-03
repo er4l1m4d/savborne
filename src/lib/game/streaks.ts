@@ -14,7 +14,7 @@
 
 import { isSameUtcDay, isSameUtcWeek, utcDayOf, utcDaysBetween, utcWeekStart } from './time'
 
-const SHIELD_CAP = 3
+export const SHIELD_CAP = 3
 
 export type StreakInput = {
   /** UTC timestamps of all check-ins for the player, ascending. */
