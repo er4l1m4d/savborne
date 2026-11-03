@@ -95,12 +95,26 @@ variables so screens reference them rather than re-typing curves:
 `--ease: cubic-bezier(0.2,0.8,0.2,1)`, `--t-press: 80ms`, `--t-enter: 180ms`,
 `--t-fill: 700ms`, `--t-pop: 900ms`.
 
-**One new utility: `.chip`.** The artefact draws a line the app does not: 88 bordered
-elements are square and carry `box-shadow: 0 3px 0 #2E4642` (panels, i.e. `.vpx`), while 11
-carry `border-radius: 6px` and are 44px icon buttons or 24px chips (controls). So corner
-radius is **not** added to `.vpx` — `.vpx` is shared by panels and buttons, and rounding it
-would drag Home's mission panels with it. A small `.chip` utility (2px border, 6px radius)
-carries the rounded controls, and `.vpx`/`.vpx-soft` keep square corners.
+These ship **with a `prefers-reduced-motion` guard**, which `src/` does not have today
+(checked — no occurrence anywhere). Tokens that exist but have no reduced-motion path are
+how "we added tokens" becomes "we added the animation bug": later batches will reach for
+`--t-fill: 700ms` on progress bars and `--t-pop: 900ms` on celebrations, and those are
+exactly the durations that need to collapse to near-zero for vestibular safety. The guard
+is a small global rule (`@media (prefers-reduced-motion: reduce)` zeroing the four
+durations), added now so no later screen has to remember it.
+
+**One new utility: `.chip` — deferred to the Economy batch.** The artefact draws a line the
+app does not: 88 bordered elements are square and carry `box-shadow: 0 3px 0 #2E4642`
+(panels, i.e. `.vpx`), while 11 carry `border-radius: 6px` and are 44px icon buttons or
+24px chips (controls). So corner radius is **not** added to `.vpx` — `.vpx` is shared by
+panels and buttons, and rounding it would drag Home's mission panels with it. A small
+`.chip` utility (2px border, 6px radius) carries the rounded controls, and `.vpx`/`.vpx-soft`
+keep square corners.
+
+`.chip` is specified here but **ships in the Economy batch**, because nothing in this batch
+renders a chip — the nav has none, and Home's existing chips are `vpx-soft` panels. Adding
+an unused utility to `globals.css` in this batch would be vocabulary with no consumer,
+which is the same trap the shared primitives are deferred to avoid.
 
 **Contrast, measured across the whole swap.** Every text token passes WCAG AA (≥4.5:1) on
 all three surfaces under the new values — worst case `--fg-faint` at 5.00:1 on `--surface`:
@@ -132,8 +146,8 @@ all three surfaces under the new values — worst case `--fg-faint` at 5.00:1 on
   stay. Revisit only if the artefact is found to carry a bracket legend.
 - **D-4 — no corner radius on panels.** The artefact rounds only its controls (6px, 11
   uses) and draws all 88 bordered panels square with a 3px bevel shadow. `.vpx`/`.vpx-soft`
-  therefore stay square and a new `.chip` carries the rounded controls, rather than
-  diverging on panels or rounding everything.
+  therefore stay square and a `.chip` carries the rounded controls, rather than diverging
+  on panels or rounding everything. `.chip` ships with its first consumer (Economy batch).
 - **D-5 — nav labels are Title Case.** The artefact's nav labels are 12px Title Case at
   700/600 weight, and its Home figcaption records that "10px was below the product
   minimum" — so the app's current `text-[9px] uppercase` sits below the artefact's own
@@ -153,13 +167,38 @@ live deployment, card links and OG images for no user-visible gain).
 added to `assets/glyphs.json`:
 
 - `assets/manifest.json` records `nav.*` as **16×16 Tiny Dungeon tiles** (Kenney, CC0),
-  wall-chroma-keyed, content-centred, snapped to product hues by a declared map, with the
-  active tab tinting warm reds → `#6FD0AE`. Built by `scripts/nav-swap.mjs`.
+  wall-chroma-keyed, content-centred, snapped to product hues by a declared map. Built by
+  `scripts/nav-swap.mjs`.
 - The artefact renders them `width=24 height=24 viewBox="0 0 16 16"` with
   `image-rendering: pixelated`; the shipped comment says the 16→24 render lands on exact
   device pixels at DPR 2/3, which is the phone target.
 - `Glyphs.tsx`'s "chrome glyphs are 24×24" rule governs **action glyphs**, not nav icons.
   This was misread during brainstorming and is corrected here.
+
+**The icons are multi-colour and stateful — measured across all 10 in-screen nav bars.**
+An earlier spec draft said "the active tab tints warm reds → mint". That is only true of
+Home:
+
+| Tab | Inactive fills | Active fills | Differs? |
+|---|---|---|---|
+| Home | `#2E4642 #F2735A #FF6A4D #FF9C86` | `#2E4642 #6FD0AE #F2735A #FF9C86` | **yes** — one path, `#FF6A4D`→`#6FD0AE` |
+| Battle | `#2E4642 #A8452F #A9B8B2` | same | no |
+| Missions | `#2E4642 #4B5A56 #A8452F #A9B8B2 #FF9C86` | same | no |
+| Ranks | `#2E4642 #4B5A56 #A9B8B2` | same | no |
+| Profile | `#2E4642 #A8452F #A9B8B2 #F2735A #FF9C86` | same | no |
+
+Two consequences the extraction must respect:
+
+1. These are **not single-hue glyphs**. A Home tile is four colours. They cannot be
+   tinted with `currentColor` or a CSS filter — Home's active change is a per-path hue
+   remap, not a uniform tint.
+2. **Only Home's icon changes on active**; the other four keep identical fills. Active
+   state is otherwise carried by the label colour alone. That is what the artefact does,
+   so `PixelNav` reproduces it rather than inventing tint-all behaviour.
+
+The asset therefore stores **both states verbatim** — `active` and `inactive` per tab —
+rather than one icon plus a tint rule. Extraction pulls each state from the artefact's own
+markup, so no hue is chosen by hand.
 
 Measured from the in-screen tab bar (the styles are inline on each anchor, which is why an
 earlier extraction missed them):
@@ -179,10 +218,15 @@ bright rule between content and nav where the app draws a faint one. Verified on
 nav bars in the artefact, not one.
 
 The tile pack lives in `assets-raw/`, which is **gitignored**, so today the only copy of
-the five nav icons is inside the artefact. The foundation therefore **extracts the five
-SVGs verbatim from `Savborne-handoff.html` into a tracked `assets/nav-icons.json`** (same
-pattern as `pixelarticons-vendor.mjs`), with a small verifier that re-extracts and fails
-on drift, so path data is never hand-transcribed.
+the nav icons is inside the artefact. The foundation therefore **extracts the nav SVGs
+verbatim from `Savborne-handoff.html` into a tracked `assets/nav-icons.json`** (same pattern
+as `pixelarticons-vendor.mjs`), with a small verifier that re-extracts and fails on drift,
+so path data is never hand-transcribed.
+
+Extraction was proven feasible before it was specified: across the 10 nav bars, each tab
+yields a byte-stable SVG in each state with **zero conflicts** — so the asset is
+`{ tab: { active, inactive } }` and no state is guessed. Home's two states differ; the
+other four are identical and are stored once each with the pair pointing at the same markup.
 
 **Vault access** (the artefact predates the vault): the `/vault` route stays. Removing the
 tab does **not** orphan it, which was checked rather than assumed — `VaultGuard` already
@@ -220,9 +264,9 @@ Each batch is its own spec → plan → implementation, and each ships independe
 
 | Batch | Screens |
 |---|---|
-| **Foundation (this)** | tokens, motion tokens, `.chip`, nav (5 tabs), `PixelNav`, tracked nav icons, Home savings card → `/vault` |
+| **Foundation (this)** | tokens, motion tokens + reduced-motion guard, nav (5 tabs), `PixelNav`, tracked nav icons (both states), Home savings card → `/vault` |
 | Onboarding | Welcome, Connect, Privacy, Name, First Check-in, Gate, Preparing, Update Pay |
-| Economy | Profile, Items, Item Sheet, Missions, Bracket Climb, Withdrawal, Settings |
+| Economy | Profile, Items, Item Sheet, Missions, Bracket Climb, Withdrawal, Settings; `.chip` |
 | Battle | Battle Menu, Ranked-Locked, Daily Limit, Queue, Queue Timeout, Friend Wait, Battle, In-Battle Wait, Win/Loss/Tie, Conn Lost |
 | Home | Home, HomeDone |
 
@@ -235,11 +279,13 @@ For the foundation batch:
 1. `npx tsc --noEmit`, `npm run lint`, `npx next build`, `npm test` — all green.
 2. Art gates that actually cover this change: `structure-check.mjs` (tag balance after
    the nav markup change), `type-audit.mjs` (the type rule still holds), and the new
-   nav-icon drift verifier. `art-gates.mjs` audits the artefact's own pixels and does not
+   nav-icon drift verifier, which must confirm **both** states of all five tabs against
+   the artefact. `art-gates.mjs` audits the artefact's own pixels and does not
    cover `src/`, so it is **not** a gate here — that assumption was corrected during
    self-review.
 3. **Render and show before/after.** Foundation: a 390×844 screenshot of Home with the new
-   palette and nav, shown for sign-off before the batch is called done. Also render at
+   palette and nav, shown for sign-off before the batch is called done. Home must be
+   captured **on the Home tab** so the active icon state is visible. Also render at
    360px width to confirm the 12px Title Case labels do not wrap.
 4. The phone remains the final measure.
 
@@ -267,5 +313,6 @@ Per screen (each later batch): the same gates, plus a before/after render of tha
 
 **Resolved during spec review (no longer open):** `--fg-faint` does *not* take `#4B5A56`
 (that value is a disabled outline at 2.32:1, not a text colour); the Vault tab's removal
-does not orphan the vault (`VaultGuard` and Profile still route to it); and the app has no
-motion-token names to collide with.
+does not orphan the vault (`VaultGuard` and Profile still route to it); the app has no
+motion-token names to collide with; and nav icons are **multi-colour and only Home's
+changes on active** — so both states are extracted verbatim and no runtime tint is used.
