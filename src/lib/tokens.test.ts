@@ -89,3 +89,35 @@ test('every text token clears 4.5:1 on every surface', () => {
     }
   }
 })
+
+/** Extract the body of a CSS at-rule block by balancing braces. */
+function block(css: string, header: string): string {
+  const start = css.indexOf(header)
+  if (start < 0) return ''
+  const open = css.indexOf('{', start)
+  let depth = 0
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === '{') depth++
+    else if (css[i] === '}') {
+      depth--
+      if (depth === 0) return css.slice(open + 1, i)
+    }
+  }
+  return ''
+}
+
+test('motion tokens are the art bible values', () => {
+  assert.match(CSS, /--ease:\s*cubic-bezier\(0\.2,\s*0\.8,\s*0\.2,\s*1\)/)
+  assert.match(CSS, /--t-press:\s*80ms/)
+  assert.match(CSS, /--t-enter:\s*180ms/)
+  assert.match(CSS, /--t-fill:\s*700ms/)
+  assert.match(CSS, /--t-pop:\s*900ms/)
+})
+
+test('every motion duration is neutralised under prefers-reduced-motion', () => {
+  const reduce = block(CSS, '@media (prefers-reduced-motion: reduce)')
+  assert.notEqual(reduce, '', 'no prefers-reduced-motion block found')
+  for (const token of ['--t-press', '--t-enter', '--t-fill', '--t-pop']) {
+    assert.match(reduce, new RegExp(`${token}:\\s*0\\.01ms`), `${token} not neutralised`)
+  }
+})

@@ -53,6 +53,25 @@
   /* LAYOUT */
   --nav-h: 84px;
   --gut: 22px;
+
+  /* MOTION — shared curves so screens do not re-type them */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-press: 80ms;
+  --t-enter: 180ms;
+  --t-fill: 700ms;
+  --t-pop: 900ms;
+}
+
+/* Vestibular safety. 0.01ms rather than 0s on purpose: a zero-duration
+   transition does not fire transitionend in every engine, and later screens key
+   state off that event. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-press: 0.01ms;
+    --t-enter: 0.01ms;
+    --t-fill: 0.01ms;
+    --t-pop: 0.01ms;
+  }
 }
 
 /* Tailwind v4 theme mapping */
