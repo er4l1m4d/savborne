@@ -17,6 +17,7 @@ import { BADGES, type BadgeKey } from '@/lib/game/badges'
 import { BadgeArt } from '@/components/Glyphs'
 import { TOUR_FLAG_KEY } from '@/components/VaultTour'
 import { BackupSettings } from '@/components/vault/BackupSettings'
+import { DeleteAccount } from '@/components/DeleteAccount'
 
 /** Single definition; the footer and the mailto both read it. */
 const CONTACT_EMAIL = 'damilareogooluwade@outlook.com'
@@ -182,6 +183,8 @@ export default function ProfilePage() {
           Show tour again
         </button>
       </section>
+
+      <DeleteAccount playerAddress={data.player.address} />
 
       <footer className="flex flex-col items-center gap-1 pt-4 border-t border-line text-[11px] text-fg-faint">
         <a href={`mailto:${CONTACT_EMAIL}`} className="text-mint underline underline-offset-4">

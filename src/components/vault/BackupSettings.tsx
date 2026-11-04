@@ -6,7 +6,9 @@
  * Three actions, all of which touch the vault key and nothing else:
  *
  *   • Show recovery phrase — requires the passphrase, then reveals the 24 words
- *     in a grid. No copy button, for the same reason onboarding has none.
+ *     in a grid with an explicit copy button. The copy exists so a player can
+ *     check and back up at any time; it is a deliberate exception to onboarding's
+ *     no-clipboard rule, and the grid stays selectable without it.
  *   • Change passphrase — requires the current one, decrypts, re-encrypts with
  *     the new one. The phrase itself never changes, so the vault address does
  *     not either.
@@ -24,6 +26,7 @@ import { decryptPhrase, encryptPhrase } from '@/lib/vault/crypto'
 import { addressFromPhrase } from '@/lib/vault/phrase'
 import { readVault, writeVault } from '@/lib/vault/storage'
 import { VaultLockedError } from '@/lib/vault/errors'
+import { CopyButton } from './CopyButton'
 
 type Phase = 'closed' | 'show' | 'change' | 'restore'
 
@@ -165,6 +168,7 @@ export function BackupSettings() {
               <p className="text-xs text-fg-muted">
                 Anyone with these words controls your vault. Write them down somewhere offline.
               </p>
+              <CopyButton text={revealed.join(' ')} />
             </>
           ) : (
             <>

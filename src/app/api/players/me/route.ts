@@ -79,3 +79,30 @@ export async function GET(req: Request) {
     },
   })
 }
+
+/**
+ * DELETE /api/players/me
+ *
+ * Permanently removes the caller's account and every row that belongs to it.
+ * The on-chain vault is untouched — the 24-word phrase still controls any NIM
+ * there. The client only calls this after the player has proved they hold that
+ * phrase (see `src/lib/account-deletion.ts`).
+ *
+ * Idempotent: deleting an already-deleted account returns `{ deleted: false }`
+ * rather than a 404, so a retry after a dropped response is safe.
+ */
+export async function DELETE(req: Request) {
+  const address = req.headers.get(PLAYER_HEADER)
+  if (!address) {
+    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
+  }
+
+  const db = supabaseAdmin()
+  const { data, error } = await db.rpc('delete_player', { p_address: address })
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json(data)
+}

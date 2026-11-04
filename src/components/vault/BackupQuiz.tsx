@@ -29,10 +29,13 @@ export function BackupQuiz({
   phrase,
   onPass,
   onBack,
+  inline = false,
 }: {
   phrase: string[]
   onPass: () => void
   onBack: () => void
+  /** Inside an existing card: drop the top margin the onboarding step needs. */
+  inline?: boolean
 }) {
   const [positions] = useState(() => pickPositions(phrase.length))
   const [answers, setAnswers] = useState<Record<number, string>>({})
@@ -53,10 +56,11 @@ export function BackupQuiz({
   }
 
   return (
-    <section className="flex flex-col gap-4 mt-4">
-      <h1 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
+    <section className={`flex flex-col gap-4 ${inline ? 'mt-0' : 'mt-4'}`}>
+      {/* h2, not h1: this is always nested under the step's or the Account section's heading. */}
+      <h2 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
         Confirm your backup
-      </h1>
+      </h2>
       <p className="text-sm text-fg-muted">
         Type these four words from your written copy, in order.
       </p>
