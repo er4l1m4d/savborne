@@ -13,6 +13,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { WalletError } from '@/lib/nimiq'
 import { authHeaders } from '@/lib/session'
@@ -244,6 +245,12 @@ function BalanceCard({ player }: { player: PlayerMe }) {
         {nim.toFixed(5)} <span className="text-base text-fg-muted">NIM</span>
       </p>
       <p className="text-[11px] text-fg-faint">Last check-in: {last} UTC</p>
+      <Link
+        href="/vault"
+        className="text-mint underline underline-offset-4 text-xs font-bold self-start mt-1"
+      >
+        Open vault
+      </Link>
     </section>
   )
 }
