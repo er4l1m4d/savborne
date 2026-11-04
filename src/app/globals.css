@@ -2,37 +2,47 @@
 
 /* ═══════════════════════════════════════════════════════════════════════
    SAVBORNE DESIGN TOKENS
-   Source: "Savborne Type & Colour Specimen.html" — Direction A v2
+   Source: "Savborne-handoff.html" — the design of record for the UI port.
+   Values below are the handoff's --sv-* palette; the variable NAMES are this
+   app's, deliberately unchanged so no component repaints itself for colour.
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
   /* SURFACE — panels separate by hue + saturation, ~7 L* apart */
-  --shell:        #152420;
-  --surface:      #1C2E29;
+  --shell:        #0C1211;
+  --surface:      #151F1D;
   --surface-hi:   #274438;
-  --surface-low:  #101C1A;
-  --sprite-well:  #0E1D19;
+  --surface-low:  #101A18;
+  --sprite-well:  #101A18;
 
   /* TEXT */
-  --fg:           #F5F0DF;
-  --fg-soft:      #D9DFC6;
-  --fg-muted:     #A6C0B2;
+  --fg:           #F3EEDD;
+  --fg-soft:      #C9C1A8;
+  --fg-muted:     #A9B8B2;
   --fg-faint:     #7A9187;
 
   /* STRUCTURE */
-  --line:         #2C463E;
-  --bevel:        #CFC49B;
-  --bevel-shadow: #35544A;
+  --line:         #2E4642;
+  --bevel:        #C9C1A8;
+  --bevel-shadow: #2E4642;
   --bevel-soft:   #4B5A56;
 
   /* ACCENTS */
-  --mint:         #5FD3AC;
-  --mint-tint:    #14302A;
+  --mint:         #6FD0AE;
+  --mint-tint:    #0C3B35;
   --coral:        #F2735A;
-  --coral-text:   #FF9E86;
+  --coral-text:   #FF9C86;
   --coral-tint:   #2A1B18;
   --butter:       #F2B544;
   --butter-text:  #FFD37A;
   --butter-tint:  #35280F;
+
+  /* ADOPTED FROM THE HANDOFF — values only. No @theme mapping until a screen
+     needs the class; an unused Tailwind colour is vocabulary without a user. */
+  --track:        #243532; /* progress-bar trough */
+  --cream:        #F6EFD9; /* lightest text on a dark surface */
+  --ember:        #FF6A4D; /* warmest accent (nav Home icon, inactive) */
+  --coral-edge:   #A8452F; /* coral button bevel */
+  --off:          #4B5A56; /* disabled outlines, locked silhouettes — NOT text */
 
   /* BRACKET METALS */
   --entry:        #D9C98A;
