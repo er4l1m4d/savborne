@@ -182,6 +182,34 @@ async function normalizeTxHash(raw: string): Promise<string> {
 }
 
 /**
+ * Ask the wallet to sign a message and return the raw proof.
+ *
+ * The wallet applies Nimiq's signed-message envelope; this function must NOT
+ * hash or prefix anything itself, or the server's verification will not match.
+ * The caller is responsible for what the message says (see `delete-request.ts`).
+ */
+export async function signMessage(
+  message: string,
+): Promise<{ publicKey: string; signature: string }> {
+  const provider = await initProvider()
+  if (typeof provider.sign !== 'function') {
+    throw new WalletError(
+      'UNKNOWN_REQUEST',
+      'Signing is not available in this Nimiq Pay version',
+    )
+  }
+  try {
+    const result = await provider.sign(message)
+    if (!result || typeof result !== 'object' || 'error' in result) {
+      throw new WalletError('UNKNOWN', 'The wallet did not sign the message')
+    }
+    return { publicKey: result.publicKey, signature: result.signature }
+  } catch (err) {
+    throw normaliseError(err)
+  }
+}
+
+/**
  * Disconnect the mini app from the wallet. Clears cached accounts so the
  * user is prompted again if they reconnect.
  */

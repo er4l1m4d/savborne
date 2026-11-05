@@ -15,7 +15,7 @@
  * fail the button says so instead of displaying a false "Copied".
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type State = 'idle' | 'copied' | 'failed'
 
@@ -25,13 +25,32 @@ const LABELS: Record<State, string> = {
   failed: 'Copy failed — select the words',
 }
 
-export function CopyButton({ text, label }: { text: string; label?: string }) {
+export function CopyButton({
+  text,
+  label,
+  onResult,
+}: {
+  text: string
+  label?: string
+  /** Called with the real outcome, so a gate can require a successful copy. */
+  onResult?: (ok: boolean) => void
+}) {
   const [state, setState] = useState<State>('idle')
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearTimeout(timer.current)
+    }
+  }, [])
 
   async function copy() {
     const ok = await writeClipboard(text)
     setState(ok ? 'copied' : 'failed')
-    setTimeout(() => setState('idle'), 2500)
+    onResult?.(ok)
+
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(() => setState('idle'), 2500)
   }
 
   return (

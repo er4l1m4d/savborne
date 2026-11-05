@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
+  // `@nimiq/core` is a WASM/worker package that Turbopack cannot bundle for a
+  // server route (its node build imports `comlink` workers and `.mjs` wasm
+  // loaders). Keep it external and let Node require it at runtime. This is a
+  // server-only dependency: the browser build is loaded from
+  // `@nimiq/core/web` inside `src/lib/vault/phrase.ts`.
+  serverExternalPackages: ["@nimiq/core"],
   // NOTE: `cacheComponents` and `partialPrefetching` are Next.js 16
   // experimental features. `cacheComponents` rejects `runtime = 'nodejs'`
   // on route handlers, and `partialPrefetching` requires `cacheComponents`.

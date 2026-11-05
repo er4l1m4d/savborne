@@ -13,6 +13,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
 import { xpToNextLevel } from '@/lib/constants'
 import { utcDayOf, utcWeekStart } from '@/lib/game/time'
+import { readDeleteProof } from '@/lib/delete-request'
+import { verifyDeleteSignature } from '@/lib/delete-verify'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -57,6 +59,9 @@ export async function GET(req: Request) {
       address: player.address,
       displayName: player.display_name,
       savingsAddress: player.savings_account_address,
+      // Canonical ISO-8601. The delete proof signs this exact string, so the
+      // client must not reformat it.
+      createdAt: new Date(player.created_at).toISOString(),
       level: player.level,
       xp: player.xp,
       xpToNext: xpToNextLevel(player.level),
@@ -88,6 +93,11 @@ export async function GET(req: Request) {
  * there. The client only calls this after the player has proved they hold that
  * phrase (see `src/lib/account-deletion.ts`).
  *
+ * Because the previous API assumption was "the header is the identity", a
+ * bare address header is not enough for an irreversible delete. The caller
+ * must also sign a message naming this address and this account's creation
+ * time with the key that controls the address. See `delete-verify.ts`.
+ *
  * Idempotent: deleting an already-deleted account returns `{ deleted: false }`
  * rather than a 404, so a retry after a dropped response is safe.
  */
@@ -97,7 +107,47 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
   }
 
+  const proof = readDeleteProof(req.headers, Date.now())
+  if (!proof.ok) {
+    return NextResponse.json(
+      { error: proof.reason },
+      { status: proof.reason === 'malformed' ? 400 : 401 },
+    )
+  }
+
   const db = supabaseAdmin()
+
+  // The message binds the account's creation time, so the server must read the
+  // stored value rather than trust anything the client sends.
+  const { data: player, error: playerErr } = await db
+    .from('players')
+    .select('created_at')
+    .eq('address', address)
+    .maybeSingle()
+
+  if (playerErr) {
+    return NextResponse.json({ error: playerErr.message }, { status: 500 })
+  }
+  // Nothing to delete. Stay idempotent and skip the destructive call.
+  if (!player) {
+    return NextResponse.json({ deleted: false, battles: 0 })
+  }
+
+  const createdAt = new Date(player.created_at).toISOString()
+
+  let verified
+  try {
+    verified = await verifyDeleteSignature({ address, createdAt, proof: proof.proof })
+  } catch {
+    return NextResponse.json({ error: 'Could not verify the signature.' }, { status: 500 })
+  }
+  if (!verified.ok) {
+    return NextResponse.json(
+      { error: verified.reason },
+      { status: verified.reason === 'malformed' ? 400 : 401 },
+    )
+  }
+
   const { data, error } = await db.rpc('delete_player', { p_address: address })
 
   if (error) {

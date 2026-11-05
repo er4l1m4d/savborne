@@ -14,16 +14,21 @@
  * If the words cannot be produced, deletion is blocked. That is the point: a
  * player who has lost their backup should not lose their funds in the same tap.
  *
- * The server call is idempotent (`{ deleted: false }` for an already-gone row),
- * so a retry after a dropped response is safe.
+ * The server call is destructive and the API's only other identity signal is an
+ * address header, so the final step also asks the wallet to sign a message
+ * naming this address and this account's creation time. A stolen header alone
+ * cannot delete an account. The call remains idempotent (`{ deleted: false }`
+ * for an already-gone row), so a retry after a dropped response is safe.
  */
 
 import { useState } from 'react'
-import { authHeaders, writeSession } from '@/lib/session'
+import { authHeaders, readSession, writeSession } from '@/lib/session'
 import { clearVault, readVault } from '@/lib/vault/storage'
 import { decryptPhrase } from '@/lib/vault/crypto'
-import { addressFromPhrase } from '@/lib/vault/phrase'
+import { phraseMatchesVault } from '@/lib/vault/phrase'
 import { VaultLockedError } from '@/lib/vault/errors'
+import { deleteAuthHeaders, deleteMessage } from '@/lib/delete-request'
+import { signMessage } from '@/lib/nimiq'
 import { TOUR_FLAG_KEY } from '@/components/VaultTour'
 import { deletionGate, type DeletionGate } from '@/lib/account-deletion'
 import { BackupQuiz } from './vault/BackupQuiz'
@@ -31,14 +36,13 @@ import { CopyButton } from './vault/CopyButton'
 
 type Phase = 'closed' | 'checking' | DeletionGate | 'reveal' | 'quiz'
 
-const normalise = (address: string) => address.replace(/\s/g, '')
-
 export function DeleteAccount({ playerAddress }: { playerAddress: string }) {
   const [phase, setPhase] = useState<Phase>('closed')
   const [passphrase, setPassphrase] = useState('')
   const [revealed, setRevealed] = useState<string[] | null>(null)
   const [typedWords, setTypedWords] = useState('')
   const [acknowledged, setAcknowledged] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [vaultAddress, setVaultAddress] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,6 +53,7 @@ export function DeleteAccount({ playerAddress }: { playerAddress: string }) {
     setRevealed(null)
     setTypedWords('')
     setAcknowledged(false)
+    setCopied(false)
     setVaultAddress(null)
     setError(null)
   }
@@ -79,6 +84,8 @@ export function DeleteAccount({ playerAddress }: { playerAddress: string }) {
       const phrase = await decryptPhrase(local.blob, passphrase)
       setRevealed(phrase)
       setPassphrase('')
+      setAcknowledged(false)
+      setCopied(false)
       setPhase('reveal')
     } catch (err) {
       setError(describe(err))
@@ -95,8 +102,7 @@ export function DeleteAccount({ playerAddress }: { playerAddress: string }) {
       if (words.length !== 24) throw new Error('Enter all 24 words, separated by spaces.')
       if (!vaultAddress) throw new Error('This account has no registered vault to match.')
 
-      const derived = await addressFromPhrase(words)
-      if (normalise(derived) !== normalise(vaultAddress)) {
+      if (!(await phraseMatchesVault(words, vaultAddress))) {
         throw new Error(
           'Those words do not control this vault. Check the order and try again.',
         )
@@ -116,13 +122,28 @@ export function DeleteAccount({ playerAddress }: { playerAddress: string }) {
     setBusy(true)
     setError(null)
     try {
+      // The proof signs the account's creation time; the server checks it
+      // against the stored row, so fetch the canonical value first.
+      const meRes = await fetch('/api/players/me', { headers: authHeaders() })
+      if (!meRes.ok) throw new Error(`Could not confirm your account (${meRes.status}).`)
+      const me = (await meRes.json()) as { player?: { createdAt?: string } }
+      const createdAt = me.player?.createdAt
+      if (!createdAt) throw new Error('Could not confirm your account.')
+
+      // Sign the same address the request will carry.
+      const address = readSession()?.playerAddress ?? playerAddress
+      const signedAt = Date.now()
+      const message = deleteMessage({ address, createdAt, signedAt })
+      const proof = await signMessage(message)
+
       const res = await fetch('/api/players/me', {
         method: 'DELETE',
-        headers: authHeaders(),
+        headers: authHeaders(deleteAuthHeaders({ ...proof, signedAt })),
       })
+
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null
-        throw new Error(body?.error ?? `Delete failed (${res.status}).`)
+        throw new Error(deleteErrorMessage(body?.error, res.status))
       }
 
       clearVault(playerAddress)
@@ -133,9 +154,11 @@ export function DeleteAccount({ playerAddress }: { playerAddress: string }) {
         // Non-fatal.
       }
       // A hard navigation drops every cached hook and the deleted player state.
+      // `busy` stays true on purpose: this component is about to unmount.
       window.location.replace('/setup')
     } catch (err) {
       setError(describe(err))
+      // A failed delete must leave the button usable for a retry.
       setBusy(false)
     }
   }
@@ -202,10 +225,10 @@ export function DeleteAccount({ playerAddress }: { playerAddress: string }) {
             ))}
           </ol>
           <p className="text-xs text-fg-muted">
-            These words control your vault outside Savborne. The clipboard is shared with other
-            apps — clear it after you have stored them somewhere offline.
+            These words control your vault outside Savborne. Copy them and store them somewhere
+            offline. The clipboard is shared with other apps — clear it afterwards.
           </p>
-          <CopyButton text={revealed.join(' ')} />
+          <CopyButton text={revealed.join(' ')} onResult={setCopied} />
           <label className="flex items-start gap-2 text-xs text-fg-muted leading-relaxed">
             <input
               type="checkbox"
@@ -218,11 +241,16 @@ export function DeleteAccount({ playerAddress }: { playerAddress: string }) {
           <button
             type="button"
             onClick={() => setPhase('quiz')}
-            disabled={!acknowledged}
+            disabled={!acknowledged || !copied}
             className="vpx bg-mint text-background py-3 px-4 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Continue
           </button>
+          {!copied && (
+            <p className="text-[11px] text-fg-faint">
+              Copy your words first — that is the only proof this device still has them.
+            </p>
+          )}
           <BackLink onClick={() => setPhase('unlock')} label="Back" />
         </div>
       )}
@@ -320,4 +348,21 @@ function Note({ children }: { children: React.ReactNode }) {
 function describe(err: unknown): string {
   if (err instanceof VaultLockedError) return 'Wrong passphrase.'
   return err instanceof Error ? err.message : String(err)
+}
+
+/** Turn a server error code into something a player can act on. */
+function deleteErrorMessage(code: string | undefined, status: number): string {
+  switch (code) {
+    case 'missing':
+      return 'Nimiq Pay did not sign the request. Try again.'
+    case 'stale':
+      return 'Confirming took too long. Try again.'
+    case 'malformed':
+    case 'bad_signature':
+      return 'The wallet signature did not match this account. Try again.'
+    case 'wrong_signer':
+      return 'Nimiq Pay signed with a different account. Switch back to this one and try again.'
+    default:
+      return `Delete failed (${status}).`
+  }
 }

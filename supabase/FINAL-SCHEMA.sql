@@ -540,6 +540,62 @@ $$;
 revoke all on function create_player_with_vault(text,text,text,text,text,boolean) from public;
 grant execute on function create_player_with_vault(text,text,text,text,text,boolean) to service_role;
 
+-- ─── Account deletion ────────────────────────────────────────────────────────
+-- Deleting a profile does not touch the on-chain vault; the 24-word phrase
+-- still controls it. The API route verifies a wallet signature before calling
+-- this, so execute belongs to service_role only.
+--
+-- Order matters. `battles.player_a`, `battles.player_b`,
+-- `battle_moves.player_address` and `queue.battle_id` do not cascade. Queue
+-- rows are cleared first: both the player's own row and any matched row,
+-- including the opponent's, that references a battle about to be removed.
+create or replace function delete_player(p_address text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_battles integer;
+  v_players integer;
+begin
+  delete from queue q
+   where q.player_address = p_address
+      or q.battle_id in (
+           select id from battles
+            where player_a = p_address or player_b = p_address
+         );
+
+  delete from battle_moves
+   where player_address = p_address;
+
+  delete from battles
+   where player_a = p_address or player_b = p_address;
+  get diagnostics v_battles = row_count;
+
+  delete from players where address = p_address;
+  get diagnostics v_players = row_count;
+
+  return jsonb_build_object(
+    'deleted', v_players > 0,
+    'battles', v_battles
+  );
+end;
+$$;
+
+revoke all on function delete_player(text) from public;
+revoke execute on function delete_player(text) from anon, authenticated;
+grant execute on function delete_player(text) to service_role;
+
+-- One-time repair: a `matched` queue row whose battle has already finished or
+-- been abandoned can never be consumed by match_me (it only pairs `waiting`),
+-- so it would otherwise sit there forever and keep blocking account deletion.
+-- Safe to re-run: the condition is never true for a fresh row.
+delete from queue q
+ using battles b
+ where q.battle_id = b.id
+   and b.status in ('completed', 'abandoned');
+
 -- ─── Verification (optional — paste separately, expect 11|8|6|≥1|15|3|true) ─
 -- select (select count(*) from missions) as missions,
 --        (select count(*) from items) as items,

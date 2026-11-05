@@ -9,6 +9,8 @@
  * The phrase is joined exactly once, here, when the mnemonic is needed.
  */
 
+import { sameAddress } from './address'
+
 type NimiqWeb = typeof import('@nimiq/core/web')
 
 let nimiqPromise: Promise<NimiqWeb> | null = null
@@ -55,6 +57,25 @@ export async function deriveVaultAddress(phrase: string[]): Promise<string> {
 /** Alias used by the recovery flow; same derivation, same address. */
 export async function addressFromPhrase(phrase: string[]): Promise<string> {
   return deriveVaultAddress(phrase)
+}
+
+/**
+ * Does this phrase control `vaultAddress`?
+ *
+ * Used by the delete gate and by restore-from-phrase. A phrase that is not a
+ * valid mnemonic, or that derives some other address, is simply `false` — the
+ * caller shows one honest message either way, and an invalid phrase cannot be
+ * distinguished from a wrong one by probing this function.
+ */
+export async function phraseMatchesVault(
+  words: string[],
+  vaultAddress: string,
+): Promise<boolean> {
+  try {
+    return sameAddress(await deriveVaultAddress(words), vaultAddress)
+  } catch {
+    return false
+  }
 }
 
 /**

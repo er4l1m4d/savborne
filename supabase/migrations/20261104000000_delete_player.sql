@@ -1,15 +1,20 @@
 -- Delete a player account and everything that belongs to it.
 --
 -- Applied manually. The API route calls this through the service-role client,
--- which is why execute is revoked from public and granted to service_role only.
+-- which is why execute is revoked from public and from anon/authenticated, and
+-- granted to service_role only.
 --
--- Order matters. Every player reference cascades except two:
+-- Order matters. Every player reference cascades except these three:
 --   * battles.player_a / battles.player_b
 --   * battle_moves.player_address
--- so deleting `players` first fails with a foreign-key error for anyone who has
--- ever battled. Moves go first, then the battles they belong to, then the player
--- row — the last delete cascades check_ins, player_missions, player_items,
--- player_badges, queue, daily_battles, daily_xp, vaults and transfers.
+--   * queue.battle_id
+-- so deleting `battles` while a queue row still points at one fails with a
+-- foreign-key error, and deleting `players` first fails for anyone who has
+-- ever battled. Queue rows go first — both the player's own row and the
+-- opponent's matched row that references a battle we are about to remove —
+-- then moves, then battles, then the player row. The last delete cascades
+-- check_ins, player_missions, player_items, player_badges, queue,
+-- daily_battles, daily_xp, vaults and transfers.
 --
 -- The on-chain vault is untouched: the 24-word phrase still controls it.
 
@@ -23,6 +28,15 @@ declare
   v_battles integer;
   v_players integer;
 begin
+  -- queue.battle_id has no ON DELETE action, so any matched row (mine, or the
+  -- opponent's row pointing at a battle I am in) blocks the battles delete.
+  delete from queue q
+   where q.player_address = p_address
+      or q.battle_id in (
+           select id from battles
+            where player_a = p_address or player_b = p_address
+         );
+
   delete from battle_moves
    where player_address = p_address;
 
@@ -41,4 +55,5 @@ end;
 $$;
 
 revoke all on function delete_player(text) from public;
+revoke execute on function delete_player(text) from anon, authenticated;
 grant execute on function delete_player(text) to service_role;

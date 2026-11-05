@@ -23,7 +23,7 @@ import { authHeaders, readSession } from '@/lib/session'
 import type { Network } from '@/lib/nimiq'
 import type { VaultDto } from '@/lib/vault/dto'
 import { decryptPhrase, encryptPhrase } from '@/lib/vault/crypto'
-import { addressFromPhrase } from '@/lib/vault/phrase'
+import { phraseMatchesVault } from '@/lib/vault/phrase'
 import { readVault, writeVault } from '@/lib/vault/storage'
 import { VaultLockedError } from '@/lib/vault/errors'
 import { CopyButton } from './CopyButton'
@@ -107,17 +107,16 @@ export function BackupSettings() {
       if (words.length !== 24) throw new Error('Enter all 24 words, separated by spaces.')
       if (newPassphrase.length < 8) throw new Error('Choose a passphrase of at least 8 characters.')
 
-      // 1. Derive the address the typed words control.
-      const derived = await addressFromPhrase(words)
-
-      // 2. Ask the server which vault this player owns.
+      // 1. Ask the server which vault this player owns.
       const res = await fetch('/api/vaults', { headers: authHeaders() })
       if (!res.ok) throw new Error(`Could not check your vault (${res.status}).`)
       const body = (await res.json()) as { vault: VaultDto | null }
       if (!body.vault) throw new Error('Create a vault before restoring one.')
 
-      // 3. Write nothing unless the words match the registered vault.
-      if (body.vault.address.replace(/\s/g, '') !== derived.replace(/\s/g, '')) {
+      // 2. Write nothing unless the words control the registered vault. The
+      // same helper gates account deletion, so both paths agree on what a
+      // match means (including spacing and case).
+      if (!(await phraseMatchesVault(words, body.vault.address))) {
         throw new Error(
           'Those words do not control this vault. Nothing was saved. Check the order and try again.',
         )
