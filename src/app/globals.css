@@ -382,3 +382,23 @@ body {
     scroll-padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ── Foundation 2: chips ──────────────────────────────────────────────── */
+@layer components {
+  .sv-chip {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 10px;
+    border: 2px solid var(--bevel);
+    border-radius: 6px;
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .sv-chip--outline { background: transparent; color: var(--fg); }
+  .sv-chip--fill { background: var(--mint); border-color: var(--mint); color: var(--shell); }
+}

@@ -42,3 +42,11 @@ test('ScreenShell owns the header, the scroll body and the back icon', () => {
   assert.match(CSS, /\.sv-shell__body\s*\{[^}]*scroll-padding-top/)
   assert.match(CSS, /\.sv-shell__body\s*\{[^}]*scroll-padding-bottom/)
 })
+
+test('Chip is 24px high with outline and fill variants', () => {
+  const src = ui('Chip.tsx')
+  assert.match(src, /variant\?:\s*'outline'\s*\|\s*'fill'/)
+  assert.match(src, /color\?:\s*string/)
+  assert.match(CSS, /\.sv-chip\s*\{[^}]*height:\s*24px/)
+  assert.match(CSS, /\.sv-chip--fill\s*\{[^}]*background:\s*var\(--mint\)/)
+})
