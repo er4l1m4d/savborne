@@ -262,6 +262,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    padding: 0 16px;
     border: 2px solid transparent;
     font-family: var(--font-jakarta), system-ui, sans-serif;
     font-size: 14px;

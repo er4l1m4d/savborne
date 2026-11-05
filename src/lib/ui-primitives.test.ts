@@ -15,6 +15,7 @@ test('Button exposes the approved variants and press/loading states', () => {
   assert.match(src, /sv-press/)
   assert.match(src, /loading\?: boolean/)
   assert.match(CSS, /\.sv-link\s*\{[^}]*min-height:\s*44px/)
+  assert.match(CSS, /\.sv-btn\s*\{[^}]*padding:\s*0 16px/)
   assert.match(CSS, /\.sv-btn--primary\s*\{[^}]*height:\s*64px/)
   assert.match(CSS, /\.sv-btn--move\s*\{[^}]*height:\s*84px/)
 })
