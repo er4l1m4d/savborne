@@ -9,9 +9,14 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Row } from '@/components/ui/Row'
+import { Chip } from '@/components/ui/Chip'
+import { Banner } from '@/components/ui/Banner'
 
 type Mission = {
   key: string
@@ -65,8 +70,22 @@ export default function MissionsPage() {
     }
   }, [router])
 
-  if (loading) return <Screen msg="Loading missions…" />
-  if (error) return <Screen msg={error} tone="error" />
+  if (loading) {
+    return (
+      <ScreenShell variant="tab" title="Missions">
+        <p className="sv-body text-fg-muted">Loading missions…</p>
+      </ScreenShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <ScreenShell variant="tab" title="Missions">
+        <Banner tone="error">{error}</Banner>
+      </ScreenShell>
+    )
+  }
+
   if (!missions || !counters) return null
 
   const daily = missions.filter((m) => m.type === 'daily')
@@ -74,28 +93,25 @@ export default function MissionsPage() {
   const oneTime = missions.filter((m) => m.type === 'onetime')
 
   return (
-    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-5">
-      <header className="mt-4">
-        <h1
-          className="text-3xl leading-none"
-          style={{ fontFamily: 'var(--font-silkscreen)' }}
-        >
-          Missions
-        </h1>
-      </header>
-
+    <ScreenShell variant="tab" title="Missions" bodyClassName="gap-3.5">
       <CapMeters counters={counters} />
 
       <Section title="Daily" caption="Resets 00:00 UTC">
-        {daily.map((m) => <MissionRow key={m.key} m={m} />)}
+        {daily.map((m, i) => (
+          <MissionRow key={m.key} m={m} divider={i < daily.length - 1} />
+        ))}
       </Section>
       <Section title="Weekly" caption="Resets Monday 00:00 UTC">
-        {weekly.map((m) => <MissionRow key={m.key} m={m} />)}
+        {weekly.map((m, i) => (
+          <MissionRow key={m.key} m={m} divider={i < weekly.length - 1} />
+        ))}
       </Section>
       <Section title="One-time" caption="Never expires">
-        {oneTime.map((m) => <MissionRow key={m.key} m={m} />)}
+        {oneTime.map((m, i) => (
+          <MissionRow key={m.key} m={m} divider={i < oneTime.length - 1} />
+        ))}
       </Section>
-    </main>
+    </ScreenShell>
   )
 }
 
@@ -112,11 +128,9 @@ function Cap({ label, value, max }: { label: string; value: number; max: number 
   const pct = Math.min(100, Math.round((value / max) * 100))
   return (
     <div className="vpx-soft bg-surface p-3 flex flex-col gap-1">
-      <span className="text-[10px] uppercase tracking-widest text-fg-faint font-bold">
-        {label}
-      </span>
-      <span className="num text-lg font-bold">
-        {value} <span className="text-fg-faint text-sm">/ {max}</span>
+      <span className="sv-section-label text-fg-faint">{label}</span>
+      <span className="sv-figure">
+        {value} <span className="text-fg-faint">/ {max}</span>
       </span>
       <div className="h-1.5 bg-surface-low overflow-hidden">
         <div className="h-full bg-butter" style={{ width: `${pct}%` }} />
@@ -132,48 +146,42 @@ function Section({
 }: {
   title: string
   caption: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <section className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-mint">{title}</h2>
-        <span className="text-[10px] text-fg-faint">{caption}</span>
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="sv-subheading text-mint">{title}</h2>
+        <span className="sv-label text-fg-faint">{caption}</span>
       </div>
-      <ul className="flex flex-col gap-2">{children}</ul>
+      <PixelPanel className="px-4 py-0">{children}</PixelPanel>
     </section>
   )
 }
 
-function MissionRow({ m }: { m: Mission }) {
+function MissionRow({ m, divider }: { m: Mission; divider: boolean }) {
   return (
-    <li
-      className={`vpx-soft p-3 flex items-start justify-between gap-3 ${
-        m.completed ? 'bg-surface-hi' : 'bg-surface'
-      }`}
+    <Row
+      divider={divider}
+      trailing={
+        <span className={`sv-figure ${m.completed ? 'text-mint' : 'text-butter-text'}`}>
+          +{m.xpReward}
+        </span>
+      }
     >
-      <div className="flex flex-col gap-1 flex-1 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`text-sm font-bold truncate ${m.completed ? 'text-mint' : 'text-foreground'}`}>
+      <div className="flex flex-col gap-1 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`sv-label ${m.completed ? 'text-mint' : 'text-foreground'}`}>
             {m.name}
           </span>
-          {m.completed && (
-            <span className="text-[10px] uppercase tracking-widest text-mint shrink-0">
-              ✓ Done
-            </span>
-          )}
+          {m.completed && <Chip variant="fill">Done</Chip>}
         </div>
-        <p className="text-xs text-fg-muted leading-snug">{m.description}</p>
+        <p className="sv-label text-fg-muted">{m.description}</p>
         {m.nextResetAt && !m.completed && (
-          <p className="text-[10px] text-fg-faint">Resets {formatTime(m.nextResetAt)}</p>
+          <p className="sv-label text-fg-faint">Resets {formatTime(m.nextResetAt)}</p>
         )}
       </div>
-      <span
-        className={`num shrink-0 text-sm font-bold ${m.completed ? 'text-mint' : 'text-butter-text'}`}
-      >
-        +{m.xpReward}
-      </span>
-    </li>
+    </Row>
   )
 }
 
@@ -183,20 +191,4 @@ function formatTime(iso: string): string {
   const sameDay = d.toISOString().slice(0, 10) === now.toISOString().slice(0, 10)
   if (sameDay) return `today ${d.toISOString().slice(11, 16)} UTC`
   return `${d.toISOString().slice(5, 10)} ${d.toISOString().slice(11, 16)} UTC`
-}
-
-function Screen({ msg, tone = 'muted' }: { msg: string; tone?: 'muted' | 'error' }) {
-  return (
-    <main className="min-h-dvh flex items-center justify-center p-(--gut)">
-      <p
-        className={
-          tone === 'error'
-            ? 'vpx bg-coral-tint p-4 text-coral-text text-sm max-w-90'
-            : 'text-fg-muted text-sm'
-        }
-      >
-        {msg}
-      </p>
-    </main>
-  )
 }
