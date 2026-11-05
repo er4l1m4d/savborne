@@ -402,3 +402,11 @@ body {
   .sv-chip--outline { background: transparent; color: var(--fg); }
   .sv-chip--fill { background: var(--mint); border-color: var(--mint); color: var(--shell); }
 }
+
+/* ── Foundation 2: grouped rows ───────────────────────────────────────── */
+@layer components {
+  .sv-row { display: flex; align-items: center; gap: 14px; min-height: 58px; }
+  .sv-row--56 { min-height: 56px; }
+  .sv-row--divider { border-bottom: 2px solid var(--track); }
+  .sv-row--divider:last-child { border-bottom: 0; }
+}

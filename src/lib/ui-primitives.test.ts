@@ -50,3 +50,12 @@ test('Chip is 24px high with outline and fill variants', () => {
   assert.match(CSS, /\.sv-chip\s*\{[^}]*height:\s*24px/)
   assert.match(CSS, /\.sv-chip--fill\s*\{[^}]*background:\s*var\(--mint\)/)
 })
+
+test('Row supports 56/58 heights and dividers', () => {
+  const src = ui('Row.tsx')
+  assert.match(src, /minHeight\?:\s*56\s*\|\s*58/)
+  assert.match(src, /divider\?:\s*boolean/)
+  assert.match(CSS, /\.sv-row\s*\{[^}]*min-height:\s*58px/)
+  assert.match(CSS, /\.sv-row--56\s*\{[^}]*min-height:\s*56px/)
+  assert.match(CSS, /\.sv-row--divider\s*\{[^}]*border-bottom:\s*2px solid var\(--track\)/)
+})
