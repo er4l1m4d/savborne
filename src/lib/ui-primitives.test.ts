@@ -69,3 +69,11 @@ test('Tabs is a controlled, accessible tablist', () => {
   assert.match(CSS, /\.sv-tab\s*\{[^}]*height:\s*44px/)
   assert.match(CSS, /\.sv-tab\[aria-selected='true'\]/)
 })
+
+test('Banner has error and info tones', () => {
+  const src = ui('Banner.tsx')
+  assert.match(src, /tone\?:\s*'error'\s*\|\s*'info'/)
+  assert.match(src, /role="alert"/)
+  assert.match(CSS, /\.sv-banner--error\s*\{[^}]*background:\s*var\(--coral-tint\)/)
+  assert.match(CSS, /\.sv-banner--info\s*\{[^}]*border-color:\s*var\(--mint\)/)
+})

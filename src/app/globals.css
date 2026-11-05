@@ -431,3 +431,17 @@ body {
     color: var(--shell);
   }
 }
+
+/* ── Foundation 2: banners ────────────────────────────────────────────── */
+@layer components {
+  .sv-banner {
+    padding: 14px;
+    border: 2px solid;
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+  .sv-banner--error { background: var(--coral-tint); border-color: var(--coral); color: var(--coral-text); }
+  .sv-banner--info { background: var(--surface); border-color: var(--mint); color: var(--fg); }
+}
