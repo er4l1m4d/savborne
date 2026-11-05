@@ -13,7 +13,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { WalletError } from '@/lib/nimiq'
 import { authHeaders } from '@/lib/session'
@@ -22,6 +21,11 @@ import { BRACKETS, LUNA_PER_NIM, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeAction } from '@/lib/game/badges'
 import { SHIELD_CAP } from '@/lib/game/streaks'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Chip } from '@/components/ui/Chip'
+import { Banner } from '@/components/ui/Banner'
 
 type MissionStatus = {
   key: string
@@ -104,103 +108,81 @@ export default function HomePage() {
 
   if (loading || !player) {
     return (
-      <main className="min-h-dvh flex items-center justify-center text-fg-muted text-sm">
-        Loading your character…
-      </main>
+      <ScreenShell variant="tab">
+        <p className="sv-body text-fg-muted">Loading your character…</p>
+      </ScreenShell>
     )
   }
 
   if (error) {
     return (
-      <main className="min-h-dvh flex items-center justify-center p-(--gut)">
-        <div className="vpx bg-coral-tint p-4 text-coral-text text-sm">{error}</div>
-      </main>
+      <ScreenShell variant="tab">
+        <Banner tone="error">{error}</Banner>
+      </ScreenShell>
     )
   }
 
   return (
-    <main className="min-h-dvh flex flex-col gap-5 p-(--gut) max-w-105 mx-auto w-full">
-      <Header player={player} />
+    <ScreenShell
+      variant="tab"
+      title={player.displayName}
+      actions={<span className="sv-label text-fg-muted">Level {player.level}</span>}
+    >
       <Chips player={player} />
       <XpBar player={player} />
       <BalanceCard player={player} />
       {dailyMissions && <DailyMissions missions={dailyMissions} />}
 
       {awards && <AwardsPanel awards={awards} />}
-      {checkError && (
-        <div className="vpx bg-coral-tint p-3 text-coral-text text-sm">{checkError}</div>
-      )}
+      {checkError && <Banner tone="error">{checkError}</Banner>}
 
-      <button
-        onClick={onCheckIn}
-        disabled={checking}
-        className="vpx bg-mint text-[#0E1D19] py-4 px-4 font-bold text-lg active:translate-y-0.5 disabled:opacity-40"
-        style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
-      >
+      <Button variant="primary" size="lg" onClick={onCheckIn} loading={checking}>
         {checking ? 'Reading balance…' : 'Check In'}
-      </button>
+      </Button>
 
-      <p className="text-[11px] text-fg-faint text-center leading-relaxed">
+      <p className="sv-label text-fg-faint text-center">
         Checking in reads the balance of your savings account and records one
         snapshot. Savborne never moves your money.
       </p>
-    </main>
+    </ScreenShell>
   )
 }
 
 // ─── Subcomponents ────────────────────────────────────────────────────────
-
-function Header({ player }: { player: PlayerMe }) {
-  return (
-    <header className="flex items-baseline justify-between mt-4">
-      <h1
-        className="text-2xl leading-none truncate max-w-[70%]"
-        style={{ fontFamily: 'var(--font-silkscreen)' }}
-      >
-        {player.displayName}
-      </h1>
-      <span className="text-xs text-fg-muted uppercase tracking-widest">
-        Level {player.level}
-      </span>
-    </header>
-  )
-}
 
 function Chips({ player }: { player: PlayerMe }) {
   const bracket = player.bracket as Bracket | null
   return (
     <div className="flex flex-wrap items-center gap-2">
       {bracket && (
-        <span
-          className="vpx-soft inline-flex items-center gap-1 h-8 px-3 text-xs font-bold uppercase tracking-wider bg-surface"
-          style={{ color: BRACKETS[bracket].color }}
-        >
+        <Chip variant="outline" color={BRACKETS[bracket].color}>
           {BRACKETS[bracket].label}
-        </span>
+        </Chip>
       )}
-      <span className="vpx-soft inline-flex items-center gap-1 h-8 px-3 text-xs font-bold bg-surface text-butter-text">
+      <Chip variant="outline" color="var(--butter-text)">
         🔥 {player.streakCurrent} day{player.streakCurrent === 1 ? '' : 's'}
-      </span>
+      </Chip>
       <span
-        className="vpx-soft inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold bg-surface"
         aria-label={`${player.shields} of ${SHIELD_CAP} streak shields`}
         title="Each shield absorbs one missed day"
       >
-        <span aria-hidden className="flex items-center gap-0.5">
-          {Array.from({ length: SHIELD_CAP }, (_, i) => (
-            <span
-              key={i}
-              className={i < player.shields ? 'text-mint' : 'text-fg-faint opacity-40'}
-            >
-              ◈
-            </span>
-          ))}
-        </span>
-        <span className="uppercase tracking-wider text-[10px] text-fg-faint">Shields</span>
+        <Chip variant="outline">
+          <span aria-hidden className="flex items-center gap-1.5">
+            {Array.from({ length: SHIELD_CAP }, (_, i) => (
+              <span
+                key={i}
+                className={i < player.shields ? 'text-mint' : 'text-fg-faint opacity-40'}
+              >
+                ◈
+              </span>
+            ))}
+            <span className="sv-label text-fg-faint">Shields</span>
+          </span>
+        </Chip>
       </span>
-      <span className="vpx-soft inline-flex items-center gap-1 h-8 px-3 text-xs font-bold bg-surface text-fg-muted">
+      <Chip variant="outline" color="var(--fg-muted)">
         {player.checkInCount} check-in{player.checkInCount === 1 ? '' : 's'}
-      </span>
+      </Chip>
     </div>
   )
 }
@@ -211,9 +193,9 @@ function XpBar({ player }: { player: PlayerMe }) {
   const pct = Math.min(100, Math.round((inLevel / player.xpToNext) * 100))
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-between text-[11px] text-fg-faint uppercase tracking-widest">
-        <span>XP</span>
-        <span className="num">
+      <div className="flex justify-between text-fg-faint">
+        <span className="sv-label">XP</span>
+        <span className="sv-figure">
           {inLevel} / {player.xpToNext}
         </span>
       </div>
@@ -237,21 +219,16 @@ function BalanceCard({ player }: { player: PlayerMe }) {
       })
     : 'Not yet'
   return (
-    <section className="vpx bg-surface p-4 flex flex-col gap-1">
-      <h2 className="text-[11px] uppercase tracking-widest text-fg-faint font-bold">
-        Savings balance
-      </h2>
-      <p className="num text-3xl font-bold text-foreground leading-tight">
+    <PixelPanel className="p-4 flex flex-col gap-1">
+      <h2 className="sv-section-label text-fg-faint">Savings balance</h2>
+      <p className="sv-number-xl text-foreground">
         {nim.toFixed(5)} <span className="text-base text-fg-muted">NIM</span>
       </p>
-      <p className="text-[11px] text-fg-faint">Last check-in: {last} UTC</p>
-      <Link
-        href="/vault"
-        className="text-mint underline underline-offset-4 text-xs font-bold self-start mt-1"
-      >
+      <p className="sv-label text-fg-faint">Last check-in: {last} UTC</p>
+      <ButtonLink href="/vault" variant="ghost" className="self-start">
         Open vault
-      </Link>
-    </section>
+      </ButtonLink>
+    </PixelPanel>
   )
 }
 
@@ -261,22 +238,20 @@ function DailyMissions({ missions }: { missions: MissionStatus[] }) {
   const earned = missions.filter((m) => m.completed).reduce((s, m) => s + m.xpReward, 0)
   const pct = Math.min(100, Math.round((earned / total) * 100))
   return (
-    <section className="vpx bg-surface p-4 flex flex-col gap-3">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-[11px] uppercase tracking-widest text-fg-faint font-bold">
-          Daily missions
-        </h2>
-        <span className="num text-xs text-fg-muted">
+    <PixelPanel className="p-4 flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="sv-section-label text-fg-faint">Daily missions</h2>
+        <span className="sv-figure text-fg-muted">
           {completed}/{missions.length} · {earned} / {total} XP
         </span>
       </div>
       <div className="flex flex-col gap-2">
         {missions.map((m) => (
           <div key={m.key} className="flex items-center justify-between gap-3">
-            <span className={`text-sm ${m.completed ? 'text-mint font-bold' : 'text-fg-muted'}`}>
+            <span className={`sv-label min-w-0 ${m.completed ? 'text-mint' : 'text-fg-muted'}`}>
               {m.completed ? '✓' : '·'} {m.name}
             </span>
-            <span className={`num text-xs font-bold ${m.completed ? 'text-mint' : 'text-butter-text'}`}>
+            <span className={`sv-figure ${m.completed ? 'text-mint' : 'text-butter-text'}`}>
               +{m.xpReward}
             </span>
           </div>
@@ -288,7 +263,7 @@ function DailyMissions({ missions }: { missions: MissionStatus[] }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-    </section>
+    </PixelPanel>
   )
 }
 
@@ -296,11 +271,11 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
   const totalXp = awards.awarded.reduce((s, a) => s + a.xpApplied, 0)
   const cappedCount = awards.awarded.filter((a) => a.xpCapped > 0).length
   return (
-    <section className="vpx bg-mint-tint p-4 flex flex-col gap-2">
-      <h2 className="text-sm font-bold text-mint">
+    <PixelPanel tone="mint" className="p-4 flex flex-col gap-2">
+      <h2 className="sv-subheading text-mint">
         +{totalXp} XP{awards.leveledUp ? ` — Level up! Now level ${awards.newLevel}` : ''}
       </h2>
-      <ul className="text-xs text-fg-soft flex flex-col gap-1">
+      <ul className="sv-label text-fg-soft flex flex-col gap-1">
         {awards.awarded.length === 0 && <li>Checked in. Balance recorded.</li>}
         {awards.awarded.map((a) => (
           <li key={a.key} className="flex justify-between gap-2">
@@ -310,23 +285,23 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
         ))}
       </ul>
       {cappedCount > 0 && (
-        <p className="text-[11px] text-fg-faint">
+        <p className="sv-label text-fg-faint">
           Some XP was capped by the daily/weekly mission limits.
         </p>
       )}
       {awards.bracketChanged && (
-        <p className="text-[11px] text-butter-text">
+        <p className="sv-label text-butter-text">
           Your bracket changed — check your inventory for new items.
         </p>
       )}
       {awards.withdrawalDetected && (
-        <p className="text-[11px] text-coral-text">
+        <p className="sv-label text-coral-text">
           Balance dropped since your last check-in. Streak badges are removed;
           everything else stays.
         </p>
       )}
       {awards.unlockedItems.length > 0 && (
-        <ul className="text-[11px] text-butter-text flex flex-col gap-0.5 pt-1 border-t border-line">
+        <ul className="sv-label text-butter-text flex flex-col gap-0.5 pt-1 border-t border-line">
           <li className="uppercase tracking-widest font-bold">New items unlocked</li>
           {awards.unlockedItems.map((k) => {
             const it = ITEMS.find((i) => i.key === k)
@@ -335,7 +310,7 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
         </ul>
       )}
       {awards.badgeActions.length > 0 && (
-        <ul className="text-[11px] text-mint flex flex-col gap-0.5 pt-1 border-t border-line">
+        <ul className="sv-label text-mint flex flex-col gap-0.5 pt-1 border-t border-line">
           <li className="uppercase tracking-widest font-bold">Badges</li>
           {awards.badgeActions.map((a) => {
             const b = BADGES.find((x) => x.key === a.badge)
@@ -348,7 +323,7 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
           })}
         </ul>
       )}
-    </section>
+    </PixelPanel>
   )
 }
 
