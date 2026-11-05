@@ -16,16 +16,13 @@ function walk(dir: string): string[] {
 
 /** Files still waiting for their migration commit. This list must be empty at the end. */
 const PENDING = new Set([
-  'app/(tabs)/profile/page.tsx',
   'app/(tabs)/vault/page.tsx',
   'app/receipts/page.tsx',
   'app/battle/[id]/page.tsx',
   'app/setup/page.tsx',
   'app/card/[token]/page.tsx',
-  'components/DeleteAccount.tsx',
   'components/VaultTour.tsx',
   'components/vault/PhraseCeremony.tsx',
-  'components/vault/BackupSettings.tsx',
 ])
 
 function violations() {

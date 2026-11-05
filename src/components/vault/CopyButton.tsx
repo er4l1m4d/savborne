@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { Button } from '@/components/ui/Button'
 
 type State = 'idle' | 'copied' | 'failed'
 
@@ -54,18 +55,20 @@ export function CopyButton({
   }
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="sm"
+      fullWidth={false}
       onClick={copy}
       aria-live="polite"
-      className={`vpx-soft bg-surface-low py-2 px-3 text-xs font-bold self-start ${
+      className={`self-start ${
         state === 'copied' ? 'text-mint' : state === 'failed' ? 'text-coral-text' : ''
       }`}
     >
       {state === 'idle' && (label ?? LABELS.idle)}
       {state === 'copied' && LABELS.copied}
       {state === 'failed' && LABELS.failed}
-    </button>
+    </Button>
   )
 }
 

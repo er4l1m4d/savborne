@@ -27,6 +27,9 @@ import { phraseMatchesVault } from '@/lib/vault/phrase'
 import { readVault, writeVault } from '@/lib/vault/storage'
 import { VaultLockedError } from '@/lib/vault/errors'
 import { CopyButton } from './CopyButton'
+import { Button } from '@/components/ui/Button'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Banner } from '@/components/ui/Banner'
 
 type Phase = 'closed' | 'show' | 'change' | 'restore'
 
@@ -142,29 +145,47 @@ export function BackupSettings() {
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Backup</h2>
+      <h2 className="sv-section-label text-mint">Backup</h2>
 
       {phase === 'closed' && (
         <div className="flex flex-col gap-2">
-          <BackupButton onClick={() => { reset(); setPhase('show') }}>Show recovery phrase</BackupButton>
-          <BackupButton onClick={() => { reset(); setPhase('change') }}>Change passphrase</BackupButton>
-          <BackupButton onClick={() => { reset(); setPhase('restore') }}>Restore from phrase</BackupButton>
+          <Button
+            variant="secondary"
+            className="justify-start"
+            onClick={() => { reset(); setPhase('show') }}
+          >
+            Show recovery phrase
+          </Button>
+          <Button
+            variant="secondary"
+            className="justify-start"
+            onClick={() => { reset(); setPhase('change') }}
+          >
+            Change passphrase
+          </Button>
+          <Button
+            variant="secondary"
+            className="justify-start"
+            onClick={() => { reset(); setPhase('restore') }}
+          >
+            Restore from phrase
+          </Button>
         </div>
       )}
 
       {phase === 'show' && (
-        <div className="vpx bg-surface p-4 flex flex-col gap-3">
+        <PixelPanel className="p-4 flex flex-col gap-3">
           {revealed ? (
             <>
               <ol className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {revealed.map((word, i) => (
                   <li key={i} className="vpx bg-surface-low p-2 flex items-baseline gap-2 font-mono text-sm select-text">
-                    <span className="text-fg-faint text-[11px] w-5 text-right shrink-0">{i + 1}</span>
+                    <span className="sv-figure text-fg-faint w-5 text-right shrink-0">{i + 1}</span>
                     <span className="break-all">{word}</span>
                   </li>
                 ))}
               </ol>
-              <p className="text-xs text-fg-muted">
+              <p className="sv-label text-fg-muted">
                 Anyone with these words controls your vault. Write them down somewhere offline.
               </p>
               <CopyButton text={revealed.join(' ')} />
@@ -176,32 +197,32 @@ export function BackupSettings() {
                 value={passphrase}
                 onChange={setPassphrase}
               />
-              <ActionButton onClick={showPhrase} disabled={busy || passphrase.length === 0}>
+              <ActionButton onClick={showPhrase} disabled={busy || passphrase.length === 0} variant="primary">
                 {busy ? 'Unlocking…' : 'Reveal words'}
               </ActionButton>
             </>
           )}
-          {error && <Note tone="error">{error}</Note>}
+          {error && <Banner tone="error">{error}</Banner>}
           <BackButton onClick={close} />
-        </div>
+        </PixelPanel>
       )}
 
       {phase === 'change' && (
-        <div className="vpx bg-surface p-4 flex flex-col gap-3">
+        <PixelPanel className="p-4 flex flex-col gap-3">
           <PassphraseInput label="Current passphrase" value={passphrase} onChange={setPassphrase} />
           <PassphraseInput label="New passphrase" value={newPassphrase} onChange={setNewPassphrase} />
           <ActionButton onClick={changePassphrase} disabled={busy || !passphrase || !newPassphrase}>
             {busy ? 'Re-encrypting…' : 'Change passphrase'}
           </ActionButton>
-          {error && <Note tone="error">{error}</Note>}
+          {error && <Banner tone="error">{error}</Banner>}
           <BackButton onClick={close} />
-        </div>
+        </PixelPanel>
       )}
 
       {phase === 'restore' && (
-        <div className="vpx bg-surface p-4 flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-fg-faint">Your 24 words, in order</span>
+        <PixelPanel className="p-4 flex flex-col gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="sv-label text-fg-faint">Your 24 words, in order</span>
             <textarea
               value={restoreWords}
               onChange={(e) => setRestoreWords(e.target.value)}
@@ -209,28 +230,20 @@ export function BackupSettings() {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              className="vpx bg-surface-low p-3 text-sm font-mono outline-none focus:border-butter"
+              className="vpx bg-surface-low p-3 text-sm font-mono focus:border-mint"
             />
           </label>
           <PassphraseInput label="New passphrase (min 8 characters)" value={newPassphrase} onChange={setNewPassphrase} />
           <ActionButton onClick={restore} disabled={busy || !restoreWords || !newPassphrase}>
             {busy ? 'Checking…' : 'Restore vault'}
           </ActionButton>
-          {error && <Note tone="error">{error}</Note>}
+          {error && <Banner tone="error">{error}</Banner>}
           <BackButton onClick={close} />
-        </div>
+        </PixelPanel>
       )}
 
-      {message && <Note tone="ok">{message}</Note>}
+      {message && <Banner tone="info">{message}</Banner>}
     </section>
-  )
-}
-
-function BackupButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="vpx-soft bg-surface py-3 px-4 font-bold text-sm text-left">
-      {children}
-    </button>
   )
 }
 
@@ -238,27 +251,25 @@ function ActionButton({
   children,
   onClick,
   disabled,
+  variant = 'secondary',
 }: {
   children: React.ReactNode
   onClick: () => void
   disabled?: boolean
+  variant?: 'primary' | 'secondary'
 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-    >
+    <Button variant={variant} onClick={onClick} disabled={disabled}>
       {children}
-    </button>
+    </Button>
   )
 }
 
 function BackButton({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} className="text-sm text-fg-muted underline underline-offset-4 self-start">
+    <Button variant="ghost" onClick={onClick} className="self-start">
       Back
-    </button>
+    </Button>
   )
 }
 
@@ -272,28 +283,16 @@ function PassphraseInput({
   onChange: (v: string) => void
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-fg-faint">{label}</span>
+    <label className="flex flex-col gap-1">
+      <span className="sv-label text-fg-faint">{label}</span>
       <input
         type="password"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         autoComplete="off"
-        className="vpx bg-surface-low p-3 text-base outline-none focus:border-butter"
+        className="vpx bg-surface-low p-3 text-base focus:border-mint"
       />
     </label>
-  )
-}
-
-function Note({ tone, children }: { tone: 'error' | 'ok'; children: React.ReactNode }) {
-  return (
-    <div
-      className={`vpx p-3 text-sm ${
-        tone === 'error' ? 'bg-coral-tint text-coral-text' : 'bg-surface-low text-mint'
-      }`}
-    >
-      {children}
-    </div>
   )
 }
 

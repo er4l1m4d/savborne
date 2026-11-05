@@ -13,6 +13,8 @@
  */
 
 import { useState } from 'react'
+import { Button } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 const QUESTION_COUNT = 4
 
@@ -58,10 +60,8 @@ export function BackupQuiz({
   return (
     <section className={`flex flex-col gap-4 ${inline ? 'mt-0' : 'mt-4'}`}>
       {/* h2, not h1: this is always nested under the step's or the Account section's heading. */}
-      <h2 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-        Confirm your backup
-      </h2>
-      <p className="text-sm text-fg-muted">
+      <h2 className="sv-heading">Confirm your backup</h2>
+      <p className="sv-body text-fg-muted">
         Type these four words from your written copy, in order.
       </p>
 
@@ -75,30 +75,20 @@ export function BackupQuiz({
               autoComplete="off"
               autoCapitalize="none"
               spellCheck={false}
-              className="vpx bg-surface-low p-3 text-base text-foreground outline-none focus:border-butter w-full font-mono"
+              className="vpx bg-surface-low p-3 text-base text-foreground focus:border-mint w-full font-mono"
             />
           </label>
         ))}
       </div>
 
-      {error && <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{error}</div>}
+      {error && <Banner tone="error">{error}</Banner>}
 
-      <button
-        type="button"
-        onClick={check}
-        disabled={!allFilled}
-        className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-0.5"
-        style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
-      >
+      <Button variant="primary" onClick={check} disabled={!allFilled}>
         Check words
-      </button>
-      <button
-        type="button"
-        onClick={onBack}
-        className="text-sm text-fg-muted underline underline-offset-4 self-start"
-      >
+      </Button>
+      <Button variant="ghost" onClick={onBack} className="self-start">
         Back
-      </button>
+      </Button>
     </section>
   )
 }

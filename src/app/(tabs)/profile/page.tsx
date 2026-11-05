@@ -18,6 +18,12 @@ import { BadgeArt } from '@/components/Glyphs'
 import { TOUR_FLAG_KEY } from '@/components/VaultTour'
 import { BackupSettings } from '@/components/vault/BackupSettings'
 import { DeleteAccount } from '@/components/DeleteAccount'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Row } from '@/components/ui/Row'
+import { Chip } from '@/components/ui/Chip'
+import { Button } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 /** Single definition; the footer and the mailto both read it. */
 const CONTACT_EMAIL = 'damilareogooluwade@outlook.com'
@@ -75,45 +81,58 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="min-h-dvh flex items-center justify-center text-fg-muted text-sm">
-        Loading your profile…
-      </main>
+      <ScreenShell variant="tab">
+        <p className="sv-body text-fg-muted">Loading your profile…</p>
+      </ScreenShell>
     )
   }
+
   if (error || !data) {
     return (
-      <main className="min-h-dvh flex items-center justify-center p-(--gut)">
-        <div className="vpx bg-coral-tint p-4 text-coral-text text-sm">
-          {error ?? 'No data'}
-        </div>
-      </main>
+      <ScreenShell variant="tab">
+        <Banner tone="error">{error ?? 'No data'}</Banner>
+      </ScreenShell>
     )
   }
 
   const ownedSet = new Set(data.ownedItems)
   const activeSet = new Set(data.activeBadges)
+  const b = data.player.bracket
 
   return (
-    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-5">
-      <IdentityStrip data={data} />
+    <ScreenShell
+      variant="tab"
+      title={data.player.displayName}
+      actions={
+        <div className="flex items-center gap-2">
+          <span className="sv-label text-fg-muted">Level {data.player.level}</span>
+          {b && (
+            <Chip variant="outline" color={BRACKETS[b].color}>
+              {BRACKETS[b].label}
+            </Chip>
+          )}
+        </div>
+      }
+    >
       <StatGrid data={data} />
+
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Badges</h2>
+        <h2 className="sv-section-label text-mint">Badges</h2>
         <div className="grid grid-cols-3 gap-2">
-          {BADGES.map((b) => {
-            const active = activeSet.has(b.key)
+          {BADGES.map((badge) => {
+            const active = activeSet.has(badge.key)
             return (
               <div
-                key={b.key}
+                key={badge.key}
                 className={`vpx-soft p-2 flex flex-col items-center gap-1 text-center ${
                   active ? 'bg-surface-hi' : 'bg-surface'
                 }`}
-                title={b.description}
+                title={badge.description}
               >
                 {/* The locked drawing is already a muted two-tone, so no extra dimming here —
                     an opacity-40 on top of it double-dims a state the art already carries. */}
-                <BadgeArt badge={b.key} state={active ? 'earned' : 'locked'} size={32} />
-                <span className="text-[10px] font-bold leading-tight">{b.name}</span>
+                <BadgeArt badge={badge.key} state={active ? 'earned' : 'locked'} size={32} />
+                <span className="sv-label leading-tight">{badge.name}</span>
               </div>
             )
           })}
@@ -121,46 +140,47 @@ export default function ProfilePage() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Inventory</h2>
-        <ul className="flex flex-col gap-2">
-          {ITEMS.map((it) => {
-            const unlocked = ownedSet.has(it.key)
+        <h2 className="sv-section-label text-mint">Inventory</h2>
+        <PixelPanel className="px-4 py-0">
+          {ITEMS.map((item, index) => {
+            const unlocked = ownedSet.has(item.key)
             return (
-              <li
-                key={it.key}
-                className={`vpx-soft p-3 flex items-start gap-3 ${
-                  unlocked ? 'bg-surface' : 'bg-surface-low opacity-60'
-                }`}
+              <Row
+                key={item.key}
+                divider={index < ITEMS.length - 1}
+                className={unlocked ? undefined : 'bg-surface-low opacity-60'}
+                leading={
+                  <span
+                    className="shrink-0 inline-block w-2 h-2"
+                    style={{
+                      background: unlocked
+                        ? BRACKETS[item.bracket].color
+                        : 'var(--bevel-soft)',
+                    }}
+                    aria-hidden
+                  />
+                }
               >
-                <span
-                  className="shrink-0 inline-block w-2 h-2 mt-2"
-                  style={{ background: unlocked ? BRACKETS[it.bracket].color : 'var(--bevel-soft)' }}
-                  aria-hidden
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span
-                      className={`text-sm font-bold truncate ${
-                        unlocked ? 'text-foreground' : 'text-fg-muted'
-                      }`}
-                    >
-                      {it.name}
+                <div className="flex flex-col gap-1 py-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className={`sv-label ${unlocked ? 'text-foreground' : 'text-fg-muted'}`}>
+                      {item.name}
                     </span>
-                    <span className="text-[10px] uppercase tracking-widest text-fg-faint shrink-0">
-                      {it.bracket}
-                    </span>
+                    <Chip variant="outline" color={BRACKETS[item.bracket].color}>
+                      {BRACKETS[item.bracket].label}
+                    </Chip>
                   </div>
-                  <p className="text-xs text-fg-muted leading-snug mt-1">
-                    {unlocked ? it.blurb : `Locked: reach ${it.bracket} to unlock.`}
+                  <p className="sv-label text-fg-muted">
+                    {unlocked ? item.blurb : `Locked: reach ${item.bracket} to unlock.`}
                   </p>
-                  {unlocked && !it.isBadge && (
-                    <p className="text-[10px] text-mint mt-1">Active in battles.</p>
+                  {unlocked && !item.isBadge && (
+                    <p className="sv-label text-mint">Active in battles.</p>
                   )}
                 </div>
-              </li>
+              </Row>
             )
           })}
-        </ul>
+        </PixelPanel>
       </section>
 
       <ShareCardSection cardToken={data.cardToken} />
@@ -168,8 +188,10 @@ export default function ProfilePage() {
       <BackupSettings />
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Help</h2>
-        <button
+        <h2 className="sv-section-label text-mint">Help</h2>
+        <Button
+          variant="secondary"
+          className="justify-start"
           onClick={() => {
             try {
               window.localStorage.removeItem(TOUR_FLAG_KEY)
@@ -178,27 +200,27 @@ export default function ProfilePage() {
             }
             router.push('/vault')
           }}
-          className="vpx-soft bg-surface py-3 px-4 font-bold text-sm text-left"
         >
           Show tour again
-        </button>
+        </Button>
       </section>
 
       <DeleteAccount playerAddress={data.player.address} />
 
-      <footer className="flex flex-col items-center gap-1 pt-4 border-t border-line text-[11px] text-fg-faint">
-        <a href={`mailto:${CONTACT_EMAIL}`} className="text-mint underline underline-offset-4">
+      <footer className="flex flex-col items-center gap-1 pt-4 border-t border-line">
+        <a href={`mailto:${CONTACT_EMAIL}`} className="sv-link">
           {CONTACT_EMAIL}
         </a>
-        <p className="text-center leading-relaxed">
+        <p className="sv-label text-fg-faint text-center">
           Savborne never holds your NIM. A 24-word phrase generated on your device controls your
           vault. Balances are read from the chain, never stored by us.
         </p>
-        <p>
-          Your address: <span className="font-mono">{short(data.player.address)}</span>
+        <p className="sv-label text-fg-faint">
+          Your address:{' '}
+          <span className="sv-figure font-mono sv-break">{short(data.player.address)}</span>
         </p>
       </footer>
-    </main>
+    </ScreenShell>
   )
 }
 
@@ -229,50 +251,28 @@ function ShareCardSection({ cardToken }: { cardToken: string | null }) {
     }
   }
 
+  const label = cardToken
+    ? copied
+      ? 'Link copied to clipboard'
+      : 'Share my card'
+    : 'Create a vault to share your card'
+
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Share</h2>
-      <button
+      <h2 className="sv-section-label text-mint">Share</h2>
+      <Button
+        variant="secondary"
         onClick={share}
         disabled={!url}
-        className="vpx bg-surface-hi py-3 px-4 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed text-left"
+        className="justify-start"
       >
-        {cardToken
-          ? copied
-            ? 'Link copied to clipboard'
-            : 'Share my card'
-          : 'Create a vault to share your card'}
-      </button>
-      {url && <p className="text-[10px] font-mono text-fg-faint break-all">{url}</p>}
-      <p className="text-[11px] text-fg-faint">
+        {label}
+      </Button>
+      {url && <p className="sv-figure font-mono text-fg-faint sv-break">{url}</p>}
+      <p className="sv-label text-fg-faint">
         Your card shows your name, level, streak and bracket — never your balance.
       </p>
     </section>
-  )
-}
-
-function IdentityStrip({ data }: { data: ProfileData }) {
-  const b = data.player.bracket
-  return (
-    <header className="flex items-baseline justify-between gap-3 mt-4">
-      <div className="flex flex-col gap-1 min-w-0">
-        <h1
-          className="text-3xl leading-none truncate"
-          style={{ fontFamily: 'var(--font-silkscreen)' }}
-        >
-          {data.player.displayName}
-        </h1>
-        <p className="text-xs text-fg-muted">Level {data.player.level}</p>
-      </div>
-      {b && (
-        <span
-          className="vpx-soft inline-flex items-center h-8 px-3 text-xs font-bold uppercase tracking-wider bg-surface shrink-0"
-          style={{ color: BRACKETS[b].color }}
-        >
-          {BRACKETS[b].label}
-        </span>
-      )}
-    </header>
   )
 }
 
@@ -287,7 +287,7 @@ function StatGrid({ data }: { data: ProfileData }) {
       </div>
       {/* Wins/Losses/Ties used to be three tiles of their own. The documented profile shows
           three tiles total, so the record collapses to one line rather than being dropped. */}
-      <p className="text-[11px] font-bold tracking-wide text-fg-muted num text-right">
+      <p className="sv-label text-fg-muted text-right">
         {player.wins}W · {player.losses}L · {player.ties}T
       </p>
     </section>
@@ -296,14 +296,9 @@ function StatGrid({ data }: { data: ProfileData }) {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="vpx bg-surface-low p-3 flex flex-col gap-1">
-      <span
-        className="text-xl leading-none"
-        style={{ fontFamily: 'var(--font-silkscreen)' }}
-      >
-        {value}
-      </span>
-      <span className="text-xs font-bold text-fg-muted">{label}</span>
+    <div className="vpx-soft bg-surface p-3 flex flex-col gap-1">
+      <span className="sv-number-m">{value}</span>
+      <span className="sv-label text-fg-muted">{label}</span>
     </div>
   )
 }
