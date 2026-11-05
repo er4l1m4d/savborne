@@ -16,7 +16,6 @@ function walk(dir: string): string[] {
 
 /** Files still waiting for their migration commit. This list must be empty at the end. */
 const PENDING = new Set([
-  'app/(tabs)/battle/page.tsx',
   'app/(tabs)/leaderboard/page.tsx',
   'app/(tabs)/profile/page.tsx',
   'app/(tabs)/vault/page.tsx',

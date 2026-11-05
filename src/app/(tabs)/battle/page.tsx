@@ -16,6 +16,10 @@ import { authHeaders } from '@/lib/session'
 import { usePlayerSession } from '@/lib/usePlayerSession'
 import { BATTLE, RANKED } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Button } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 export default function BattleMenuPage() {
   const router = useRouter()
@@ -144,19 +148,16 @@ export default function BattleMenuPage() {
   }
 
   return (
-    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-5">
-      <header className="flex items-baseline justify-between mt-4">
-        <h1 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-          Battle
-        </h1>
-        <span
-          className={`text-xs font-bold num ${limitReached ? 'text-coral-text' : 'text-fg-muted'}`}
-        >
+    <ScreenShell
+      variant="tab"
+      title="Battle"
+      actions={
+        <span className={`sv-figure ${limitReached ? 'text-coral-text' : 'text-fg-muted'}`}>
           {battlesToday} / {BATTLE.dailyLimit} today
         </span>
-      </header>
-
-      {error && <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{error}</div>}
+      }
+    >
+      {error && <Banner tone="error">{error}</Banner>}
 
       <ModeCard
         title="Savborne AI"
@@ -181,88 +182,76 @@ export default function BattleMenuPage() {
         accent="var(--butter)"
       />
       {challenge && (
-        <div className="vpx bg-surface p-4 flex flex-col gap-2 -mt-2">
-          <p className="text-xs text-fg-muted">
+        <PixelPanel className="p-4 flex flex-col gap-2">
+          <p className="sv-label text-fg-muted">
             Send this code to your friend. It opens inside their Nimiq Pay once they paste it as a
             Mini App URL, and expires in 24 hours.
           </p>
-          <code className="num text-[11px] bg-surface-low p-2 break-all vpx-soft">
+          <code className="sv-figure font-mono bg-surface-low p-2 vpx-soft sv-break">
             {challenge.sharePath}
           </code>
-          <button
-            onClick={copyLink}
-            className="vpx-soft bg-surface-hi py-2 text-sm font-bold active:translate-y-0.5"
-          >
+          <Button variant="secondary" onClick={copyLink}>
             {copied ? 'Copied!' : 'Copy challenge link'}
-          </button>
-        </div>
+          </Button>
+        </PixelPanel>
       )}
 
       {queued ? (
-        <div className="vpx bg-surface p-4 flex flex-col gap-3">
-          <p className="text-sm font-bold text-mint">
+        <PixelPanel className="p-4 flex flex-col gap-3">
+          <p className="sv-body font-bold text-mint">
             Searching for a ranked opponent in your bracket…
           </p>
-          <p className="num text-xs text-fg-muted">
+          <p className="sv-figure text-fg-muted">
             {Math.floor(waitedSeconds / 60)}:{String(waitedSeconds % 60).padStart(2, '0')} ·
             ±{waitedSeconds < 60 ? 150 : waitedSeconds < 120 ? 300 : waitedSeconds < 180 ? 450 : 600} rating window
           </p>
           {waitedSeconds >= 180 && (
-            <p className="text-xs text-butter-text">
+            <p className="sv-label text-butter-text">
               No match yet. We&apos;ll keep searching. You can battle the AI or a friend while you
               wait.
             </p>
           )}
           <div className="flex gap-2">
-            <button
-              onClick={leaveQueue}
-              className="vpx-soft bg-surface-low py-2 px-3 text-xs font-bold text-fg-muted active:translate-y-0.5"
-            >
+            <Button variant="secondary" onClick={leaveQueue}>
               Cancel search
-            </button>
-            <button
-              onClick={() => { leaveQueue(); startAiBattle() }}
-              className="vpx-soft bg-surface-hi py-2 px-3 text-xs font-bold text-mint active:translate-y-0.5"
-            >
+            </Button>
+            <Button variant="secondary" onClick={() => { leaveQueue(); startAiBattle() }}>
               Battle AI instead
-            </button>
+            </Button>
           </div>
-        </div>
+        </PixelPanel>
       ) : (
-        <div className="vpx-soft bg-surface-low p-4 flex flex-col gap-1.5">
-          <h2 className="text-base font-bold">Ranked match</h2>
-          <p className="text-xs text-fg-muted leading-snug">Find a ranked match in your bracket.</p>
+        <PixelPanel tone="off" className="p-4 flex flex-col gap-1.5">
+          <h2 className="sv-subheading">Ranked match</h2>
+          <p className="sv-label text-fg-muted">Find a ranked match in your bracket.</p>
           {!rankedEligible && !loading && (
-            <p className="text-[11px] text-butter-text">
+            <p className="sv-label text-butter-text">
               Reach Level {RANKED.minLevel} and complete {RANKED.minCheckIns} check-ins to unlock
               ranked battles.
             </p>
           )}
           {rankedEligible && (
-            <button
+            <Button
+              variant="primary"
               onClick={joinQueue}
               disabled={busy || limitReached || queueBusy}
-              className="vpx py-2.5 font-bold text-sm bg-coral text-[#1C0E0A] active:translate-y-0.5 disabled:opacity-40"
-              style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
             >
               {busy ? 'Checking…' : 'Find ranked match'}
-            </button>
+            </Button>
           )}
-        </div>
+        </PixelPanel>
       )}
 
       <section className="flex flex-col gap-2 pt-2 border-t border-line">
-        <h3 className="text-[11px] uppercase tracking-widest text-fg-faint font-bold">
-          How battles work
-        </h3>
-        <ul className="text-xs text-fg-muted leading-relaxed flex flex-col gap-1 list-disc pl-4">
+        <h3 className="sv-section-label text-fg-faint">How battles work</h3>
+        <ul className="sv-label text-fg-muted flex flex-col gap-1 list-disc pl-4">
           <li>5 turns. Each turn both sides secretly pick Attack, Defend, Special Move, or Use item.</li>
           <li>Higher health after 5 turns wins. A knockout ends it early. Ties give both 15 XP.</li>
           <li>No chance — outcomes depend only on moves and items.</li>
           <li>Not chosen by the timer? Your turn defaults to Defend.</li>
         </ul>
       </section>
-    </main>
+    </ScreenShell>
   )
 }
 
@@ -284,23 +273,18 @@ function ModeCard({
   footnote?: string
 }) {
   return (
-    <div className="vpx bg-surface p-4 flex flex-col gap-3">
-      <div>
-        <h2 className="text-base font-bold" style={{ color: accent }}>
+    <PixelPanel className="p-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h2 className="sv-subheading" style={{ color: accent }}>
           {title}
         </h2>
-        <p className="text-xs text-fg-muted mt-1">{blurb}</p>
+        <p className="sv-label text-fg-muted">{blurb}</p>
       </div>
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className="vpx py-3 font-bold text-sm active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
-        style={{ background: accent, color: '#0E1D19', boxShadow: '0 3px 0 var(--bevel-shadow)' }}
-      >
+      <Button variant="primary" onClick={onClick} disabled={disabled}>
         {cta}
-      </button>
-      {footnote && <p className="text-[10px] text-fg-faint">{footnote}</p>}
-    </div>
+      </Button>
+      {footnote && <p className="sv-label text-fg-faint">{footnote}</p>}
+    </PixelPanel>
   )
 }
 
