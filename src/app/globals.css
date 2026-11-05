@@ -339,3 +339,46 @@ body {
     text-underline-offset: 4px;
   }
 }
+
+/* ── Foundation 2: screen shell ───────────────────────────────────────── */
+@layer components {
+  .sv-shell {
+    display: flex;
+    flex-direction: column;
+    padding: 20px var(--gut) 0;
+  }
+  .sv-shell--tab { height: calc(100dvh - var(--nav-h) - env(safe-area-inset-bottom, 0px)); }
+  .sv-shell--pushed { height: 100dvh; }
+  .sv-shell__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 36px;
+    flex-shrink: 0;
+  }
+  .sv-shell--pushed .sv-shell__header { min-height: 44px; }
+  .sv-shell__title {
+    font-family: var(--font-silkscreen);
+    font-size: 28px;
+    line-height: 1.1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .sv-shell__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    scroll-padding-top: 16px;
+    scroll-padding-bottom: 16px;
+  }
+  .sv-shell--pushed .sv-shell__body {
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  }
+}
