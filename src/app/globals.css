@@ -254,3 +254,88 @@ body {
   .sv-sheet, .sv-shake, .sv-pop, .sv-dots span { animation: none; }
   .sv-press:active { transform: none; }
 }
+
+/* ── Foundation 2: buttons and links ──────────────────────────────────── */
+@layer components {
+  .sv-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 2px solid transparent;
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+  }
+  .sv-btn--full { width: 100%; }
+  .sv-btn--primary {
+    height: 64px;
+    background: var(--coral);
+    color: var(--shell);
+    border-color: var(--cream);
+    box-shadow: 0 4px 0 var(--coral-edge);
+  }
+  .sv-btn--secondary {
+    height: 56px;
+    background: var(--surface);
+    color: var(--fg);
+    border-color: var(--bevel);
+    box-shadow: 0 4px 0 var(--bevel-shadow);
+  }
+  .sv-btn--destructive {
+    height: 56px;
+    background: var(--coral-tint);
+    color: var(--coral-text);
+    border-color: var(--coral);
+    box-shadow: 0 4px 0 var(--coral-edge);
+  }
+  .sv-btn--ghost {
+    min-height: 44px;
+    background: transparent;
+    color: var(--fg-muted);
+    border-color: transparent;
+    box-shadow: none;
+    padding: 0 8px;
+  }
+  .sv-btn--icon {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: var(--surface);
+    color: var(--fg);
+    border-color: var(--bevel);
+    box-shadow: 0 3px 0 var(--bevel-shadow);
+  }
+  .sv-btn--sm { height: 44px; }
+  .sv-btn--md { height: 56px; }
+  .sv-btn--lg { height: 64px; }
+  .sv-btn--move {
+    height: 84px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 16px;
+    font-size: 18px;
+  }
+  .sv-btn:disabled {
+    background: var(--surface-low);
+    color: var(--fg-faint);
+    border-color: var(--off);
+    box-shadow: 0 3px 0 #1B2624;
+    cursor: not-allowed;
+  }
+  .sv-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--mint);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
