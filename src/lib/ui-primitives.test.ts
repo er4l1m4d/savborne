@@ -55,6 +55,7 @@ test('Row supports 56/58 heights and dividers', () => {
   const src = ui('Row.tsx')
   assert.match(src, /minHeight\?:\s*56\s*\|\s*58/)
   assert.match(src, /divider\?:\s*boolean/)
+  assert.match(src, /className\?:\s*string/)
   assert.match(CSS, /\.sv-row\s*\{[^}]*min-height:\s*58px/)
   assert.match(CSS, /\.sv-row--56\s*\{[^}]*min-height:\s*56px/)
   assert.match(CSS, /\.sv-row--divider\s*\{[^}]*border-bottom:\s*2px solid var\(--track\)/)

@@ -13,6 +13,8 @@ type RowProps = {
   trailing?: ReactNode
   divider?: boolean
   minHeight?: 56 | 58
+  /** Extra classes on the row itself, e.g. the current player's highlight. */
+  className?: string
   children: ReactNode
 }
 
@@ -21,6 +23,7 @@ export function Row({
   trailing,
   divider = false,
   minHeight = 58,
+  className,
   children,
 }: RowProps) {
   return (
@@ -29,6 +32,7 @@ export function Row({
         'sv-row',
         minHeight === 56 ? 'sv-row--56' : '',
         divider ? 'sv-row--divider' : '',
+        className ?? '',
       ]
         .filter(Boolean)
         .join(' ')}
