@@ -59,3 +59,13 @@ test('Row supports 56/58 heights and dividers', () => {
   assert.match(CSS, /\.sv-row--56\s*\{[^}]*min-height:\s*56px/)
   assert.match(CSS, /\.sv-row--divider\s*\{[^}]*border-bottom:\s*2px solid var\(--track\)/)
 })
+
+test('Tabs is a controlled, accessible tablist', () => {
+  const src = ui('Tabs.tsx')
+  assert.match(src, /role="tablist"/)
+  assert.match(src, /aria-selected/)
+  assert.match(src, /ariaLabel/)
+  assert.match(src, /onChange/)
+  assert.match(CSS, /\.sv-tab\s*\{[^}]*height:\s*44px/)
+  assert.match(CSS, /\.sv-tab\[aria-selected='true'\]/)
+})

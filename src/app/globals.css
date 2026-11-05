@@ -410,3 +410,24 @@ body {
   .sv-row--divider { border-bottom: 2px solid var(--track); }
   .sv-row--divider:last-child { border-bottom: 0; }
 }
+
+/* ── Foundation 2: tabs ───────────────────────────────────────────────── */
+@layer components {
+  .sv-tabs { display: flex; gap: 8px; }
+  .sv-tab {
+    flex: 1;
+    height: 44px;
+    border: 2px solid var(--bevel);
+    background: var(--surface);
+    color: var(--fg);
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .sv-tab[aria-selected='true'] {
+    background: var(--mint);
+    border-color: var(--mint);
+    color: var(--shell);
+  }
+}
