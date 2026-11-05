@@ -88,3 +88,14 @@ test('BottomSheet traps focus, closes on Escape and locks scroll', () => {
   assert.match(CSS, /\.sv-scrim\s*\{[^}]*position:\s*fixed/)
   assert.match(CSS, /\.sv-sheet-panel\s*\{[^}]*max-height:\s*80dvh/)
 })
+
+test('ResultPanel renders a display headline, tiles and actions', () => {
+  const src = ui('ResultPanel.tsx')
+  assert.match(src, /tone:\s*'mint'\s*\|\s*'coral'\s*\|\s*'cream'/)
+  assert.match(src, /tiles:\s*ResultTile\[\]/)
+  assert.match(src, /unlocks\?/)
+  assert.match(src, /sv-display/)
+  assert.match(src, /vpx-soft/)
+  assert.match(src, /sv-number-m/)
+  assert.match(src, /actions/)
+})
