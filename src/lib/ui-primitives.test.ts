@@ -77,3 +77,14 @@ test('Banner has error and info tones', () => {
   assert.match(CSS, /\.sv-banner--error\s*\{[^}]*background:\s*var\(--coral-tint\)/)
   assert.match(CSS, /\.sv-banner--info\s*\{[^}]*border-color:\s*var\(--mint\)/)
 })
+
+test('BottomSheet traps focus, closes on Escape and locks scroll', () => {
+  const src = ui('BottomSheet.tsx')
+  assert.match(src, /aria-modal="true"/)
+  assert.match(src, /Escape/)
+  assert.match(src, /document\.body\.style\.overflow\s*=\s*'hidden'/)
+  assert.match(src, /focusable\.length === 0/)
+  assert.match(src, /panel\.focus\(\)/)
+  assert.match(CSS, /\.sv-scrim\s*\{[^}]*position:\s*fixed/)
+  assert.match(CSS, /\.sv-sheet-panel\s*\{[^}]*max-height:\s*80dvh/)
+})

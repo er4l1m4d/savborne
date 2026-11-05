@@ -445,3 +445,21 @@ body {
   .sv-banner--error { background: var(--coral-tint); border-color: var(--coral); color: var(--coral-text); }
   .sv-banner--info { background: var(--surface); border-color: var(--mint); color: var(--fg); }
 }
+
+/* ── Foundation 2: bottom sheet ───────────────────────────────────────── */
+@layer components {
+  .sv-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(12, 18, 17, 0.7); }
+  .sv-sheet-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 61;
+    max-height: 80dvh;
+    overflow-y: auto;
+    padding: 22px;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 2px solid var(--bevel);
+  }
+}
