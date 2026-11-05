@@ -11,8 +11,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { authHeaders } from '@/lib/session'
 import { BRACKETS, type Bracket } from '@/lib/constants'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Row } from '@/components/ui/Row'
+import { Chip } from '@/components/ui/Chip'
+import { Tabs } from '@/components/ui/Tabs'
+import { Banner } from '@/components/ui/Banner'
+import { Button } from '@/components/ui/Button'
 
-type Row = {
+type RankRow = {
   rank: number
   displayName: string
   level: number
@@ -29,7 +36,7 @@ type Row = {
 export default function LeaderboardPage() {
   const [board, setBoard] = useState<'ranked' | 'unranked'>('ranked')
   const [friends, setFriends] = useState(false)
-  const [rows, setRows] = useState<Row[] | null>(null)
+  const [rows, setRows] = useState<RankRow[] | null>(null)
   const [total, setTotal] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,7 +49,7 @@ export default function LeaderboardPage() {
         headers: authHeaders(),
       })
       if (!res.ok) throw new Error(`${res.status}`)
-      const json = (await res.json()) as { rows: Row[]; total: number }
+      const json = (await res.json()) as { rows: RankRow[]; total: number }
       setRows(json.rows)
       setTotal(json.total)
     } catch (err) {
@@ -57,67 +64,77 @@ export default function LeaderboardPage() {
   }, [load])
 
   return (
-    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-4">
-      <header className="flex items-baseline justify-between mt-4">
-        <h1 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-          Ranks
-        </h1>
-        <button
-          onClick={() => setFriends((f) => !f)}
+    <ScreenShell
+      variant="tab"
+      title="Ranks"
+      actions={
+        <Button
+          variant="secondary"
+          size="sm"
+          fullWidth={false}
           aria-pressed={friends}
-          className={`vpx-soft px-3 h-8 text-xs font-bold uppercase tracking-widest ${
-            friends ? 'bg-mint-tint text-mint' : 'bg-surface text-fg-muted'
-          }`}
+          onClick={() => setFriends((f) => !f)}
         >
           Friends {friends ? 'on' : 'off'}
-        </button>
-      </header>
+        </Button>
+      }
+    >
+      <Tabs
+        ariaLabel="Leaderboard"
+        value={board}
+        onChange={(v) => setBoard(v as 'ranked' | 'unranked')}
+        items={[
+          { value: 'ranked', label: 'Ranked' },
+          { value: 'unranked', label: 'Unranked' },
+        ]}
+      />
 
-      <div className="grid grid-cols-2 gap-2">
-        <BoardTab active={board === 'ranked'} onClick={() => setBoard('ranked')} label="Ranked" hint="Elo & wins" />
-        <BoardTab
-          active={board === 'unranked'}
-          onClick={() => setBoard('unranked')}
-          label="Unranked"
-          hint="Savings score"
-        />
-      </div>
-
-      {loading && <p className="text-sm text-fg-muted py-6 text-center">Loading…</p>}
-      {error && <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{error}</div>}
+      {loading && <p className="sv-body text-fg-muted py-6 text-center">Loading…</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       {!loading && !error && rows && (
         <>
           {rows.length === 0 ? (
-            <div className="vpx-soft bg-surface p-6 text-center flex flex-col gap-2">
-              <p className="text-sm text-fg-muted">Nobody on this board yet.</p>
-              <p className="text-xs text-fg-faint">
+            <PixelPanel className="p-6 text-center flex flex-col gap-2">
+              <p className="sv-body text-fg-muted">Nobody on this board yet.</p>
+              <p className="sv-label text-fg-faint">
                 {board === 'ranked'
                   ? 'Ranked play opens at Level 3 with 5 check-ins.'
                   : 'Check in and battle — scores build from real play.'}
               </p>
-            </div>
+            </PixelPanel>
           ) : (
-            <ol className="flex flex-col gap-1.5">
-              {rows.map((r) => (
-                <li
+            <PixelPanel className="px-4 py-0">
+              {rows.map((r, i) => (
+                <Row
                   key={`${r.rank}-${r.displayName}`}
-                  className={`vpx-soft p-2.5 flex items-center gap-3 ${
-                    r.isMe ? 'bg-surface-hi' : 'bg-surface'
-                  }`}
+                  minHeight={56}
+                  divider={i < rows.length - 1}
+                  className={r.isMe ? 'bg-surface-hi' : undefined}
+                  leading={
+                    <span
+                      className={`sv-figure w-8 text-center shrink-0 ${
+                        r.rank === 1
+                          ? 'text-gold'
+                          : r.rank === 2
+                            ? 'text-silver'
+                            : r.rank === 3
+                              ? 'text-bronze'
+                              : 'text-fg-faint'
+                      }`}
+                    >
+                      {r.rank}
+                    </span>
+                  }
+                  trailing={
+                    <span className="sv-figure text-butter-text shrink-0">{r.score}</span>
+                  }
                 >
-                  <span
-                    className={`num w-8 text-center font-bold shrink-0 ${
-                      r.rank === 1 ? 'text-gold' : r.rank === 2 ? 'text-silver' : r.rank === 3 ? 'text-bronze' : 'text-fg-faint'
-                    }`}
-                  >
-                    {r.rank}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold truncate">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="sv-label">
                         {r.displayName}
-                        {r.isMe && <span className="text-fg-faint"> (you)</span>}
+                        {r.isMe && <span className="sv-label text-fg-faint"> (you)</span>}
                       </span>
                       {r.verifiedSaver && (
                         <span
@@ -129,56 +146,33 @@ export default function LeaderboardPage() {
                         </span>
                       )}
                       {r.bracket && (
-                        <span
-                          className="text-[10px] font-bold uppercase tracking-wider shrink-0"
-                          style={{ color: BRACKETS[r.bracket as Bracket]?.color }}
+                        <Chip
+                          variant="outline"
+                          color={BRACKETS[r.bracket as Bracket]?.color}
                         >
                           {BRACKETS[r.bracket as Bracket]?.label}
-                        </span>
+                        </Chip>
                       )}
                     </div>
-                    <p className="text-[11px] text-fg-faint">
+                    <p className="sv-label text-fg-faint">
                       Lvl {r.level} · {r.wins}W
                       {board === 'unranked' && r.amountScore !== null
                         ? ` · growth ${r.amountScore} · streak ${r.consistencyScore}`
                         : ` · streak ${r.streak}d`}
                     </p>
                   </div>
-                  <span className="num text-lg font-bold text-butter-text shrink-0">{r.score}</span>
-                </li>
+                </Row>
               ))}
-            </ol>
+            </PixelPanel>
           )}
-          <p className="text-[10px] text-fg-faint text-center">
+          <p className="sv-label text-fg-faint text-center">
             {total} player{total === 1 ? '' : 's'} · balances and addresses are never shown
           </p>
-          <p className="text-[10px] text-fg-faint text-center">⟡ marks a verified saver — funds in their own vault</p>
+          <p className="sv-label text-fg-faint text-center">
+            ⟡ marks a verified saver — funds in their own vault
+          </p>
         </>
       )}
-    </main>
-  )
-}
-
-function BoardTab({
-  active,
-  onClick,
-  label,
-  hint,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-  hint: string
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`vpx-soft p-2.5 text-left flex flex-col gap-0.5 ${
-        active ? 'bg-surface-hi' : 'bg-surface opacity-70'
-      }`}
-    >
-      <span className={`text-sm font-bold ${active ? 'text-mint' : 'text-fg-muted'}`}>{label}</span>
-      <span className="text-[10px] uppercase tracking-widest text-fg-faint">{hint}</span>
-    </button>
+    </ScreenShell>
   )
 }
