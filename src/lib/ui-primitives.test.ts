@@ -18,3 +18,13 @@ test('Button exposes the approved variants and press/loading states', () => {
   assert.match(CSS, /\.sv-btn--primary\s*\{[^}]*height:\s*64px/)
   assert.match(CSS, /\.sv-btn--move\s*\{[^}]*height:\s*84px/)
 })
+
+test('PixelPanel composes the stepped panel and tone variables', () => {
+  const src = ui('PixelPanel.tsx')
+  assert.match(src, /wrapperClassName\?:\s*string/)
+  assert.match(src, /data-tone=\{tone\}/)
+  assert.match(src, /className=\{`pxw/)
+  assert.match(src, /className=\{`px sv-panel/)
+  assert.match(CSS, /\.pxw\[data-tone='coral'\]\s*>\s*\.px/)
+  assert.match(CSS, /\.pxw\[data-tone='off'\]\s*>\s*\.px/)
+})
