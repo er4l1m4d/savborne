@@ -15,6 +15,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import { isGetBalanceAvailable, isInsideNimiqPay, WalletError } from '@/lib/nimiq'
+import { PixelPanel } from '@/components/ui/PixelPanel'
 
 /**
  * Paths that must render outside Nimiq Pay: they are opened by link, not by a
@@ -67,7 +68,7 @@ export function VersionGate({ children }: { children: ReactNode }) {
 
   if (state.phase === 'checking') {
     return (
-      <div className="min-h-dvh flex items-center justify-center text-fg-muted text-sm">
+      <div className="min-h-dvh flex items-center justify-center text-fg-muted sv-body">
         Preparing Savborne…
       </div>
     )
@@ -101,15 +102,10 @@ export function VersionGate({ children }: { children: ReactNode }) {
 function GateShell({ title, body }: { title: string; body: string }) {
   return (
     <div className="min-h-dvh flex items-center justify-center p-(--gut)">
-      <div className="vpx bg-surface p-6 max-w-90 w-full flex flex-col gap-3">
-        <h1
-          className="text-2xl leading-tight"
-          style={{ fontFamily: 'var(--font-silkscreen)' }}
-        >
-          {title}
-        </h1>
-        <p className="text-sm text-fg-muted leading-relaxed">{body}</p>
-      </div>
+      <PixelPanel className="p-6 max-w-90 w-full flex flex-col gap-3">
+        <h1 className="sv-heading">{title}</h1>
+        <p className="sv-body text-fg-muted">{body}</p>
+      </PixelPanel>
     </div>
   )
 }

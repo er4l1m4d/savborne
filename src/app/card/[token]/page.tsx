@@ -14,6 +14,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { BRACKETS } from '@/lib/constants'
 import { getFlexCard } from '@/lib/vault/cards'
+import { PixelPanel } from '@/components/ui/PixelPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,12 +41,10 @@ export default async function CardPage({ params }: { params: Promise<{ token: st
 
   return (
     <main className="min-h-dvh flex items-center justify-center p-(--gut)">
-      <article className="vpx bg-surface-low p-6 max-w-90 w-full flex flex-col gap-4">
+      <PixelPanel tone="off" wrapperClassName="max-w-90 w-full" className="p-6 flex flex-col gap-4">
         <header className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-widest text-fg-faint">Savborne saver</span>
-          <h1 className="text-3xl leading-none break-words" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-            {card.displayName}
-          </h1>
+          <span className="sv-section-label text-fg-faint">Savborne saver</span>
+          <h1 className="sv-heading sv-break">{card.displayName}</h1>
         </header>
 
         <dl className="grid grid-cols-3 gap-3">
@@ -56,27 +55,29 @@ export default async function CardPage({ params }: { params: Promise<{ token: st
 
         {bracket && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-widest text-fg-faint">Bracket</span>
-            <span className="text-sm font-bold" style={{ color: bracket.color }}>
+            <span className="sv-section-label text-fg-faint">Bracket</span>
+            <span className="sv-label font-bold" style={{ color: bracket.color }}>
               {bracket.label}
             </span>
           </div>
         )}
 
         <div className="vpx-soft bg-surface p-3 flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-widest text-fg-faint">
+          <span className="sv-section-label text-fg-faint">
             {card.backupVerified ? 'Verified saver ⟡' : 'Vault in progress'}
           </span>
-          <span className="text-xs font-mono text-fg-soft break-all">{card.shortVaultAddress}</span>
-          <span className="text-[11px] text-fg-faint">
+          <span className="sv-figure font-mono text-fg-soft sv-break">
+            {card.shortVaultAddress}
+          </span>
+          <span className="sv-label text-fg-faint">
             Funds held in this player&apos;s own vault. Savborne never holds them.
           </span>
         </div>
 
-        <p className="text-[11px] text-fg-faint">
+        <p className="sv-label text-fg-faint">
           Balances are never public. This card proves a vault exists, not how much is in it.
         </p>
-      </article>
+      </PixelPanel>
     </main>
   )
 }
@@ -84,10 +85,8 @@ export default async function CardPage({ params }: { params: Promise<{ token: st
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <dt className="text-[10px] uppercase tracking-widest text-fg-faint">{label}</dt>
-      <dd className="text-2xl leading-none num" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-        {value}
-      </dd>
+      <dt className="sv-section-label text-fg-faint">{label}</dt>
+      <dd className="sv-number-m">{value}</dd>
     </div>
   )
 }
