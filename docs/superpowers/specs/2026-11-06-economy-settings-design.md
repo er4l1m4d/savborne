@@ -93,8 +93,9 @@ Success means:
 
 ## 5. Settings anatomy
 
-All sections use `PixelPanel` + `Row`; headings use `.sv-section-label`. The
-screen body uses the standard 14px gap.
+Read-only rows use `PixelPanel` + `Row`; action rows use the full-width ghost
+button treatment inside the same panel so they stay real buttons. Headings use
+`.sv-section-label`. The screen body uses the standard 14px gap.
 
 ### 5.1 Account
 
@@ -157,10 +158,10 @@ The server vault is read with `GET /api/vaults` using the session headers.
 
 ### 6.2 Progress
 
-A four-dot indicator plus one label (same pattern as Setup) shows
-`Step N of M · <label>`. M is 4 for the local-vault path, 2 for the typed-words
-path and 1 for no vault. Only the active label renders, so 360px never
-truncates.
+An indicator of one 8px square per step plus one label (same pattern as Setup)
+shows `Step N of M · <label>`. M is 4 for the local-vault path, 2 for the
+typed-words path and 1 for no vault. Only the active label renders, so 360px
+never truncates.
 
 ### 6.3 Review
 
@@ -172,7 +173,7 @@ The review panel states:
 - that onboarding again creates a new vault.
 
 `Delete everything` (`variant="destructive"`) opens the confirmation sheet. The
-sheet repeats the irreversible line and holds the real `Delete everything`
+sheet repeats the irreversible line and holds the real `Yes, delete everything`
 button plus `Cancel`. The signed delete call only runs from the sheet button.
 
 ### 6.4 Success and failure
