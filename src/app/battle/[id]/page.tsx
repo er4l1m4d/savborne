@@ -18,11 +18,14 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { Glyph } from '@/components/Glyphs'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 type MoveInfo = { move: string; itemKey: string | null; damage: number } | null
 
@@ -140,16 +143,16 @@ export default function BattleScreen() {
 
   if (!state) {
     return (
-      <Shell>
+      <ScreenShell variant="pushed" title="Battle" backHref="/battle">
         {error ? (
-          <Panel tone="error">
-            <p>{error}</p>
+          <>
+            <Banner tone="error">{error}</Banner>
             <BackLink />
-          </Panel>
+          </>
         ) : (
-          <p className="text-fg-muted text-sm">Loading battle…</p>
+          <p className="sv-body text-fg-muted">Loading battle…</p>
         )}
-      </Shell>
+      </ScreenShell>
     )
   }
 
@@ -160,54 +163,44 @@ export default function BattleScreen() {
 
   if (battle.status === 'abandoned') {
     return (
-      <Shell>
-        <Panel>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-            Challenge expired
-          </h1>
-          <p className="text-sm text-fg-muted mt-2">
+      <ScreenShell variant="pushed" title="Battle" backHref="/battle">
+        <PixelPanel className="p-6 flex flex-col gap-3">
+          <h1 className="sv-heading">Challenge expired</h1>
+          <p className="sv-body text-fg-muted">
             Your challenge is still waiting. It expires in 24 hours.
           </p>
-          <p className="text-sm text-fg-muted">Nobody answered in time — no XP lost.</p>
+          <p className="sv-body text-fg-muted">Nobody answered in time — no XP lost.</p>
           <BackLink />
-        </Panel>
-      </Shell>
+        </PixelPanel>
+      </ScreenShell>
     )
   }
 
   if (battle.status === 'pending') {
     return (
-      <Shell>
+      <ScreenShell variant="pushed" title="Battle" backHref="/battle">
         {iAmCreator ? (
-          <Panel>
-            <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-              Challenge sent
-            </h1>
-            <p className="text-sm text-fg-muted mt-2">
+          <PixelPanel className="p-6 flex flex-col gap-3">
+            <h1 className="sv-heading">Challenge sent</h1>
+            <p className="sv-body text-fg-muted">
               Your challenge is still waiting. It expires in 24 hours.
             </p>
-            <p className="text-xs text-fg-faint">Share the code from the Battle tab.</p>
+            <p className="sv-label text-fg-faint">Share the code from the Battle tab.</p>
             <BackLink />
-          </Panel>
+          </PixelPanel>
         ) : (
-          <Panel>
-            <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-              {battle.opponentName} challenges you
-            </h1>
-            <p className="text-sm text-fg-muted mt-2">
+          <PixelPanel className="p-6 flex flex-col gap-3">
+            <h1 className="sv-heading">{battle.opponentName} challenges you</h1>
+            <p className="sv-body text-fg-muted">
               5 turns. No chance. Winner has more health.
             </p>
-            <button
-              onClick={join}
-              disabled={submitting}
-              className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold mt-4 active:translate-y-0.5 disabled:opacity-40"
-              style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
-            >
+            <Button variant="primary" onClick={join} disabled={submitting}>
               {submitting ? 'Joining…' : 'Accept challenge'}
-            </button>
-          </Panel>
+            </Button>
+            <BackLink />
+          </PixelPanel>
         )}
-      </Shell>
+      </ScreenShell>
     )
   }
 
@@ -215,170 +208,152 @@ export default function BattleScreen() {
     const iWon = battle.winner === viewer.address
     const isTie = battle.winner === null
     return (
-      <Shell>
-        <Panel>
+      <ScreenShell variant="pushed" title="Battle" backHref="/battle">
+        <PixelPanel className="p-6 flex flex-col gap-3">
           <h1
-            className="text-3xl font-bold"
+            className="sv-display"
             style={{
-              fontFamily: 'var(--font-silkscreen)',
               color: isTie ? 'var(--butter)' : iWon ? 'var(--mint)' : 'var(--coral-text)',
             }}
           >
             {isTie ? "It's a tie." : iWon ? 'You win!' : 'You lost.'}
           </h1>
-          <p className="text-sm text-fg-muted mt-3">
+          <p className="sv-body text-fg-muted">
             {isTie
               ? 'Both characters held their ground. Each player gets 15 XP.'
               : iWon
                 ? '+30 XP added.'
                 : '+10 XP — a loss still teaches.'}
           </p>
-          <div className="flex justify-between text-xs text-fg-faint mt-4 num">
+          <div className="flex justify-between sv-label text-fg-faint">
             <span>You: {myHp} HP</span>
             <span>
               {battle.opponentName}: {oppHp} HP
             </span>
           </div>
           <BackLink label="Back to battle" />
-        </Panel>
-      </Shell>
+        </PixelPanel>
+      </ScreenShell>
     )
   }
 
   // ── Active battle ──
   return (
-    <Shell>
-      <div className="w-full max-w-105 mx-auto flex flex-col gap-4 p-(--gut)">
-        <header className="flex items-baseline justify-between">
-          <span className="text-xs uppercase tracking-widest text-fg-faint">
-            {battle.mode === 'ai' ? 'Unranked. Opponent: Savborne AI.' : `vs ${battle.opponentName}`}
-          </span>
-          <span className="num text-sm font-bold text-butter-text">
-            Turn {battle.currentTurn} of {battle.maxTurns}
-          </span>
-        </header>
+    <ScreenShell
+      variant="pushed"
+      title="Battle"
+      backHref="/battle"
+      actions={
+        <span className="sv-figure text-butter-text">
+          Turn {battle.currentTurn} of {battle.maxTurns}
+        </span>
+      }
+    >
+      <span className="sv-section-label text-fg-faint">
+        {battle.mode === 'ai' ? 'Unranked. Opponent: Savborne AI.' : `vs ${battle.opponentName}`}
+      </span>
 
-        <HpBars
-          me={myHp}
-          opp={oppHp}
-          maxHp={battle.startingHp}
-          oppName={battle.opponentName}
-          meName={viewer.displayName}
-        />
+      <HpBars
+        me={myHp}
+        opp={oppHp}
+        maxHp={battle.startingHp}
+        oppName={battle.opponentName}
+        meName={viewer.displayName}
+      />
 
-        {viewer.opponentLastMove && (
-          <p className="text-[11px] text-mint">
-            ◈ Copper Compass: their last move was <strong>{viewer.opponentLastMove}</strong>.
-          </p>
-        )}
+      {viewer.opponentLastMove && (
+        <p className="sv-label text-mint">
+          ◈ Copper Compass: their last move was <strong>{viewer.opponentLastMove}</strong>.
+        </p>
+      )}
 
-        {lastTurn && <TurnLog turn={lastTurn} meSide={viewer.side} />}
+      {lastTurn && <TurnLog turn={lastTurn} meSide={viewer.side} />}
 
-        {viewer.hasMovedThisTurn ? (
-          <div className="vpx-soft bg-surface p-4 text-center">
-            <p className="text-sm text-fg-muted">Waiting for your opponent to choose.</p>
-            {secondsLeft !== null && (
-              <p className="text-[11px] text-fg-faint num mt-1">{secondsLeft}s</p>
-            )}
+      {viewer.hasMovedThisTurn ? (
+        <PixelPanel className="p-4 text-center flex flex-col gap-1">
+          <p className="sv-body text-fg-muted">Waiting for your opponent to choose.</p>
+          {secondsLeft !== null && (
+            <p className="sv-figure text-fg-faint">{secondsLeft}s</p>
+          )}
+        </PixelPanel>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <h2 className="sv-subheading">Choose your move</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <MoveButton
+              label="Attack"
+              glyph="attack"
+              variant="primary"
+              onClick={() => submitMove('attack')}
+              disabled={submitting}
+            />
+            <MoveButton
+              label="Defend"
+              glyph="defend"
+              variant="secondary"
+              onClick={() => submitMove('defend')}
+              disabled={submitting}
+            />
+            <MoveButton
+              label="Special Move"
+              glyph="special"
+              variant="secondary"
+              note={viewer.specialAvailable ? undefined : 'cooldown 1'}
+              onClick={() => submitMove('special')}
+              disabled={submitting || !viewer.specialAvailable}
+            />
+            <MoveButton
+              label="Use item"
+              glyph="useItem"
+              variant="secondary"
+              onClick={() => setShowItems((s) => !s)}
+              disabled={submitting || viewer.ownedInactiveItems.length === 0}
+            />
           </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-              Choose your move
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              <MoveButton
-                label="Attack"
-                glyph="attack"
-                onClick={() => submitMove('attack')}
-                disabled={submitting}
-                accent="var(--coral)"
-              />
-              <MoveButton
-                label="Defend"
-                glyph="defend"
-                onClick={() => submitMove('defend')}
-                disabled={submitting}
-                accent="var(--silver)"
-              />
-              <MoveButton
-                label="Special Move"
-                glyph="special"
-                note={viewer.specialAvailable ? undefined : 'cooldown 1'}
-                onClick={() => submitMove('special')}
-                disabled={submitting || !viewer.specialAvailable}
-                accent="var(--butter)"
-              />
-              <MoveButton
-                label="Use item"
-                glyph="useItem"
-                onClick={() => setShowItems((s) => !s)}
-                disabled={submitting || viewer.ownedInactiveItems.length === 0}
-                accent="var(--mint)"
-              />
-            </div>
-            {showItems && viewer.ownedInactiveItems.length > 0 && (
-              <div className="vpx-soft bg-surface-low p-3 flex flex-col gap-1">
-                <p className="text-[10px] uppercase tracking-widest text-fg-faint font-bold">
-                  Activate one item (costs your turn, lasts the battle)
-                </p>
-                {viewer.ownedInactiveItems.map((k) => {
-                  const it = ITEMS.find((i) => i.key === k)!
-                  return (
-                    <button
-                      key={k}
-                      onClick={() => submitMove('item', k)}
-                      disabled={submitting}
-                      className="text-left text-sm py-1.5 px-2 hover:bg-surface-hi disabled:opacity-50"
-                    >
-                      {it.name} <span className="text-fg-faint text-xs">— {it.blurb}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-            {secondsLeft !== null && (
-              <p className="text-[11px] text-fg-faint num text-center">
-                Auto-Defend in {secondsLeft}s
+          {showItems && viewer.ownedInactiveItems.length > 0 && (
+            <PixelPanel tone="off" className="p-3 flex flex-col gap-1">
+              <p className="sv-section-label text-fg-faint">
+                Activate one item (costs your turn, lasts the battle)
               </p>
-            )}
-          </div>
-        )}
+              {viewer.ownedInactiveItems.map((k) => {
+                const it = ITEMS.find((i) => i.key === k)!
+                return (
+                  <Button
+                    key={k}
+                    variant="secondary"
+                    size="sm"
+                    fullWidth
+                    className="justify-start"
+                    onClick={() => submitMove('item', k)}
+                    disabled={submitting}
+                  >
+                    {it.name}{' '}
+                    <span className="sv-label text-fg-faint">— {it.blurb}</span>
+                  </Button>
+                )
+              })}
+            </PixelPanel>
+          )}
+          {secondsLeft !== null && (
+            <p className="sv-state text-fg-faint text-center">
+              Auto-Defend in {secondsLeft}s
+            </p>
+          )}
+        </div>
+      )}
 
-        {error && <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{error}</div>}
-      </div>
-    </Shell>
+      {error && <Banner tone="error">{error}</Banner>}
+    </ScreenShell>
   )
 }
 
 // ─── Atoms ─────────────────────────────────────────────────────────────────
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="min-h-dvh flex items-start justify-center bg-background">{children}</main>
-  )
-}
-
-function Panel({ children, tone }: { children: React.ReactNode; tone?: 'error' }) {
-  return (
-    <div
-      className={`vpx p-6 max-w-90 w-full m-(--gut) ${
-        tone === 'error' ? 'bg-coral-tint text-coral-text' : 'bg-surface text-foreground'
-      }`}
-    >
-      {children}
-    </div>
-  )
-}
-
 function BackLink({ label = 'Back to battle' }: { label?: string }) {
   return (
-    <Link
-      href="/battle"
-      className="inline-block text-sm text-mint underline underline-offset-4 mt-4 self-start"
-    >
+    <ButtonLink href="/battle" variant="ghost" className="self-start">
       {label}
-    </Link>
+    </ButtonLink>
   )
 }
 
@@ -418,9 +393,11 @@ function Hp({
   const color = pct > 50 ? 'var(--mint)' : pct > 20 ? 'var(--butter)' : 'var(--coral)'
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex justify-between text-[11px] uppercase tracking-widest">
-        <span className={self ? 'text-foreground font-bold' : 'text-fg-muted'}>{label}</span>
-        <span className="num text-fg-muted">
+      <div className="flex justify-between">
+        <span className={`sv-state ${self ? 'text-foreground' : 'text-fg-muted'}`}>
+          {label}
+        </span>
+        <span className="sv-figure text-fg-muted">
           {value} / {max}
         </span>
       </div>
@@ -445,18 +422,16 @@ function TurnLog({
   const theirs = meSide === 'a' ? turn.b : turn.a
   if (!mine && !theirs) return null
   return (
-    <div className="vpx-soft bg-surface p-3 text-xs text-fg-muted flex flex-col gap-0.5">
-      <span className="font-bold text-fg-faint uppercase tracking-widest text-[10px]">
-        Turn {turn.turnNumber} result
-      </span>
+    <div className="vpx-soft bg-surface p-3 flex flex-col gap-0.5">
+      <span className="sv-state text-fg-faint">Turn {turn.turnNumber} result</span>
       {mine && (
-        <span>
+        <span className="sv-label text-fg-muted">
           You used {mine.move}
           {mine.damage ? ` and dealt ${mine.damage}` : '.'}
         </span>
       )}
       {theirs && (
-        <span>
+        <span className="sv-label text-fg-muted">
           Opponent used {theirs.move}
           {theirs.damage ? ` and dealt ${theirs.damage}` : '.'}
         </span>
@@ -471,7 +446,7 @@ function MoveButton({
   glyph,
   onClick,
   disabled,
-  accent,
+  variant,
 }: {
   label: string
   /** Small corner note, e.g. the Special Move cooldown. Keeps the disabled state from reflowing the label. */
@@ -479,22 +454,21 @@ function MoveButton({
   glyph: 'attack' | 'defend' | 'special' | 'useItem'
   onClick: () => void
   disabled: boolean
-  accent: string
+  variant: 'primary' | 'secondary'
 }) {
   return (
-    <button
+    <Button
+      variant={variant}
+      size="move"
       onClick={onClick}
       disabled={disabled}
-      className="vpx-soft relative bg-surface h-21 px-4 flex flex-col items-start justify-center gap-1.5 text-lg font-bold hover:bg-surface-hi active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
-      style={{ color: accent }}
+      className="relative"
     >
       <Glyph name={glyph} size={24} />
       <span>{label}</span>
       {note && (
-        <span className="absolute top-1.5 right-2 text-[10px] font-bold opacity-70">
-          {note}
-        </span>
+        <span className="sv-state absolute top-1.5 right-2 opacity-70">{note}</span>
       )}
-    </button>
+    </Button>
   )
 }
