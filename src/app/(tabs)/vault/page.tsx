@@ -14,6 +14,10 @@ import { LUNA_PER_NIM } from '@/lib/constants'
 import { hostNetwork } from '@/lib/nimiq'
 import { readSession } from '@/lib/session'
 import { useVault } from '@/lib/vault/useVault'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 export default function VaultPage() {
   const {
@@ -121,35 +125,42 @@ export default function VaultPage() {
 
   // ── States the local key and the server row can disagree on ────────────────
   if (loading) {
-    return <Shell><p className="text-sm text-fg-muted">Loading your vault…</p></Shell>
-  }
-  if (error) {
     return (
-      <Shell>
-        <ErrorCard title="Could not load your vault" body={error} onRetry={refresh} />
-      </Shell>
+      <ScreenShell variant="tab" title="Vault" backHref="/">
+        <p className="sv-body text-fg-muted">Loading your vault…</p>
+      </ScreenShell>
     )
   }
+
+  if (error) {
+    return (
+      <ScreenShell variant="tab" title="Vault" backHref="/">
+        <Banner tone="error">
+          <p className="font-bold">Could not load your vault</p>
+          <p className="sv-label">{error}</p>
+          <Button variant="primary" size="sm" fullWidth={false} onClick={refresh}>
+            Retry
+          </Button>
+        </Banner>
+      </ScreenShell>
+    )
+  }
+
   if (!vault) {
     return (
-      <Shell>
-        <section className="flex flex-col gap-3">
-          <h1 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-            No vault yet
-          </h1>
-          <p className="text-sm text-fg-muted">
+      <ScreenShell variant="tab" title="Vault" backHref="/">
+        <PixelPanel className="p-4 flex flex-col gap-3">
+          <h1 className="sv-heading">No vault yet</h1>
+          <p className="sv-body text-fg-muted">
             {hasLocalKey
               ? 'This device has a vault key, but the server has no mapping for it. Create the vault to register it.'
               : 'Create a vault to start saving on chain. It takes a minute and costs nothing.'}
           </p>
-          <Link
-            href="/setup/vault"
-            className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold text-base text-center no-underline"
-          >
+          <ButtonLink href="/setup/vault" variant="primary">
             Create my vault
-          </Link>
-        </section>
-      </Shell>
+          </ButtonLink>
+        </PixelPanel>
+      </ScreenShell>
     )
   }
 
@@ -157,76 +168,88 @@ export default function VaultPage() {
   const settledTransfers = transfers.filter((t) => t.status !== 'expired')
 
   return (
-    <Shell>
-      <section
-        data-tour="vault"
-        className="vpx bg-surface-low p-4 flex flex-col gap-2"
-      >
-        <span className="text-[10px] uppercase tracking-widest text-fg-faint">Vault balance</span>
-        {balanceError ? (
-          <ErrorCard title="Balance unavailable" body={balanceError} onRetry={refreshBalance} compact />
-        ) : balanceNim === null ? (
-          <span className="h-9 w-40 bg-surface animate-pulse inline-block" aria-hidden />
-        ) : (
-          <span className="text-4xl leading-none num" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-            {balanceNim.toFixed(2)} <span className="text-lg">NIM</span>
-          </span>
-        )}
-        <span className="text-[11px] font-mono text-fg-faint break-all">{vault.address}</span>
-      </section>
+    <ScreenShell variant="tab" title="Vault" backHref="/">
+      <div data-tour="vault">
+        <PixelPanel className="p-4 flex flex-col gap-2">
+          <span className="sv-section-label text-fg-faint">Vault balance</span>
+          {balanceError ? (
+            <Banner tone="error">
+              <p className="font-bold">Balance unavailable</p>
+              <p className="sv-label">{balanceError}</p>
+              <Button
+                variant="primary"
+                size="sm"
+                fullWidth={false}
+                onClick={refreshBalance}
+              >
+                Retry
+              </Button>
+            </Banner>
+          ) : balanceNim === null ? (
+            <span className="h-9 w-40 bg-surface animate-pulse inline-block" aria-hidden />
+          ) : (
+            <span className="sv-number-xl">
+              {balanceNim.toFixed(2)} <span className="text-lg">NIM</span>
+            </span>
+          )}
+          <span className="sv-figure font-mono text-fg-faint sv-break">{vault.address}</span>
+        </PixelPanel>
+      </div>
 
       <ShieldStrip />
 
       {networkMismatch && (
-        <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">
+        <Banner tone="error">
           Your wallet is on <strong>{host}</strong> but this vault is on{' '}
           <strong>{vault.network}</strong>. Switch the wallet network to move funds.
-        </div>
+        </Banner>
       )}
 
       {(vault.backupVerifiedAt === null || !hasLocalKey) && (
-        <div className="vpx bg-butter-tint p-3 text-sm flex flex-col gap-2">
+        <PixelPanel className="bg-butter-tint p-3 flex flex-col gap-2">
           {vault.backupVerifiedAt === null && (
-            <p>Deposits are locked until you confirm your backup. This protects your own funds.</p>
+            <p className="sv-label">
+              Deposits are locked until you confirm your backup. This protects your own funds.
+            </p>
           )}
           {!hasLocalKey && (
-            <p>
+            <p className="sv-label">
               This device has no vault key. Restore it from your 24 words in Profile → Backup.
             </p>
           )}
-        </div>
+        </PixelPanel>
       )}
 
       {balanceLuna === 0 && settledTransfers.length === 0 && (
-        <p className="text-sm text-fg-muted">
+        <p className="sv-body text-fg-muted">
           Your vault is empty. Deposit 1 NIM to open it and unlock the entry bracket.
         </p>
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Deposit</h2>
+        <h2 className="sv-section-label text-mint">Deposit</h2>
         <AmountField
           label="Amount (NIM)"
           value={depositNim}
           onChange={setDepositNim}
           disabled={busy || networkMismatch || vault.backupVerifiedAt === null}
         />
-        <button
+        <Button
+          variant="primary"
           data-tour="deposit"
           onClick={handleDeposit}
           disabled={busy || networkMismatch || vault.backupVerifiedAt === null}
-          className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {busy ? 'Waiting for the wallet…' : 'Deposit'}
-        </button>
-        <p className="text-[11px] text-fg-faint">
+        </Button>
+        <p className="sv-label text-fg-faint">
           Your wallet signs this deposit. Savborne only reads the vault address on chain.
         </p>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Withdraw</h2>
-        <p className="text-xs text-fg-muted break-all">
+        <h2 className="sv-section-label text-mint">Withdraw</h2>
+        <p className="sv-label text-fg-muted sv-break">
           Destination: <br />
           <span className="font-mono">{identityAddress ?? 'your identity account'}</span>
           <br />
@@ -246,64 +269,52 @@ export default function VaultPage() {
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
               placeholder="Vault passphrase"
-              className="vpx bg-surface-low p-3 text-base outline-none focus:border-butter"
+              className="vpx bg-surface-low p-3 text-base focus:border-mint"
             />
-            <button
-              onClick={handleUnlock}
-              disabled={passphrase.length === 0}
-              className="vpx bg-surface-hi py-2 px-4 font-bold text-sm disabled:opacity-40"
-            >
+            <Button variant="primary" onClick={handleUnlock} disabled={passphrase.length === 0}>
               Unlock vault
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
+          <Button
+            variant="primary"
             onClick={handleWithdraw}
             disabled={busy || networkMismatch}
-            className="vpx bg-butter text-[#1A1405] py-3 px-4 font-bold disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {busy ? 'Signing…' : 'Withdraw'}
-          </button>
+          </Button>
         )}
-        {unlockedMessage && <p className="text-xs text-mint">Vault unlocked for this session.</p>}
+        {unlockedMessage && <p className="sv-label text-mint">Vault unlocked for this session.</p>}
       </section>
 
-      {actionError && (
-        <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{actionError}</div>
-      )}
-      {notice && <div className="vpx bg-surface p-3 text-sm text-mint">{notice}</div>}
+      {actionError && <Banner tone="error">{actionError}</Banner>}
+      {notice && <Banner tone="info">{notice}</Banner>}
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-mint">Recent movements</h2>
+        <h2 className="sv-section-label text-mint">Recent movements</h2>
         {transfers.length === 0 ? (
-          <p className="text-xs text-fg-faint italic">No deposits yet.</p>
+          <p className="sv-label text-fg-faint italic">No deposits yet.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {transfers.slice(0, 8).map((t) => (
               <li key={t.id} className="vpx-soft bg-surface p-3 flex items-center justify-between gap-3">
-                <span className="text-sm">{t.direction === 'in' ? 'Deposit' : 'Withdrawal'}</span>
-                <span className="text-xs text-fg-muted">{statusLabel(t.status, t.failureReason)}</span>
-                <span className="text-sm num">{(t.amountLuna / LUNA_PER_NIM).toFixed(2)}</span>
+                <span className="sv-label">{t.direction === 'in' ? 'Deposit' : 'Withdrawal'}</span>
+                <span className="sv-label text-fg-muted">{statusLabel(t.status, t.failureReason)}</span>
+                <span className="sv-figure">{(t.amountLuna / LUNA_PER_NIM).toFixed(2)}</span>
               </li>
             ))}
           </ul>
         )}
-        <div className="flex gap-4 text-sm">
-          <Link href="/receipts" className="text-mint underline underline-offset-4">
+        <div className="flex gap-4">
+          <Link href="/receipts" className="sv-link">
             Receipts
           </Link>
-          <Link href="/profile" className="text-mint underline underline-offset-4">
+          <Link href="/profile" className="sv-link">
             Share card &amp; backup
           </Link>
         </div>
       </section>
-    </Shell>
-  )
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-5 pb-10">{children}</main>
+    </ScreenShell>
   )
 }
 
@@ -329,11 +340,18 @@ function ShieldStrip() {
   }, [])
 
   return (
-    <div data-tour="shields" className="flex items-center gap-2 text-xs text-fg-muted">
-      <span>Streak shields</span>
-      <span className="flex gap-0.5 text-base" aria-label={shields === null ? 'Shields loading' : `${shields} of 3 shields`}>
+    <div data-tour="shields" className="flex items-center gap-2">
+      <span className="sv-label text-fg-muted">Streak shields</span>
+      <span
+        className="flex gap-0.5 text-base"
+        aria-label={shields === null ? 'Shields loading' : `${shields} of 3 shields`}
+      >
         {[0, 1, 2].map((i) => (
-          <span key={i} aria-hidden className={shields !== null && i < shields ? 'text-mint' : 'text-fg-faint opacity-40'}>
+          <span
+            key={i}
+            aria-hidden
+            className={shields !== null && i < shields ? 'text-mint' : 'text-fg-faint opacity-40'}
+          >
             ◈
           </span>
         ))}
@@ -354,38 +372,16 @@ function AmountField({
   disabled?: boolean
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-fg-faint">{label}</span>
+    <label className="flex flex-col gap-1">
+      <span className="sv-label text-fg-faint">{label}</span>
       <input
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="vpx bg-surface-low p-3 text-base num outline-none focus:border-butter disabled:opacity-50"
+        className="vpx bg-surface-low p-3 text-base num focus:border-mint disabled:opacity-50"
       />
     </label>
-  )
-}
-
-function ErrorCard({
-  title,
-  body,
-  onRetry,
-  compact,
-}: {
-  title: string
-  body: string
-  onRetry: () => void
-  compact?: boolean
-}) {
-  return (
-    <div className={`vpx bg-coral-tint text-coral-text flex flex-col gap-2 ${compact ? 'p-3' : 'p-4'}`}>
-      <span className="font-bold text-sm">{title}</span>
-      <span className="text-xs break-words">{body}</span>
-      <button onClick={onRetry} className="self-start vpx bg-surface px-3 py-1 text-xs font-bold text-foreground">
-        Retry
-      </button>
-    </div>
   )
 }
 

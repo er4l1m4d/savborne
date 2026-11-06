@@ -16,6 +16,8 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Button } from '@/components/ui/Button'
 
 export const TOUR_FLAG_KEY = 'savborne.tour.v1'
 
@@ -161,42 +163,47 @@ export function VaultTour() {
       <div
         ref={cardRef}
         tabIndex={-1}
-        className="absolute vpx bg-surface p-4 flex flex-col gap-3 w-[calc(100%-2rem)] max-w-90 outline-none"
+        className="absolute w-[calc(100%-2rem)] max-w-90 outline-none"
         style={cardPosition(rect)}
       >
-        <span className="text-[10px] uppercase tracking-widest text-fg-faint">
-          Step {index + 1} of {STEPS.length}
-        </span>
-        <h2 className="text-xl leading-tight" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-          {step.title}
-        </h2>
-        <p className="text-sm text-fg-muted">{step.body}</p>
+        <PixelPanel className="p-4 flex flex-col gap-3">
+          <span className="sv-section-label text-fg-faint">
+            Step {index + 1} of {STEPS.length}
+          </span>
+          <h2 className="sv-subheading">{step.title}</h2>
+          <p className="sv-body text-fg-muted">{step.body}</p>
 
-        <div className="flex items-center gap-2">
-          {index > 0 && (
-            <button
-              onClick={() => setIndex((i) => i - 1)}
-              className="vpx bg-surface-hi px-3 py-2 text-sm font-bold"
+          <div className="flex items-center gap-2">
+            {index > 0 && (
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth={false}
+                onClick={() => setIndex((i) => i - 1)}
+              >
+                Back
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              fullWidth={false}
+              className="flex-1"
+              onClick={() => (last ? finish() : setIndex((i) => i + 1))}
             >
-              Back
-            </button>
-          )}
-          <button
-            onClick={() => (last ? finish() : setIndex((i) => i + 1))}
-            className="vpx bg-mint text-[#0E1D19] px-4 py-2 text-sm font-bold flex-1"
-          >
-            {last ? 'Deposit now' : 'Next'}
-          </button>
-          <button
-            onClick={() => {
-              finish()
-              router.push('/vault')
-            }}
-            className="text-xs text-fg-muted underline underline-offset-4 px-1"
-          >
-            Skip
-          </button>
-        </div>
+              {last ? 'Deposit now' : 'Next'}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                finish()
+                router.push('/vault')
+              }}
+            >
+              Skip
+            </Button>
+          </div>
+        </PixelPanel>
       </div>
     </div>
   )
