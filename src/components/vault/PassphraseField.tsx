@@ -11,6 +11,8 @@
  */
 
 import { useState } from 'react'
+import { Button } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 export const MIN_PASSPHRASE_LENGTH = 8
 
@@ -43,45 +45,39 @@ export function PassphraseField({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-fg-muted">
+      <p className="sv-body text-fg-muted">
         Choose a passphrase. It locks your vault on this device and is asked for before every
         withdrawal. Savborne cannot reset it — but you can reset it yourself with your 24
         words, so it is not another thing to lose.
       </p>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-fg-faint">Passphrase</span>
+      <label className="flex flex-col gap-1">
+        <span className="sv-label text-fg-faint">Passphrase</span>
         <input
           type="password"
           value={first}
           onChange={(e) => setFirst(e.target.value)}
           autoComplete="new-password"
-          className="vpx bg-surface-low p-3 text-base text-foreground outline-none focus:border-butter"
+          className="vpx bg-surface-low p-3 text-base text-foreground focus:border-mint"
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-fg-faint">Confirm passphrase</span>
+      <label className="flex flex-col gap-1">
+        <span className="sv-label text-fg-faint">Confirm passphrase</span>
         <input
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
-          className="vpx bg-surface-low p-3 text-base text-foreground outline-none focus:border-butter"
+          className="vpx bg-surface-low p-3 text-base text-foreground focus:border-mint"
         />
       </label>
 
-      {error && <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{error}</div>}
+      {error && <Banner tone="error">{error}</Banner>}
 
-      <button
-        type="button"
-        onClick={submit}
-        disabled={!ready}
-        className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-0.5"
-        style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
-      >
+      <Button variant="primary" onClick={submit} disabled={!ready}>
         Lock my vault
-      </button>
+      </Button>
     </div>
   )
 }

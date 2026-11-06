@@ -28,6 +28,10 @@ import { writeVault } from '@/lib/vault/storage'
 import { PhraseCeremony } from '@/components/vault/PhraseCeremony'
 import { BackupQuiz } from '@/components/vault/BackupQuiz'
 import { PassphraseField } from '@/components/vault/PassphraseField'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Button } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 type Step = 1 | 2 | 3 | 4 | 5
 type BackupPhase = 'show' | 'quiz' | 'passphrase'
@@ -164,7 +168,7 @@ export default function SetupPage() {
   }
 
   return (
-    <main className="min-h-dvh flex flex-col p-(--gut) max-w-105 mx-auto w-full gap-6">
+    <ScreenShell variant="pushed">
       <ProgressBar step={step} />
 
       {step === 1 && <StepWelcome onNext={() => setStep(2)} />}
@@ -196,18 +200,12 @@ export default function SetupPage() {
             />
           )}
           {backupPhase === 'passphrase' && (
-            <section className="flex flex-col gap-4 mt-4">
-              <h1
-                className="text-3xl leading-none"
-                style={{ fontFamily: 'var(--font-silkscreen)' }}
-              >
-                Lock your vault
-              </h1>
+            <Section title="Lock your vault">
               <PassphraseField onSet={lockVault} />
-              {error && <ErrorNote>{error}</ErrorNote>}
+              {error && <Banner tone="error">{error}</Banner>}
               {loading && <StatusNote>Encrypting…</StatusNote>}
               <BackButton onClick={() => setBackupPhase('quiz')} disabled={loading} />
-            </section>
+            </Section>
           )}
         </>
       )}
@@ -230,7 +228,7 @@ export default function SetupPage() {
           onBack={() => setStep(4)}
         />
       )}
-    </main>
+    </ScreenShell>
   )
 }
 
@@ -239,15 +237,17 @@ export default function SetupPage() {
 function StepWelcome({ onNext }: { onNext: () => void }) {
   return (
     <Section title="Welcome">
-      <p>
+      <p className="sv-body">
         Savborne turns your NIM savings into a role-playing game. Check in daily, grow your
         vault, and your balance becomes XP, items, streaks, and rank.
       </p>
-      <p className="text-fg-muted">
+      <p className="sv-body text-fg-muted">
         Your NIM lives in a vault only you control. Savborne never holds your money, never
         holds your key, and cannot move a single luna without you signing.
       </p>
-      <PrimaryButton onClick={onNext}>Create my vault</PrimaryButton>
+      <Button variant="primary" onClick={onNext}>
+        Create my vault
+      </Button>
     </Section>
   )
 }
@@ -267,7 +267,7 @@ function StepCreateVault({
 }) {
   return (
     <Section title="Create your vault">
-      <p className="text-fg-muted">
+      <p className="sv-body text-fg-muted">
         First, choose the wallet account that identifies you. Your vault is a separate
         address, generated on this device from 24 words you will write down next.
       </p>
@@ -280,16 +280,17 @@ function StepCreateVault({
       )}
       {!loading &&
         accounts.map((a) => (
-          <button
+          <Button
             key={a}
+            variant="secondary"
+            className="justify-start font-mono sv-break"
             onClick={() => onPick(a)}
-            className="vpx bg-surface p-3 text-left text-sm font-mono break-all hover:bg-surface-hi transition-colors"
           >
             {a}
-          </button>
+          </Button>
         ))}
 
-      {error && <ErrorNote>{error}</ErrorNote>}
+      {error && <Banner tone="error">{error}</Banner>}
       <BackButton onClick={onBack} />
     </Section>
   )
@@ -306,36 +307,39 @@ function StepPrivacy({
 }) {
   return (
     <Section title="Privacy notice">
-      <div className="vpx-soft bg-surface-low p-4 flex flex-col gap-2 text-sm text-fg-soft">
-        <p>
+      <PixelPanel tone="off" className="p-4 flex flex-col gap-2">
+        <p className="sv-label text-fg-soft">
           <strong>What we collect.</strong> Your wallet address, your vault address, one
           balance snapshot each time you check in, and game data (XP, missions, items,
           badges, battle results). Your display name is stored for the leaderboard.
         </p>
-        <p>
+        <p className="sv-label text-fg-soft">
           <strong>What we do NOT collect.</strong> Your 24 words, your vault passphrase, or
           any data that would let us move or lock your funds. The key exists only on this
           device, encrypted.
         </p>
-        <p>
+        <p className="sv-label text-fg-soft">
           <strong>What is public.</strong> Your display name, bracket, level, and leaderboard
           score. Your balance is never shown to other players.
         </p>
-        <p>
+        <p className="sv-label text-fg-soft">
           <strong>Where it is stored.</strong> Supabase (US-East) and Vercel. You can request
           deletion by emailing the contact in the app footer.
         </p>
-        <p>
+        <p className="sv-label text-fg-soft">
           <strong>The risk you are accepting.</strong> If you lose your 24 words and this
           device, the NIM in your vault is unrecoverable. Savborne cannot restore it.
         </p>
-      </div>
+      </PixelPanel>
 
-      <p className="text-sm text-fg-muted">
-        Your vault address is <span className="font-mono">{short(vaultAddress)}</span>.
+      <p className="sv-label text-fg-muted">
+        Your vault address is{' '}
+        <span className="sv-figure font-mono sv-break">{short(vaultAddress)}</span>.
       </p>
 
-      <PrimaryButton onClick={onContinue}>I understand — Continue</PrimaryButton>
+      <Button variant="primary" onClick={onContinue}>
+        I understand — Continue
+      </Button>
       <BackButton onClick={onBack} />
     </Section>
   )
@@ -356,10 +360,10 @@ function StepName({
   onSubmit: () => void
   onBack: () => void
 }) {
-  const valid = useMemo(() => value.trim().length >= 1 && value.trim().length <= 32, [value])
+  const valid = useMemo(() => value.trim().length >= 1 && value.trim().length <= 16, [value])
   return (
     <Section title="Pick your character name">
-      <p className="text-fg-muted">
+      <p className="sv-body text-fg-muted">
         This is your display name on the leaderboard. Other players see it in ranked
         battles. You cannot change it later in v1.
       </p>
@@ -367,14 +371,14 @@ function StepName({
         autoFocus
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="32 characters max"
-        maxLength={32}
-        className="vpx bg-surface-low p-3 text-base text-foreground outline-none focus:border-butter"
+        placeholder="16 characters max"
+        maxLength={16}
+        className="vpx bg-surface-low p-3 text-base text-foreground focus:border-mint"
       />
-      {error && <ErrorNote>{error}</ErrorNote>}
-      <PrimaryButton disabled={!valid || loading} onClick={onSubmit}>
+      {error && <Banner tone="error">{error}</Banner>}
+      <Button variant="primary" disabled={!valid || loading} onClick={onSubmit}>
         {loading ? 'Creating your vault…' : 'Start saving'}
-      </PrimaryButton>
+      </Button>
       <BackButton onClick={onBack} disabled={loading} />
     </Section>
   )
@@ -384,82 +388,50 @@ function StepName({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-4 mt-4">
-      <h1
-        className="text-3xl leading-none"
-        style={{ fontFamily: 'var(--font-silkscreen)' }}
-      >
-        {title}
-      </h1>
+    <section className="flex flex-col gap-4">
+      <h1 className="sv-heading">{title}</h1>
       {children}
     </section>
   )
 }
 
-function PrimaryButton({
-  children,
-  onClick,
-  disabled,
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  disabled?: boolean
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="vpx bg-mint text-[#0E1D19] py-3 px-4 font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-0.5"
-      style={{ boxShadow: '0 3px 0 var(--bevel-shadow)' }}
-    >
-      {children}
-    </button>
-  )
-}
-
 function BackButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="text-sm text-fg-muted underline underline-offset-4 self-start disabled:opacity-40"
-    >
+    <Button variant="ghost" className="self-start" onClick={onClick} disabled={disabled}>
       Back
-    </button>
+    </Button>
   )
 }
 
 function StatusNote({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm text-fg-faint italic">{children}</p>
-}
-
-function ErrorNote({ children }: { children: React.ReactNode }) {
-  return <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{children}</div>
+  return <p className="sv-label text-fg-faint italic">{children}</p>
 }
 
 function ProgressBar({ step }: { step: Step }) {
   const steps = ['Welcome', 'Vault', 'Backup', 'Privacy', 'Name']
   return (
-    <ol className="flex items-center justify-between gap-1 text-[10px] uppercase tracking-widest text-fg-faint mt-4">
-      {steps.map((label, i) => {
-        const idx = (i + 1) as Step
-        const active = idx === step
-        const done = idx < step
-        return (
-          <li key={label} className="flex items-center gap-1.5">
-            <span
-              className={`inline-block w-2 h-2 ${
-                done ? 'bg-mint' : active ? 'bg-butter' : 'bg-line'
-              }`}
+    <div
+      className="flex flex-col gap-2"
+      aria-label={`Step ${step} of ${steps.length}: ${steps[step - 1]}`}
+    >
+      <ol className="flex items-center gap-2">
+        {steps.map((label, i) => {
+          const idx = (i + 1) as Step
+          return (
+            <li
+              key={label}
               aria-hidden
+              className={`inline-block w-2 h-2 ${
+                idx < step ? 'bg-mint' : idx === step ? 'bg-butter' : 'bg-line'
+              }`}
             />
-            <span className={active ? 'text-fg font-bold' : done ? 'text-mint' : ''}>
-              {label}
-            </span>
-          </li>
-        )
-      })}
-    </ol>
+          )
+        })}
+      </ol>
+      <p className="sv-label text-fg-muted">
+        {step} of {steps.length} · {steps[step - 1]}
+      </p>
+    </div>
   )
 }
 

@@ -15,11 +15,7 @@ function walk(dir: string): string[] {
 }
 
 /** Files still waiting for their migration commit. This list must be empty at the end. */
-const PENDING = new Set([
-  'app/setup/page.tsx',
-  'app/card/[token]/page.tsx',
-  'components/vault/PhraseCeremony.tsx',
-])
+const PENDING = new Set(['app/card/[token]/page.tsx'])
 
 function violations() {
   const out: { file: string; line: number; text: string }[] = []
