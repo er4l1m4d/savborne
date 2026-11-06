@@ -13,10 +13,13 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
 import { authHeaders } from '@/lib/session'
 import { LUNA_PER_NIM } from '@/lib/constants'
 import type { SnapshotItem, TimelineItem, TransferItem } from '@/lib/vault/receipts'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 export default function ReceiptsPage() {
   const [items, setItems] = useState<TimelineItem[]>([])
@@ -68,32 +71,27 @@ export default function ReceiptsPage() {
   }
 
   return (
-    <main className="min-h-dvh p-(--gut) max-w-105 mx-auto w-full flex flex-col gap-4 pb-10">
-      <header className="flex flex-col gap-1 mt-4">
-        <h1 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-          Receipts
-        </h1>
-        <p className="text-sm text-fg-muted">
-          Every deposit, withdrawal and balance check-in, newest first. A receipt is only shown
-          once the chain has confirmed it.
-        </p>
-      </header>
+    <ScreenShell variant="pushed" title="Receipts" backHref="/vault">
+      <p className="sv-body text-fg-muted">
+        Every deposit, withdrawal and balance check-in, newest first. A receipt is only shown
+        once the chain has confirmed it.
+      </p>
 
-      {loading && <p className="text-sm text-fg-muted">Loading…</p>}
+      {loading && <p className="sv-body text-fg-muted">Loading…</p>}
 
       {error && (
-        <div className="vpx bg-coral-tint p-3 text-sm text-coral-text flex flex-col gap-2">
-          <span>{error}</span>
-          <button onClick={load} className="self-start vpx bg-surface px-3 py-1 text-xs font-bold text-foreground">
+        <Banner tone="error">
+          <p className="sv-label">{error}</p>
+          <Button variant="primary" size="sm" fullWidth={false} onClick={load}>
             Retry
-          </button>
-        </div>
+          </Button>
+        </Banner>
       )}
 
-      {checkResult && <div className="vpx bg-surface p-3 text-sm text-mint">{checkResult}</div>}
+      {checkResult && <Banner tone="info">{checkResult}</Banner>}
 
       {!loading && !error && items.length === 0 && (
-        <p className="text-sm text-fg-muted">
+        <p className="sv-body text-fg-muted">
           Nothing here yet. Your first deposit creates the first receipt.
         </p>
       )}
@@ -112,11 +110,7 @@ export default function ReceiptsPage() {
           ),
         )}
       </ol>
-
-      <Link href="/vault" className="text-mint underline underline-offset-4 text-sm self-start">
-        Back to vault
-      </Link>
-    </main>
+    </ScreenShell>
   )
 }
 
@@ -134,62 +128,68 @@ function TransferRow({
   const fee = (item.feeLuna / LUNA_PER_NIM).toFixed(5)
 
   return (
-    <li className="vpx bg-surface p-4 flex flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="font-bold">{label}</span>
-        <span className={`text-sm num ${item.direction === 'in' ? 'text-mint' : 'text-butter'}`}>
-          {item.direction === 'in' ? '+' : '−'}
-          {amount} NIM
-        </span>
-      </div>
-
-      <span className="text-[11px] font-mono text-fg-faint break-all">{item.txHash}</span>
-      <span className="text-[11px] text-fg-faint">{formatWhen(item.at)}</span>
-
-      {item.status === 'included' && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-          <span className="text-mint">Confirmed in block {item.blockHeight}</span>
-          <span className="text-fg-faint num">fee {fee} NIM</span>
-          {item.explorerUrl && (
-            <a
-              href={item.explorerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-mint underline underline-offset-4"
-            >
-              View on explorer ↗
-            </a>
-          )}
-        </div>
-      )}
-
-      {item.status === 'pending' && (
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <span className="text-butter">Pending — not yet confirmed</span>
-          <button
-            onClick={onCheck}
-            disabled={checking}
-            className="vpx bg-surface-hi px-3 py-1 text-xs font-bold disabled:opacity-40"
-          >
-            {checking ? 'Checking…' : 'Check again'}
-          </button>
-        </div>
-      )}
-
-      {item.status === 'expired' && (
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <span className="text-coral-text">
-            Failed{item.failureReason ? ` — ${humanReason(item.failureReason)}` : ''}
+    <li>
+      <PixelPanel className="p-4 flex flex-col gap-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="sv-label">{label}</span>
+          <span className={`sv-figure ${item.direction === 'in' ? 'text-mint' : 'text-butter'}`}>
+            {item.direction === 'in' ? '+' : '−'}
+            {amount} NIM
           </span>
-          {/* `expired` is terminal: the same hash can never settle. Sign a new one. */}
-          <Link
-            href={`/vault?direction=${item.direction}&amount=${(item.amountLuna / LUNA_PER_NIM).toFixed(2)}`}
-            className="vpx bg-surface-hi px-3 py-1 text-xs font-bold text-foreground no-underline"
-          >
-            Try again
-          </Link>
         </div>
-      )}
+
+        <span className="sv-figure font-mono text-fg-faint sv-break">{item.txHash}</span>
+        <span className="sv-label text-fg-faint">{formatWhen(item.at)}</span>
+
+        {item.status === 'included' && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="sv-label text-mint">Confirmed in block {item.blockHeight}</span>
+            <span className="sv-label text-fg-faint">fee {fee} NIM</span>
+            {item.explorerUrl && (
+              <a
+                href={item.explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="sv-link"
+              >
+                View on explorer ↗
+              </a>
+            )}
+          </div>
+        )}
+
+        {item.status === 'pending' && (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="sv-label text-butter">Pending — not yet confirmed</span>
+            <Button
+              variant="secondary"
+              size="sm"
+              fullWidth={false}
+              onClick={onCheck}
+              disabled={checking}
+            >
+              {checking ? 'Checking…' : 'Check again'}
+            </Button>
+          </div>
+        )}
+
+        {item.status === 'expired' && (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="sv-label text-coral-text">
+              Failed{item.failureReason ? ` — ${humanReason(item.failureReason)}` : ''}
+            </span>
+            {/* `expired` is terminal: the same hash can never settle. Sign a new one. */}
+            <ButtonLink
+              href={`/vault?direction=${item.direction}&amount=${(item.amountLuna / LUNA_PER_NIM).toFixed(2)}`}
+              variant="primary"
+              size="sm"
+              fullWidth={false}
+            >
+              Try again
+            </ButtonLink>
+          </div>
+        )}
+      </PixelPanel>
     </li>
   )
 }
@@ -198,11 +198,11 @@ function TransferRow({
 function SnapshotRow({ item }: { item: SnapshotItem }) {
   return (
     <li className="vpx-soft bg-surface-low px-4 py-3 flex items-baseline justify-between gap-3">
-      <span className="text-sm text-fg-muted">Balance check-in</span>
-      <span className="text-sm num text-fg-soft">
+      <span className="sv-label text-fg-muted">Balance check-in</span>
+      <span className="sv-figure text-fg-soft">
         {(item.balanceLuna / LUNA_PER_NIM).toFixed(2)} NIM
       </span>
-      <span className="text-[11px] text-fg-faint">{formatWhen(item.at)}</span>
+      <span className="sv-label text-fg-faint">{formatWhen(item.at)}</span>
     </li>
   )
 }
