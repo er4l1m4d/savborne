@@ -18,6 +18,9 @@ import { writeVault } from '@/lib/vault/storage'
 import { PhraseCeremony } from '@/components/vault/PhraseCeremony'
 import { BackupQuiz } from '@/components/vault/BackupQuiz'
 import { PassphraseField } from '@/components/vault/PassphraseField'
+import { ScreenShell } from '@/components/ui/ScreenShell'
+import { Button } from '@/components/ui/Button'
+import { Banner } from '@/components/ui/Banner'
 
 type Phase = 'pick' | 'show' | 'quiz' | 'passphrase'
 
@@ -102,27 +105,28 @@ export default function SetupVaultPage() {
   }
 
   return (
-    <main className="min-h-dvh flex flex-col p-(--gut) max-w-105 mx-auto w-full gap-6">
+    <ScreenShell variant="pushed" backHref="/vault">
       {phase === 'pick' && (
-        <section className="flex flex-col gap-4 mt-4">
-          <h1 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-            Create your vault
-          </h1>
-          <p className="text-fg-muted">
+        <section className="flex flex-col gap-4">
+          <h1 className="sv-heading">Create your vault</h1>
+          <p className="sv-body text-fg-muted">
             Choose the wallet account that identifies you. Your vault is a new, separate
             address derived on this device from 24 words.
           </p>
-          {accounts.length === 0 && <p className="text-sm text-fg-faint italic">Connect a wallet in Nimiq Pay.</p>}
+          {accounts.length === 0 && (
+            <p className="sv-label text-fg-faint italic">Connect a wallet in Nimiq Pay.</p>
+          )}
           {accounts.map((a) => (
-            <button
+            <Button
               key={a}
+              variant="secondary"
+              className="justify-start font-mono sv-break"
               onClick={() => createVault(a)}
-              className="vpx bg-surface p-3 text-left text-sm font-mono break-all hover:bg-surface-hi transition-colors"
             >
               {a}
-            </button>
+            </Button>
           ))}
-          {error && <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{error}</div>}
+          {error && <Banner tone="error">{error}</Banner>}
         </section>
       )}
 
@@ -135,16 +139,14 @@ export default function SetupVaultPage() {
       )}
 
       {phase === 'passphrase' && (
-        <section className="flex flex-col gap-4 mt-4">
-          <h1 className="text-3xl leading-none" style={{ fontFamily: 'var(--font-silkscreen)' }}>
-            Lock your vault
-          </h1>
+        <section className="flex flex-col gap-4">
+          <h1 className="sv-heading">Lock your vault</h1>
           <PassphraseField onSet={lockAndRegister} />
-          {error && <div className="vpx bg-coral-tint p-3 text-sm text-coral-text">{error}</div>}
-          {loading && <p className="text-sm text-fg-faint italic">Registering your vault…</p>}
+          {error && <Banner tone="error">{error}</Banner>}
+          {loading && <p className="sv-label text-fg-faint italic">Registering your vault…</p>}
         </section>
       )}
-    </main>
+    </ScreenShell>
   )
 }
 
