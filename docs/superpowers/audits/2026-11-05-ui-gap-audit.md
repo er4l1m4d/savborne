@@ -460,3 +460,5 @@ Sustained scrolling holds the 16.7ms frame budget at p95. The occasional spike i
 ### Remaining step
 
 The emulated sweep is the agent's evidence. The real-device pass in Nimiq Pay at 360–430px is the user's final sign-off step.
+
+**Sign-off:** batch signed off on 2026-11-06. A review copy of the current renders, with before/after pairs, is at `docs/superpowers/renders/foundation-2/review/` for the user's corrections.

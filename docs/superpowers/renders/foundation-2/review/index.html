@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne — Foundation 2 review</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0;
+    padding: 32px 24px 80px;
+    background: #10171a;
+    color: #e8efe9;
+    font: 14px/1.5 ui-sans-serif, system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lede { color: #9fb8ae; margin: 0 0 28px; max-width: 70ch; }
+  .screen { margin: 0 0 40px; padding: 20px; border: 1px solid #2b3a35; border-radius: 10px; background: #141d1f; }
+  .screen h2 { font-size: 16px; margin: 0; }
+  .route { color: #9fb8ae; font-size: 12px; margin: 2px 0 16px; }
+  .strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  figure { margin: 0; }
+  figcaption { color: #9fb8ae; font-size: 12px; margin: 0 0 6px; }
+  img { display: block; width: 100%; height: auto; border: 1px solid #2b3a35; border-radius: 6px; background: #0b1112; }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: #6fd0ae; font-size: 13px; }
+  details .strip { margin-top: 12px; }
+  .note { color: #9fb8ae; font-size: 12px; margin-top: 10px; }
+  @media (max-width: 760px) { .strip { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>Foundation 2 — current UI review</h1>
+<p class="lede">
+  Current renders (after the Foundation 2 migration) at 360, 390 and 430px. Open
+  “Before” under any screen to compare against the pre-migration render. Write
+  corrections in <code>NOTES.md</code> next to this file.
+</p>
+
+<section class="screen" data-slug="home">
+  <h2>Home</h2>
+  <p class="route">/</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/home@360.png" alt="Home at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/home@390.png" alt="Home at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/home@430.png" alt="Home at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/home@360.png" alt="Home before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/home@390.png" alt="Home before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/home@430.png" alt="Home before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="missions">
+  <h2>Missions</h2>
+  <p class="route">/missions</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/missions@360.png" alt="Missions at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/missions@390.png" alt="Missions at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/missions@430.png" alt="Missions at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/missions@360.png" alt="Missions before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/missions@390.png" alt="Missions before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/missions@430.png" alt="Missions before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="battle">
+  <h2>Battle menu</h2>
+  <p class="route">/battle</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/battle@360.png" alt="Battle menu at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/battle@390.png" alt="Battle menu at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/battle@430.png" alt="Battle menu at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/battle@360.png" alt="Battle menu before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/battle@390.png" alt="Battle menu before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/battle@430.png" alt="Battle menu before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="ranks">
+  <h2>Ranks</h2>
+  <p class="route">/leaderboard</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/ranks@360.png" alt="Ranks at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/ranks@390.png" alt="Ranks at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/ranks@430.png" alt="Ranks at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/ranks@360.png" alt="Ranks before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/ranks@390.png" alt="Ranks before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/ranks@430.png" alt="Ranks before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="profile">
+  <h2>Profile</h2>
+  <p class="route">/profile</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/profile@360.png" alt="Profile at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/profile@390.png" alt="Profile at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/profile@430.png" alt="Profile at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/profile@360.png" alt="Profile before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/profile@390.png" alt="Profile before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/profile@430.png" alt="Profile before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="vault">
+  <h2>Vault</h2>
+  <p class="route">/vault</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/vault@360.png" alt="Vault at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/vault@390.png" alt="Vault at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/vault@430.png" alt="Vault at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/vault@360.png" alt="Vault before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/vault@390.png" alt="Vault before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/vault@430.png" alt="Vault before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="receipts">
+  <h2>Receipts</h2>
+  <p class="route">/receipts</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/receipts@360.png" alt="Receipts at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/receipts@390.png" alt="Receipts at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/receipts@430.png" alt="Receipts at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/receipts@360.png" alt="Receipts before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/receipts@390.png" alt="Receipts before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/receipts@430.png" alt="Receipts before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="setup">
+  <h2>Setup</h2>
+  <p class="route">/setup</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/setup@360.png" alt="Setup at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/setup@390.png" alt="Setup at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/setup@430.png" alt="Setup at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/setup@360.png" alt="Setup before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/setup@390.png" alt="Setup before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/setup@430.png" alt="Setup before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="setup-vault">
+  <h2>Setup vault</h2>
+  <p class="route">/setup/vault</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/setup-vault@360.png" alt="Setup vault at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/setup-vault@390.png" alt="Setup vault at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/setup-vault@430.png" alt="Setup vault at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/setup-vault@360.png" alt="Setup vault before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/setup-vault@390.png" alt="Setup vault before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/setup-vault@430.png" alt="Setup vault before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="battle-detail">
+  <h2>Battle detail</h2>
+  <p class="route">/battle/[id]</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/battle-detail@360.png" alt="Battle detail at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/battle-detail@390.png" alt="Battle detail at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/battle-detail@430.png" alt="Battle detail at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/battle-detail@360.png" alt="Battle detail before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/battle-detail@390.png" alt="Battle detail before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/battle-detail@430.png" alt="Battle detail before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen" data-slug="card">
+  <h2>Card</h2>
+  <p class="route">/card/[token]</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/card@360.png" alt="Card at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/card@390.png" alt="Card at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/card@430.png" alt="Card at 430px"></figure>
+  </div>
+  <details><summary>Before</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/card@360.png" alt="Card before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/card@390.png" alt="Card before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/card@430.png" alt="Card before at 430px"></figure>
+  </div></details>
+</section>
+
+<p class="note">
+  Renders are 2× device-scale PNGs captured headless at 844px height. Hover/active
+  and transient states are not in this folder; name any you want captured.
+</p>
+</body>
+</html>
