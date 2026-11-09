@@ -699,3 +699,120 @@ The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code
 1. Apply `supabase/FINAL-SCHEMA.sql` to the live project and run the five-POST, concurrency and rate-limit acceptance checks.
 2. The real-device Nimiq Pay pass at 360-430 is the user's final sign-off step.
 3. Do not merge until the user signs off.
+
+---
+
+## 14. Onboarding UI status - 2026-11-09
+
+**Branch:** `onboarding-ui-redesign` (from `main` at `f055a35`).
+**Verdict:** onboarding now matches the handoff's Welcome, Create your vault,
+Privacy and Name structure, keeps the non-custodial 24-word ceremony, stores
+privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
+
+### What landed
+
+- **Routes and draft:** `/welcome`, `/connect`, `/privacy` and `/name` behind
+  one `(onboarding)` layout; `/setup` server-redirects to `/welcome`. The draft
+  lives in React context. The phrase never enters localStorage, sessionStorage,
+  a URL or a cookie. A stored session is probed first: 200 goes Home, 404 clears
+  the stale session, other failures leave onboarding alone.
+- **Welcome:** the handoff logo mark and pixel wordmark, 144px `CharacterArt` in
+  the 220x260 well, the 36px Silkscreen headline, coral `Get started`, and the
+  "Built for Nimiq Pay" footer.
+- **Create your vault (step 1 of 3):** the handoff Connect shell, three 8px
+  step bars, numbered explainer, can/cannot cards and coral CTA. The existing
+  phrase grid, four-word quiz and passphrase ceremony run inside the step; the
+  quiz owns an h1 in onboarding and stays h2 in Settings. A ready state covers
+  returning from Privacy.
+- **Privacy (step 2 of 3):** short-version mint panel, four cards
+  (collect / don't / public / stored), consent line and coral Continue. One
+  copy source feeds the Settings compact variant and the stored notice version
+  (`2026-11-09`). The previous mojibake arrow is gone.
+- **Name (step 3 of 3):** 128px character preview, 56px field, 16-character
+  limit, live counter, label and hint, `aria-describedby`, `aria-invalid`, error
+  banner and coral "Start playing".
+- **Consent:** `players.privacy_consent_at` and `privacy_notice_version` added
+  inline and by ALTER; `create_player_with_vault` gained
+  `p_privacy_notice_version` and drops the old six-argument signature first;
+  `POST /api/players` accepts the optional version and stores the timestamp in
+  the same transaction.
+- **Name limit:** 16 for new names on the client and in the API. The database
+  check stays 1-32 so legacy names remain valid.
+- **Balance error:** `/balance-error` for `503 rpc_unreachable` only, with the
+  coral warning panel, the handoff copy, error shake, Try again and Go back to
+  Home. Try again leaves a one-shot flag; Home consumes it and starts one
+  check-in. Every other failure keeps the inline banner.
+- **Gate:** Preparing is the brand mark and one line with no spinner; Open
+  inside Nimiq Pay is the phone panel with no CTA; Update Nimiq Pay has the
+  update arrow, the Nimiq site link and a retry that re-runs the check.
+  `/card/*` stays public.
+- **Foundation additions:** `.sv-display-sm` (36), `.sv-heading-lg` (32),
+  `.sv-subheading-lg` (32 Jakarta), `.sv-input`, `.sv-steps`, `BrandMark`,
+  `StepBars` and the hand-drawn `phone` glyph from the handoff.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 344 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 50 warnings, 0 errors |
+| `npm run build` | exit 0, `/welcome`, `/connect`, `/privacy`, `/name`, `/balance-error` compiled |
+| Type floor | no `text-[10px]`/`text-[11px]` in new code; the privacy consent line is 12px |
+| Audit | 45 rows (15 states x 360/390/430): `overflowX: 0`, no wide elements, no target <44x44, min font 12, every tab stop in view/uncovered with the 2px mint outline |
+
+### 360 behaviour
+
+- Welcome: the brand row fits; the headline takes four lines; the character well
+  and CTA fit with no horizontal overflow.
+- Create your vault: the title takes two lines; the explainer wraps to four
+  lines for step 3; the can/cannot cards stay two columns and wrap their text.
+  The account address wraps inside its button. The 24-word grid stays two columns
+  and the page scrolls; the quiz and passphrase fields fit.
+- Privacy: the short panel and four cards scroll; the consent line and CTA are
+  at the end and are reachable by scrolling. The 2-column pair keeps both cards
+  and wraps.
+- Name: the title takes two lines; the 250px character panel, field, counter and
+  error fit. The error state keeps the CTA on screen at 360.
+- Balance error: the 24px top title wraps and is balanced; both actions fit.
+- Gate: the outside top title balances to "OPEN INSIDE" / "NIMIQ PAY"; the
+  Update title fits one line and both actions fit.
+
+### Rulings
+
+- **Split routes, memory draft.** The handoff URLs and browser back work; a
+  reload restarts onboarding. The phrase is not stored, by design.
+- **"Create your vault", not "Connect your savings account".** The app creates
+  a vault; the handoff's Connect copy describes reading an existing account.
+- **The ceremony is kept.** The word grid, quiz, passphrase rule and local
+  encryption are unchanged; only the shell and the quiz heading level changed.
+- **Consent time is server time at creation.** The accepted version travels
+  with the request; the timestamp is a few seconds after the Continue tap.
+- **16 for new names; DB stays 32.** No rename path exists, so legacy names are
+  untouched. Display-name uniqueness is out of scope.
+- **Balance Error only for `rpc_unreachable`.** Other check-in failures keep the
+  inline banner, where the copy is accurate.
+- **The gate stays one component with states.** A gate route would be gated
+  itself or need an exemption.
+- **Update opens https://nimiq.com.** No app-store deep link exists in the repo.
+- **The privacy page scrolls.** The handoff pins the consent footer; at 360 the
+  cards and a pinned footer would obscure text, so the footer sits at the end.
+- **The Settings compact notice changed.** It now shares the copy source and
+  shows the notice version; its layout is otherwise the same list.
+
+### Renders
+
+45 PNGs in `docs/superpowers/renders/onboarding/after/` (15 states at
+360/390/430) and the Foundation 2 `/setup` before pair in
+`docs/superpowers/renders/onboarding/before/`. The review page is
+`docs/superpowers/renders/onboarding/review/index.html`; raw audit is
+`docs/superpowers/renders/onboarding/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. Apply `supabase/FINAL-SCHEMA.sql` before deploying this build: the new API
+   route calls the 7-argument `create_player_with_vault`.
+2. Run the check-in acceptance checks and confirm onboarding stores
+   `privacy_consent_at` and `privacy_notice_version`.
+3. The real-device Nimiq Pay pass at 360-430 is the user's final sign-off step.
+4. Do not merge until the user signs off.
