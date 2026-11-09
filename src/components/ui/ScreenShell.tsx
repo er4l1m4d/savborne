@@ -36,7 +36,7 @@ export function ScreenShell({
         <header className="sv-shell__header">
           <div className="flex min-w-0 items-center gap-2">
             {backHref && (
-              <ButtonLink href={backHref} variant="icon" aria-label="Back">
+              <ButtonLink href={backHref} variant="icon" aria-label="Back" className="shrink-0">
                 <Glyph name="back" size={24} />
               </ButtonLink>
             )}

@@ -337,8 +337,8 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
           <p className="sv-subheading text-coral-text">Delete this account permanently?</p>
           <p className="sv-label text-fg-muted">
             This removes your profile, level, XP, streak, items, badges, check-ins and battle
-            history from the server. The NIM in your vault stays on-chain and is controlled by the
-            24 words you confirmed. Onboarding again creates a new vault.
+            history from the server. The NIM in your vault stays on-chain and is controlled by
+            your 24 words. Onboarding again creates a new vault.
           </p>
           <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={busy}>
             Delete everything
