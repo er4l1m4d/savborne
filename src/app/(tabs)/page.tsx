@@ -26,6 +26,7 @@ import {
   takeCheckInAwards,
   writeBracketHandoff,
   writeCheckInAwards,
+  writeFirstCheckInHandoff,
   writeWithdrawalHandoff,
 } from '@/lib/checkin-handoff'
 import { ScreenShell } from '@/components/ui/ScreenShell'
@@ -87,7 +88,24 @@ export default function HomePage() {
       const json = (await res.json()) as AwardSummary & { ok: true }
       await refresh()
 
-      const destination = checkInDestination(json)
+      const destination = checkInDestination({
+        ...json,
+        firstCheckIn: json.awarded.some((award) => award.key === 'first_steps'),
+      })
+      if (destination === 'first-checkin') {
+        const first = json.awarded.find((award) => award.key === 'first_steps')
+        const stored = writeFirstCheckInHandoff({
+          xp: first?.xpApplied ?? 20,
+          balanceLuna: json.balanceLuna,
+          bracket: json.bracket,
+          items: json.unlockedItems,
+        })
+        if (stored) {
+          writeCheckInAwards(json)
+          router.push('/first-checkin')
+          return
+        }
+      }
       if (destination === 'withdrawal') {
         const stored = writeWithdrawalHandoff({
           fromLuna: json.previousBalanceLuna ?? player?.balanceLuna ?? json.balanceLuna,

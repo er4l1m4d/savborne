@@ -14,10 +14,18 @@ import type { ItemKey } from './game/items'
 const BRACKET_KEY = 'savborne.bracket-climb.v1'
 const WITHDRAWAL_KEY = 'savborne.withdrawal.v1'
 const AWARDS_KEY = 'savborne.checkin-awards.v1'
+const FIRST_KEY = 'savborne.first-checkin.v1'
 
 export type BracketHandoff = {
   bracket: Bracket
   xp: number
+  items: ItemKey[]
+}
+
+export type FirstCheckInHandoff = {
+  xp: number
+  balanceLuna: number
+  bracket: Bracket | null
   items: ItemKey[]
 }
 
@@ -92,6 +100,14 @@ export function writeWithdrawalHandoff(value: WithdrawalHandoff): boolean {
 
 export function takeWithdrawalHandoff(): WithdrawalHandoff | null {
   return take<WithdrawalHandoff>(WITHDRAWAL_KEY)
+}
+
+export function writeFirstCheckInHandoff(value: FirstCheckInHandoff): boolean {
+  return write(FIRST_KEY, value)
+}
+
+export function takeFirstCheckInHandoff(): FirstCheckInHandoff | null {
+  return take<FirstCheckInHandoff>(FIRST_KEY)
 }
 
 /** The full check-in summary survives the celebration route and is shown on Home. */

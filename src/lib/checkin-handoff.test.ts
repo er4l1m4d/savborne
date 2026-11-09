@@ -3,8 +3,10 @@ import assert from 'node:assert/strict'
 import {
   checkInDestination,
   takeBracketHandoff,
+  takeFirstCheckInHandoff,
   takeWithdrawalHandoff,
   writeBracketHandoff,
+  writeFirstCheckInHandoff,
   writeWithdrawalHandoff,
 } from './checkin-handoff'
 
@@ -105,6 +107,21 @@ test('a bracket handoff is consumed once', () => {
   assert.equal(writeBracketHandoff({ bracket: 'bronze', xp: 50, items: [] }), true)
   assert.deepEqual(takeBracketHandoff(), { bracket: 'bronze', xp: 50, items: [] })
   assert.equal(takeBracketHandoff(), null)
+})
+
+test('a first-check-in handoff is consumed once', () => {
+  installWindow()
+  assert.equal(
+    writeFirstCheckInHandoff({
+      xp: 20,
+      balanceLuna: 200000,
+      bracket: 'entry',
+      items: ['cloth_purse'],
+    }),
+    true,
+  )
+  assert.equal(takeFirstCheckInHandoff()?.xp, 20)
+  assert.equal(takeFirstCheckInHandoff(), null)
 })
 
 test('a withdrawal handoff is consumed once', () => {
