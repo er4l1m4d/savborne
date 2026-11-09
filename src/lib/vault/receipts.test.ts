@@ -39,6 +39,7 @@ function checkIn(overrides: Partial<CheckInRow> = {}): CheckInRow {
     player_address: 'NQ81 C01N',
     balance_luna: 250_000,
     recorded_at: '2026-11-02T09:00:00.000Z',
+    utc_date: '2026-11-02',
     ...overrides,
   }
 }

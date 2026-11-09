@@ -12,17 +12,23 @@
  *
  * Header: X-Player-Address: <address>
  *
- * Steps performed inside this handler (kept linear; a real Postgres
- * transaction is added in migration 0002 via `record_check_in` RPC):
- *   1. Load the player's current row + recent check-in history.
- *   2. Insert a new check_ins row.
- *   3. Evaluate which missions newly qualified (First Steps, Daily Check-in,
- *      Weekly Check-in, Rising Tide, Steady Saver, Bracket Climb).
- *   4. Award XP for each via `computeAward`, respecting daily/weekly caps.
- *   5. Recompute streak.
- *   6. Detect bracket change and level-up; write both.
- *   7. Update daily_xp ledger.
- *   8. Return the aggregate result to the client for animation.
+ * Integrity release gate (migration 20261109000000):
+ *   1. A database fixed-window rate limit runs before any table or chain read.
+ *   2. A reading is one row per player per UTC day (`check_ins.utc_date`).
+ *   3. A same-day POST returns the normal response shape with
+ *      `alreadyCheckedIn: true` and no awards, without touching the chain.
+ *   4. `commit_check_in` writes the reading, the player row, daily XP, mission
+ *      credits, item unlocks and badge changes in ONE transaction. It derives
+ *      `players.check_in_count` from the distinct-day rows, so five POSTs in
+ *      one UTC day can never unlock ranked.
+ *
+ * Steps:
+ *   1. Rate limit, then load the player, vault and recent history.
+ *   2. Return early when today's reading already exists.
+ *   3. Read the balance from the chain.
+ *   4. Evaluate missions, awards, streak, badge actions and unlocks.
+ *   5. Commit everything through `commit_check_in`.
+ *   6. Return the aggregate result to the client for animation.
  */
 
 import { NextResponse } from 'next/server'
@@ -41,6 +47,11 @@ import { getAccount, RpcError } from '@/lib/vault/rpc'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+/** 10 requests per 60 seconds per player address, before any expensive work. */
+const RATE_LIMIT = { limit: 10, windowSeconds: 60 }
+
+type CheckInRowLite = { balance_luna: number; recorded_at: string }
+
 export async function POST(req: Request) {
   const address = req.headers.get(PLAYER_HEADER)
   if (!address) {
@@ -52,8 +63,25 @@ export async function POST(req: Request) {
   const today = utcDayOf(now)
   const weekStart = utcWeekStart(now)
 
-  // 1. Load player + their vault. The body is deliberately unread: there is
-  //    nothing a client can send that changes the balance.
+  // 1. Rate limit before any table or chain read. A denied request is cheap.
+  const { data: rate, error: rateErr } = await db.rpc('consume_rate_limit', {
+    p_key: `check-in:${address}`,
+    p_limit: RATE_LIMIT.limit,
+    p_window_seconds: RATE_LIMIT.windowSeconds,
+  })
+  if (rateErr) {
+    return NextResponse.json({ error: rateErr.message }, { status: 500 })
+  }
+  if (rate && rate.allowed === false) {
+    const retryAfter = Number(rate.retryAfterSeconds ?? RATE_LIMIT.windowSeconds)
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfterSeconds: retryAfter },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+    )
+  }
+
+  // 2. Load the player and their vault. The body is deliberately unread: there
+  //    is nothing a client can send that changes the balance.
   const { data: player, error: playerErr } = await db
     .from('players')
     .select('*')
@@ -73,7 +101,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'vault_required' }, { status: 409 })
   }
 
-  // 2. Read the balance from the chain. No fallback: an RPC outage is a
+  const { data: history } = await db
+    .from('check_ins')
+    .select('balance_luna, recorded_at')
+    .eq('player_address', address)
+    .order('recorded_at', { ascending: false })
+    .limit(60)
+  const prior = (history ?? []) as CheckInRowLite[]
+
+  // A same-day POST is idempotent. Return the normal shape with empty awards
+  // and do not read the chain: the reading already exists and was committed.
+  if (alreadyCheckedInToday(prior.map((r) => new Date(r.recorded_at)), now)) {
+    return NextResponse.json(alreadyCheckedInResponse(player))
+  }
+
+  // 3. Read the balance from the chain. No fallback: an RPC outage is a
   //    check-in outage, surfaced honestly rather than hidden behind a cache.
   let account: Awaited<ReturnType<typeof getAccount>>
   try {
@@ -89,14 +131,6 @@ export async function POST(req: Request) {
   }
   const balanceLuna = account.balanceLuna
 
-  const { data: history } = await db
-    .from('check_ins')
-    .select('balance_luna, recorded_at')
-    .eq('player_address', address)
-    .order('recorded_at', { ascending: false })
-    .limit(60)
-  const prior = history ?? []
-
   // Owned items, loaded early so the Ledger Scroll XP bonus applies to this
   // check-in's awards. Items unlocked *during* this check-in take effect
   // from the next one.
@@ -106,20 +140,14 @@ export async function POST(req: Request) {
     .eq('player_address', address)
   const hasLedgerScroll = (ownedItemRows ?? []).some((r) => r.item_key === 'ledger_scroll')
 
-  // 2. Insert new check-in.
-  const { error: insertErr } = await db.from('check_ins').insert({
-    player_address: address,
-    balance_luna: Math.floor(balanceLuna),
-    recorded_at: now.toISOString(),
-  })
-  if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
-
-  // 3. Build the mission snapshot.
-  const alreadyToday = alreadyCheckedInToday(prior.map((r) => new Date(r.recorded_at)), now)
+  // 4. Build the mission snapshot.
   const alreadyWeek = alreadyCheckedInThisWeek(prior.map((r) => new Date(r.recorded_at)), now)
   const priorMostRecent = prior.length > 0 ? Number(prior[0].balance_luna) : null
   const thisWeekRows = prior.filter((r) => new Date(r.recorded_at) >= weekStart)
-  const weekOpening = thisWeekRows.length > 0 ? Number(thisWeekRows[thisWeekRows.length - 1].balance_luna) : null
+  const weekOpening =
+    thisWeekRows.length > 0
+      ? Number(thisWeekRows[thisWeekRows.length - 1].balance_luna)
+      : null
 
   // Detect withdrawals within this week: any consecutive pair where the later
   // balance is strictly less than the earlier one, OR a settled outgoing
@@ -164,7 +192,7 @@ export async function POST(req: Request) {
     // A withdrawal at this check-in disqualifies Steady Saver too (spec 6.3:
     // "withdrawals reset this mission for the week").
     anyWithdrawalThisWeek: anyWithdrawalThisWeek || withdrewNow,
-    alreadyCheckedInToday: alreadyToday,
+    alreadyCheckedInToday: false,
     alreadyCheckedInThisWeek: alreadyWeek,
     totalCheckInsBefore: player.check_in_count,
     currentBracket: newBracket,
@@ -198,7 +226,7 @@ export async function POST(req: Request) {
     m.isOnetime ? !allCreditedKeys.has(m.key) : !creditedThisWeek.has(m.key),
   )
 
-  // 4. Award XP sequentially through the caps.
+  // 5. Award XP sequentially through the caps.
   const dailyHeadroomState: PlayerXpState = {
     xp: player.xp,
     level: player.level,
@@ -230,7 +258,7 @@ export async function POST(req: Request) {
     awards.push({ mission: m, applied: r.applied, capped: r.capped })
   }
 
-  // 5. Recompute streak.
+  // 6. Recompute streak.
   const allCheckInDates = [now, ...prior.map((r) => new Date(r.recorded_at))]
   const streak = computeStreak({
     checkInsAt: allCheckInDates,
@@ -239,74 +267,14 @@ export async function POST(req: Request) {
     shieldsEarned: player.shields_earned ?? 0,
   })
 
-  // 6-7. Write player row + ledger rows + mission credits.
   const newXp = running.xp
   const newLevel = levelFromXp(newXp)
 
-  const updates: Record<string, unknown> = {
-    current_balance_luna: Math.floor(balanceLuna),
-    last_check_in_at: now.toISOString(),
-    check_in_count: player.check_in_count + 1,
-    xp: newXp,
-    level: newLevel,
-    streak_current: streak.current,
-    streak_best: Math.max(player.streak_best, streak.current),
-    shields: streak.shields,
-    shields_earned: streak.shieldsEarned,
-    bracket: newBracket,
-  }
-  // Withdrawal detection: a lower balance than the last snapshot flips the
-  // flag; a higher or equal balance clears it.
-  if (priorMostRecent !== null && balanceLuna < priorMostRecent) {
-    updates.withdrawal_in_progress = true
-    updates.last_withdrawal_at = now.toISOString()
-  } else if (priorMostRecent !== null && balanceLuna >= priorMostRecent) {
-    updates.withdrawal_in_progress = false
-  }
-
-  const playerUpdRes = await db.from('players').update(updates).eq('address', address)
-  if (playerUpdRes.error) {
-    return NextResponse.json({ error: playerUpdRes.error.message }, { status: 500 })
-  }
-  const dailyErr = await upsertDailyXp(today, totalApplied)
-  if (dailyErr) {
-    return NextResponse.json({ error: dailyErr }, { status: 500 })
-  }
-
-  // Write player_missions for each credited mission.
-  if (toCredit.length > 0) {
-    const rows = toCredit.map((m) => ({
-      player_address: address,
-      mission_key: m.key,
-      completed_at: now.toISOString(),
-      reset_at: m.isOnetime ? null : computeResetAt(m.key, now),
-    }))
-    const { error: missionErr } = await db.from('player_missions').insert(rows)
-    if (missionErr) {
-      // Non-fatal for the check-in itself; log for later inspection.
-      console.error('Failed to write player_missions:', missionErr.message)
-    }
-  }
-
-  // 8. Item unlocks on bracket reach. Once unlocked, items never re-lock.
+  // 7. Item unlocks on bracket reach. Once unlocked, items never re-lock.
   const ownedKeys = new Set<ItemKey>((ownedItemRows ?? []).map((r) => r.item_key as ItemKey))
   const unlockList = itemsToUnlock(ownedKeys, newBracket)
-  let unlockedItems: ItemKey[] = []
-  if (unlockList.length > 0) {
-    const insertRows = unlockList.map((k) => ({
-      player_address: address,
-      item_key: k,
-      unlocked_at: now.toISOString(),
-    }))
-    const { error: itemErr } = await db.from('player_items').insert(insertRows)
-    if (itemErr) {
-      console.error('Failed to write player_items:', itemErr.message)
-    } else {
-      unlockedItems = unlockList
-    }
-  }
 
-  // 9. Badge awards and revocations.
+  // 8. Badge awards and revocations.
   const { data: activeBadgeRows } = await db
     .from('player_badges')
     .select('badge_key')
@@ -319,57 +287,80 @@ export async function POST(req: Request) {
     ? utcDaysBetween(new Date(player.steady_hand_started_at), now)
     : 0
   const badgeSnapshot = {
-    hasAnyCheckIn: true, // we just inserted one
+    hasAnyCheckIn: true,
     streakCurrent: streak.current,
     bracket: newBracket,
-    withdrawalJustNow: priorMostRecent !== null && balanceLuna < priorMostRecent,
+    withdrawalJustNow: withdrewNow,
     daysSinceLastWithdrawalReset,
     hasBattleWin: player.wins > 0,
   }
   const badgeActions = computeBadgeActions(badgeSnapshot, alreadyActive)
-  for (const action of badgeActions) {
-    if (action.kind === 'award') {
-      const { error } = await db.from('player_badges').insert({
-        player_address: address,
-        badge_key: action.badge,
-        awarded_at: now.toISOString(),
-        revoked_at: null,
-      })
-      if (error) console.error(`Failed to award badge ${action.badge}:`, error.message)
-    } else {
-      const { error } = await db
-        .from('player_badges')
-        .update({ revoked_at: now.toISOString() })
-        .eq('player_address', address)
-        .eq('badge_key', action.badge)
-        .is('revoked_at', null)
-      if (error) console.error(`Failed to revoke badge ${action.badge}:`, error.message)
-    }
+
+  // The Golden Crown is an item as well as a badge. Persist the item row in the
+  // same transaction so a later demotion cannot re-lock it.
+  const crownAwarded = badgeActions.some(
+    (action) => action.kind === 'award' && action.badge === 'golden_crown',
+  )
+  const itemKeys = new Set<ItemKey>(unlockList)
+  if (crownAwarded) itemKeys.add('golden_crown')
+  const unlockedItems = [...itemKeys]
+
+  // 9. One transaction for the reading and every reward.
+  const playerPatch: Record<string, unknown> = {
+    current_balance_luna: Math.floor(balanceLuna),
+    last_check_in_at: now.toISOString(),
+    xp: newXp,
+    level: newLevel,
+    streak_current: streak.current,
+    streak_best: Math.max(player.streak_best, streak.current),
+    shields: streak.shields,
+    shields_earned: streak.shieldsEarned,
+    bracket: newBracket,
+  }
+  // A lower balance flips the withdrawal flag and restarts Steady Hand. A
+  // higher or equal balance clears the flag. No prior reading leaves both as-is.
+  if (priorMostRecent !== null && balanceLuna < priorMostRecent) {
+    playerPatch.withdrawal_in_progress = true
+    playerPatch.last_withdrawal_at = now.toISOString()
+    playerPatch.steady_hand_started_at = now.toISOString()
+  } else if (priorMostRecent !== null && balanceLuna >= priorMostRecent) {
+    playerPatch.withdrawal_in_progress = false
   }
 
-  // The Golden Crown is an item as well as a badge. Persist the item row so a
-  // later demotion cannot re-lock it; /api/profile also backfills existing
-  // crown-badge rows that predate this write.
-  if (badgeActions.some((action) => action.kind === 'award' && action.badge === 'golden_crown')) {
-    const { error } = await db.from('player_items').upsert(
-      { player_address: address, item_key: 'golden_crown' },
-      { onConflict: 'player_address,item_key', ignoreDuplicates: true },
-    )
-    if (error) console.error('Failed to persist Golden Crown item:', error.message)
-    if (!unlockedItems.includes('golden_crown')) unlockedItems.push('golden_crown')
+  const { data: committed, error: commitErr } = await db.rpc('commit_check_in', {
+    p_address: address,
+    p_balance_luna: Math.floor(balanceLuna),
+    p_recorded_at: now.toISOString(),
+    p_player: playerPatch,
+    p_daily_xp: totalApplied,
+    p_missions: toCredit.map((m) => ({
+      mission_key: m.key,
+      completed_at: now.toISOString(),
+      reset_at: m.isOnetime ? null : computeResetAt(m.key, now),
+    })),
+    p_items: unlockedItems.map((key) => ({
+      item_key: key,
+      unlocked_at: now.toISOString(),
+    })),
+    p_badges: badgeActions.map((action) =>
+      action.kind === 'award'
+        ? { badge_key: action.badge, action: 'award', at: now.toISOString() }
+        : { badge_key: action.badge, action: 'revoke', at: now.toISOString() },
+    ),
+  })
+  if (commitErr) {
+    return NextResponse.json({ error: commitErr.message }, { status: 500 })
   }
-
-  // If a withdrawal just happened, restart the Steady Hand counter.
-  if (badgeSnapshot.withdrawalJustNow) {
-    const { error: steadyErr } = await db
-      .from('players')
-      .update({ steady_hand_started_at: now.toISOString() })
-      .eq('address', address)
-    if (steadyErr) console.error('Failed to reset steady_hand_started_at:', steadyErr.message)
+  if (!committed || committed.claimed === false) {
+    // A concurrent request won the reading insert. Nothing was written by this
+    // call; return the same idempotent shape as a same-day POST.
+    return NextResponse.json(alreadyCheckedInResponse(player))
   }
 
   return NextResponse.json({
     ok: true,
+    alreadyCheckedIn: false,
+    checkInCount: Number(committed.check_in_count ?? player.check_in_count + 1),
     awarded: awards.map((a) => ({
       key: a.mission.key,
       xpApplied: a.applied,
@@ -386,7 +377,7 @@ export async function POST(req: Request) {
     bracket: newBracket,
     bracketChanged: newBracket !== currentBracket,
     previousBracket: currentBracket,
-    withdrawalDetected: priorMostRecent !== null && balanceLuna < priorMostRecent,
+    withdrawalDetected: withdrewNow,
     previousBalanceLuna: priorMostRecent,
     balanceLuna: Math.floor(balanceLuna),
     unlockedItems,
@@ -394,6 +385,31 @@ export async function POST(req: Request) {
   })
 
   // ── helpers defined inside the handler so they close over `db` + `address` ──
+
+  function alreadyCheckedInResponse(row: Record<string, unknown>) {
+    const bracket = (row.bracket as Bracket | null) ?? null
+    return {
+      ok: true,
+      alreadyCheckedIn: true,
+      checkInCount: Number(row.check_in_count ?? 0),
+      awarded: [],
+      leveledUp: false,
+      newLevel: row.level,
+      newXp: row.xp,
+      xpToNext: xpToNextLevel(row.level as number),
+      streakCurrent: row.streak_current,
+      shields: row.shields,
+      shieldsEarned: row.shields_earned,
+      bracket,
+      bracketChanged: false,
+      previousBracket: bracket,
+      withdrawalDetected: false,
+      previousBalanceLuna: null,
+      balanceLuna: Number(row.current_balance_luna ?? 0),
+      unlockedItems: [],
+      badgeActions: [],
+    }
+  }
 
   async function dailyXpToday(): Promise<number> {
     const { data } = await db
@@ -416,30 +432,6 @@ export async function POST(req: Request) {
     // for the cap. For stricter accounting, use a dedicated weekly_xp ledger.
     const weeklyCount = (data ?? []).filter((r) => isWeeklyMissionKey(r.mission_key)).length
     return weeklyCount * 33
-  }
-
-  async function upsertDailyXp(day: string, addXp: number): Promise<string | null> {
-    if (addXp <= 0) return null
-    const { data: cur } = await db
-      .from('daily_xp')
-      .select('xp_earned')
-      .eq('player_address', address)
-      .eq('utc_date', day)
-      .maybeSingle()
-    if (cur) {
-      const { error } = await db
-        .from('daily_xp')
-        .update({ xp_earned: cur.xp_earned + addXp })
-        .eq('player_address', address)
-        .eq('utc_date', day)
-      return error?.message ?? null
-    }
-    const { error } = await db.from('daily_xp').insert({
-      player_address: address,
-      utc_date: day,
-      xp_earned: addXp,
-    })
-    return error?.message ?? null
   }
 }
 

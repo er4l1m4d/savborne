@@ -50,8 +50,9 @@ export type Database = {
           player_address: string
           balance_luna: number
           recorded_at: string
+          utc_date: string
         }
-        Insert: Omit<Database['public']['Tables']['check_ins']['Row'], 'id' | 'recorded_at'>
+        Insert: Omit<Database['public']['Tables']['check_ins']['Row'], 'id' | 'recorded_at' | 'utc_date'>
         Update: never
       }
       missions: {
@@ -200,6 +201,15 @@ export type Database = {
         }
         Insert: Database['public']['Tables']['daily_xp']['Row']
         Update: Partial<Database['public']['Tables']['daily_xp']['Row']>
+      }
+      api_rate_limits: {
+        Row: {
+          key: string
+          window_start: string
+          count: number
+        }
+        Insert: Database['public']['Tables']['api_rate_limits']['Row']
+        Update: Partial<Database['public']['Tables']['api_rate_limits']['Row']>
       }
       vaults: {
         Row: {
