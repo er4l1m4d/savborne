@@ -462,3 +462,56 @@ Sustained scrolling holds the 16.7ms frame budget at p95. The occasional spike i
 The emulated sweep is the agent's evidence. The real-device pass in Nimiq Pay at 360–430px is the user's final sign-off step.
 
 **Sign-off:** batch signed off on 2026-11-06. A review copy of the current renders, with before/after pairs, is at `docs/superpowers/renders/foundation-2/review/` for the user's corrections.
+
+---
+
+## 10. Economy — Settings slice status — 2026-11-09
+
+**Branch:** `feat/economy-settings`, stacked on the signed-off Foundation 2 head.
+**Verdict:** the Settings + delete slice is implemented and verified. Items, Bracket Climb, Withdrawal and the rest of the Profile restructure remain in the Economy batch.
+
+### What landed
+
+- **`/settings`** (`src/app/settings/page.tsx`): a pushed screen reached from the 44×44 settings icon on Profile. Account rows (display name, vault address, backup status), the existing `BackupSettings`, Help (show tour, contact), About (version from `package.json`, address, privacy sheet, custody line), and a Danger zone with **Disconnect savings account** and **Delete account**.
+- **`/settings/delete`** (`src/app/settings/delete/page.tsx` + `src/components/settings/DeleteAccountFlow.tsx`): the existing proof gate, phrase matching, signed `DELETE /api/players/me` and error mapping moved unchanged out of Profile. The flow starts in `checking`, shows one square per step plus an active label, and the destructive call only runs from a `BottomSheet` (`Yes, delete everything`).
+- **Disconnect** is local only: it clears the session and, when present, this device's vault key, then lands on `/setup`. The sheet says plainly that the profile, level, streak and vault stay on the server.
+- **Setup reconnect** (`src/lib/reconnect.ts` + `src/app/setup/page.tsx`): the account picker probes `GET /api/players/me` with the picked address before creating anything. A 200 restores the session from the profile; a 404 continues onboarding; any other status shows an error and creates nothing. This removes the `vault_exists` dead end Disconnect would otherwise hit.
+- **Shared `PrivacyNotice`** (`src/components/PrivacyNotice.tsx`): one copy for Setup and the Settings sheet.
+- **Profile**: header is `Profile` + the handoff's flag icon; the display name, level and bracket moved into the body identity strip. Delete, Backup, Help and the footer left Profile.
+- **Primitive fix:** `ScreenShell`'s back link is now `shrink-0`. At 360px on `/settings/delete`, the wrapping title had squeezed it to 43×44; it is 44×44 again.
+
+### Verification evidence
+
+| Check | Result |
+|---|---|
+| `npm test` | 206 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 44 warnings, 0 errors (three new `set-state-in-effect` warnings follow the existing session-read pattern) |
+| `npm run build` | exit 0, `/settings` and `/settings/delete` compiled |
+| `text-[10px]` / `text-[11px]` in `src/**/*.tsx` | none |
+
+### Keyboard and touch audit
+
+Run with the CDP harness at 360/390/430 over `/profile`, `/settings` and `/settings/delete`:
+
+- `overflowX` is 0 everywhere; no element is wider than the viewport.
+- No interactive target is below 44×44. The `shrink-0` fix above came from this audit.
+- Minimum rendered font is 12px (13px on `/settings/delete`).
+- Focus runs in reading order, every stop is visible and uncovered, and every stop shows the 2px mint outline.
+
+The sheets were opened with the harness (`--click`) and captured at 360 and 390. Escape and focus restore are inherited from the Foundation 2 `BottomSheet` and its source contract.
+
+### 360px behaviour
+
+- **`/settings/delete`:** the title wraps to two lines (`DELETE / ACCOUNT`); no label, hint or button is truncated.
+- **`/settings`:** the full page scrolls taller than 844px; account values and the custody line wrap normally.
+- **Sheets:** the privacy sheet fills most of a 360×844 viewport and scrolls inside `max-height: 80dvh`; the Close button stays reachable.
+- **Profile:** the settings icon stays on-screen and the 16-character name limit wraps instead of colliding.
+
+### Renders
+
+21 PNGs in `docs/superpowers/renders/economy/after/`: Profile, Settings and Delete at 360/390/430, plus the Settings full-page shots and the Review, delete confirmation, Disconnect and Privacy sheet states. The review copy with before/after pairs is at `docs/superpowers/renders/economy/review/`.
+
+### Remaining step
+
+The emulated sweep is the agent's evidence. The real-device pass in Nimiq Pay at 360–430px is the user's final sign-off step.

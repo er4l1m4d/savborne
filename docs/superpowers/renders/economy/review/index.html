@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne — Economy settings review</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0;
+    padding: 32px 24px 80px;
+    background: #10171a;
+    color: #e8efe9;
+    font: 14px/1.5 ui-sans-serif, system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lede { color: #9fb8ae; margin: 0 0 28px; max-width: 78ch; }
+  .screen { margin: 0 0 40px; padding: 20px; border: 1px solid #2b3a35; border-radius: 10px; background: #141d1f; }
+  .screen h2 { font-size: 16px; margin: 0; }
+  .route { color: #9fb8ae; font-size: 12px; margin: 2px 0 16px; }
+  .strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .strip.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  figure { margin: 0; }
+  figcaption { color: #9fb8ae; font-size: 12px; margin: 0 0 6px; }
+  img { display: block; width: 100%; height: auto; border: 1px solid #2b3a35; border-radius: 6px; background: #0b1112; }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: #6fd0ae; font-size: 13px; }
+  details .strip { margin-top: 12px; }
+  h3 { font-size: 13px; color: #d9d4c0; margin: 22px 0 8px; }
+  .note { color: #9fb8ae; font-size: 12px; margin-top: 10px; }
+  @media (max-width: 760px) { .strip, .strip.two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>Economy — Settings and delete review</h1>
+<p class="lede">
+  Current renders after the Settings slice. Profile has a real before/after pair;
+  Settings and Delete are new routes. Write corrections under the matching screen
+  in <code>NOTES.md</code> next to this file.
+</p>
+
+<section class="screen">
+  <h2>Profile</h2>
+  <p class="route">/profile — settings entry, identity strip, old sections removed</p>
+  <div class="strip">
+    <figure><figcaption>360 — after</figcaption><img src="current/profile@360.png" alt="Profile after at 360px"></figure>
+    <figure><figcaption>390 — after</figcaption><img src="current/profile@390.png" alt="Profile after at 390px"></figure>
+    <figure><figcaption>430 — after</figcaption><img src="current/profile@430.png" alt="Profile after at 430px"></figure>
+  </div>
+  <details><summary>Before (Foundation 2 Profile)</summary><div class="strip">
+    <figure><figcaption>360 — before</figcaption><img src="before/profile@360.png" alt="Profile before at 360px"></figure>
+    <figure><figcaption>390 — before</figcaption><img src="before/profile@390.png" alt="Profile before at 390px"></figure>
+    <figure><figcaption>430 — before</figcaption><img src="before/profile@430.png" alt="Profile before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen">
+  <h2>Settings</h2>
+  <p class="route">/settings — pushed screen, no bottom nav</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/settings@360.png" alt="Settings at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/settings@390.png" alt="Settings at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/settings@430.png" alt="Settings at 430px"></figure>
+  </div>
+  <h3>Full page (all sections, including Danger zone)</h3>
+  <div class="strip">
+    <figure><figcaption>360 full</figcaption><img src="current/settings@360-full.png" alt="Full Settings at 360px"></figure>
+    <figure><figcaption>390 full</figcaption><img src="current/settings@390-full.png" alt="Full Settings at 390px"></figure>
+    <figure><figcaption>430 full</figcaption><img src="current/settings@430-full.png" alt="Full Settings at 430px"></figure>
+  </div>
+  <h3>Sheets</h3>
+  <div class="strip two">
+    <figure><figcaption>Disconnect — 360</figcaption><img src="current/settings-disconnect@360.png" alt="Disconnect sheet at 360px"></figure>
+    <figure><figcaption>Disconnect — 390</figcaption><img src="current/settings-disconnect@390.png" alt="Disconnect sheet at 390px"></figure>
+  </div>
+  <div class="strip two" style="margin-top:16px">
+    <figure><figcaption>Privacy — 360</figcaption><img src="current/settings-privacy@360.png" alt="Privacy sheet at 360px"></figure>
+    <figure><figcaption>Privacy — 390</figcaption><img src="current/settings-privacy@390.png" alt="Privacy sheet at 390px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Delete account</h2>
+  <p class="route">/settings/delete — proof gate, review, confirmation sheet</p>
+  <h3>Proof (local vault fixture)</h3>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/delete@360.png" alt="Delete proof at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/delete@390.png" alt="Delete proof at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/delete@430.png" alt="Delete proof at 430px"></figure>
+  </div>
+  <h3>Review (no vault fixture)</h3>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/delete-review@360.png" alt="Delete review at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/delete-review@390.png" alt="Delete review at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/delete-review@430.png" alt="Delete review at 430px"></figure>
+  </div>
+  <h3>Confirmation sheet</h3>
+  <div class="strip two">
+    <figure><figcaption>360</figcaption><img src="current/delete-sheet@360.png" alt="Delete confirmation sheet at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/delete-sheet@390.png" alt="Delete confirmation sheet at 390px"></figure>
+  </div>
+</section>
+
+<p class="note">
+  Renders are 2× device-scale PNGs from the headless CDP harness. The wallet
+  prompt in Setup step 2 cannot be approved headlessly, so Setup reconnect has no
+  render; it is covered by the helper tests, the source contract and your
+  real-device pass.
+</p>
+</body>
+</html>
