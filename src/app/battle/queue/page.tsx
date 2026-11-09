@@ -264,7 +264,7 @@ export default function RankedQueuePage() {
               disabled={busy !== null}
             >
               <span className="flex flex-col items-start gap-0.5 text-left">
-                <span>Battle the AI</span>
+                <span className="sv-subheading">Battle the AI</span>
                 <span className="sv-label text-background/80">
                   Unranked. Counts toward today&apos;s {BATTLE.dailyLimit} battles.
                 </span>
@@ -278,7 +278,7 @@ export default function RankedQueuePage() {
               disabled={busy !== null}
             >
               <span className="flex flex-col items-start gap-0.5 text-left">
-                <span>Challenge a friend</span>
+                <span className="sv-subheading">Challenge a friend</span>
                 <span className="sv-label text-fg-muted">Unranked.</span>
               </span>
             </Button>
