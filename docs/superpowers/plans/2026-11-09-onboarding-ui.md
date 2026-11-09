@@ -191,7 +191,9 @@ git commit -m "feat: add onboarding brand, type roles and step bars"
 - Create: `src/components/onboarding/OnboardingProvider.tsx`
 - Create: `src/components/onboarding/OnboardingScreen.tsx`
 - Create: `src/app/(onboarding)/welcome/page.tsx`
+- Create: `src/lib/wallet-errors.ts`
 - Modify: `src/app/setup/page.tsx` (server redirect)
+- Modify: `src/app/setup/vault/page.tsx` (shared wallet-error helper)
 - Modify: `src/lib/settings.test.ts`
 - Create: `src/lib/onboarding.test.ts`
 
@@ -213,7 +215,8 @@ useOnboarding(): Draft & {
   startConnect(): Promise<void>
   pickAccount(address: string): Promise<'reconnect' | 'created'>
   lockVault(passphrase: string): Promise<void>
-  acceptPrivacy(): void
+  acceptPrivacy(version: string): void
+  setDisplayName(value: string): void
   finish(displayName: string): Promise<void>
 }
 ```
@@ -430,7 +433,8 @@ compact "Where it is stored" line replaces the current mojibake arrow with
 - `<h1 className="sv-heading-lg">Privacy notice</h1>`.
 - `<PrivacyNotice variant="full" />`.
 - Footer with a 2px cream top border: the 12px consent line and a coral
-  `Button` "Continue" that calls `acceptPrivacy()` then `router.push('/name')`.
+  `Button` "Continue" that calls `acceptPrivacy(PRIVACY_NOTICE_VERSION)` then
+  `router.push('/name')`.
 
 - [ ] **Step 4: Test and capture**
 

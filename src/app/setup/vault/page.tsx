@@ -10,7 +10,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { listAccounts, hostNetwork, WalletError, type Network } from '@/lib/nimiq'
+import { listAccounts, hostNetwork, type Network } from '@/lib/nimiq'
+import { describeWalletError } from '@/lib/wallet-errors'
 import { authHeaders, readSession } from '@/lib/session'
 import { encryptPhrase } from '@/lib/vault/crypto'
 import { deriveVaultAddress, generatePhrase } from '@/lib/vault/phrase'
@@ -44,7 +45,7 @@ export default function SetupVaultPage() {
         setAccounts(list)
         if (session && list.includes(session.playerAddress)) setIdentity(session.playerAddress)
       } catch (err) {
-        setError(describe(err))
+        setError(describeWalletError(err))
       }
     })()
   }, [session])
@@ -59,7 +60,7 @@ export default function SetupVaultPage() {
       setPhrase(words)
       setPhase('show')
     } catch (err) {
-      setError(describe(err))
+      setError(describeWalletError(err))
     } finally {
       setLoading(false)
     }
@@ -150,11 +151,3 @@ export default function SetupVaultPage() {
   )
 }
 
-function describe(err: unknown): string {
-  if (err instanceof WalletError) {
-    return err.type === 'PERMISSION_DENIED'
-      ? 'Account access was declined. Approve the wallet prompt in Nimiq Pay.'
-      : err.message
-  }
-  return err instanceof Error ? err.message : String(err)
-}

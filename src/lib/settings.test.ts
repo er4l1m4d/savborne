@@ -11,10 +11,9 @@ const DELETE_ROUTE = source('../app/settings/delete/page.tsx')
 const FLOW = source('../components/settings/DeleteAccountFlow.tsx')
 const PROFILE = source('../app/(tabs)/profile/page.tsx')
 
-test('Setup renders the shared privacy notice', () => {
-  assert.match(SETUP, /from '@\/components\/PrivacyNotice'/)
-  assert.match(SETUP, /<PrivacyNotice \/>/)
-  assert.doesNotMatch(SETUP, /What we collect/)
+test('Setup redirects to the new welcome route', () => {
+  assert.match(SETUP, /redirect\('\/welcome'\)/)
+  assert.doesNotMatch(SETUP, /<PrivacyNotice \/>/)
 })
 
 test('a profile maps to exactly the session fields', () => {
@@ -65,17 +64,17 @@ test('disconnect clears the vault only when one is on this device', () => {
   assert.equal(disconnectPlan(false), 'session-only')
 })
 
-test('Setup checks for an existing profile before creating a vault', () => {
-  assert.match(SETUP, /reconnectDecision/)
-  assert.match(SETUP, /\/api\/players\/me/)
-  const choose = SETUP.indexOf('async function chooseAccount')
-  const create = SETUP.indexOf('async function createVault')
-  assert.ok(choose >= 0, 'chooseAccount is missing')
-  assert.ok(create > choose, 'createVault must come after chooseAccount')
-  assert.match(SETUP, /onPick=\{chooseAccount\}/)
-  assert.match(SETUP, /We reconnect it instead of creating a second vault/)
-  assert.match(SETUP, /reconnectProfile\(body\.player\)/)
-  assert.match(SETUP, /sameAddress\(profile\.address, identityAddress\)/)
+test('Onboarding checks for an existing profile before creating a vault', () => {
+  const PROVIDER = source('../components/onboarding/OnboardingProvider.tsx')
+  assert.match(PROVIDER, /reconnectDecision/)
+  assert.match(PROVIDER, /\/api\/players\/me/)
+  assert.match(PROVIDER, /reconnectProfile\(body\.player\)/)
+  assert.match(PROVIDER, /sameAddress\(profile\.address, identity\)/)
+  assert.match(PROVIDER, /writeSession\(sessionFromProfile\(profile\)\)/)
+  const reconnect = PROVIDER.indexOf('reconnectDecision(res.status)')
+  const create = PROVIDER.indexOf('generatePhrase()')
+  assert.ok(reconnect >= 0, 'reconnectDecision is missing')
+  assert.ok(create > reconnect, 'a new vault must only start after the reconnect probe')
 })
 
 test('the delete route keeps the proof gate and the signed request', () => {
