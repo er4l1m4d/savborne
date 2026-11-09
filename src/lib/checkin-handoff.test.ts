@@ -11,6 +11,7 @@ import {
 test('a withdrawal wins over a bracket change', () => {
   assert.equal(
     checkInDestination({
+      firstCheckIn: false,
       withdrawalDetected: true,
       bracketChanged: true,
       bracket: 'bronze',
@@ -23,6 +24,7 @@ test('a withdrawal wins over a bracket change', () => {
 test('a bracket rise lands on the climb screen', () => {
   assert.equal(
     checkInDestination({
+      firstCheckIn: false,
       withdrawalDetected: false,
       bracketChanged: true,
       bracket: 'bronze',
@@ -35,6 +37,7 @@ test('a bracket rise lands on the climb screen', () => {
 test('a drop below the entry floor has no climb screen', () => {
   assert.equal(
     checkInDestination({
+      firstCheckIn: false,
       withdrawalDetected: false,
       bracketChanged: true,
       bracket: null,
@@ -47,6 +50,7 @@ test('a drop below the entry floor has no climb screen', () => {
 test('a demotion is not a climb', () => {
   assert.equal(
     checkInDestination({
+      firstCheckIn: false,
       withdrawalDetected: false,
       bracketChanged: true,
       bracket: 'silver',
@@ -59,12 +63,26 @@ test('a demotion is not a climb', () => {
 test('an ordinary check-in stays on home', () => {
   assert.equal(
     checkInDestination({
+      firstCheckIn: false,
       withdrawalDetected: false,
       bracketChanged: false,
       bracket: 'silver',
       previousBracket: 'silver',
     }),
     'home',
+  )
+})
+
+test('the first check-in wins over every other celebration', () => {
+  assert.equal(
+    checkInDestination({
+      firstCheckIn: true,
+      withdrawalDetected: true,
+      bracketChanged: true,
+      bracket: 'entry',
+      previousBracket: null,
+    }),
+    'first-checkin',
   )
 })
 

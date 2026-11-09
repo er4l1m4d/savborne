@@ -27,18 +27,20 @@ export type WithdrawalHandoff = {
   revoked: BadgeKey[]
 }
 
-export type CheckInDestination = 'withdrawal' | 'bracket-climb' | 'home'
+export type CheckInDestination = 'first-checkin' | 'withdrawal' | 'bracket-climb' | 'home'
 
 /**
  * A withdrawal is the more urgent explanation, so it wins when both flags are
  * set. A bracket change below the entry floor has no climb screen to show.
  */
 export function checkInDestination(result: {
+  firstCheckIn: boolean
   withdrawalDetected: boolean
   bracketChanged: boolean
   bracket: Bracket | null
   previousBracket: Bracket | null
 }): CheckInDestination {
+  if (result.firstCheckIn) return 'first-checkin'
   if (result.withdrawalDetected) return 'withdrawal'
   if (
     result.bracketChanged &&
