@@ -45,8 +45,9 @@ Success means:
 | Check-in action | Inside the savings card; coral primary; disabled "Checked in today" with check glyph |
 | Checked-in detection | UTC date of `player.lastCheckInAt` versus now |
 | Delta chip | `balanceLuna - previousBalanceLuna` from the check-in response; mint for positive, coral for negative; hidden on reload |
+| Balance precision | 2dp on Home, matching the handoff's `12.40` |
 | Streak chip | Savings card balance row; `N-day streak`; hidden at 0 |
-| Shields / check-ins | One compact `.sv-label` line below the balance, app-specific |
+| Shields / check-ins | Removed from Home to keep the Battle card on the handoff's one-screen height; check-ins remain on Profile, shields remain in the game model |
 | Missions | Two 58px rows (Daily Check-in, Quick Duel), 24px checkbox, +XP trailing; no progress bar |
 | Battle card | Cream `PixelPanel`, battles left from `BATTLE.dailyLimit - battlesToday`, coral "Choose opponent" |
 | First check-in | New `/first-checkin` route; precedence over withdrawal and bracket climb |
@@ -85,9 +86,8 @@ Use `xpProgress(level, xp)` from `constants.ts`; never divide cumulative XP.
   - checked in today: `Checked in just now` in mint
   - otherwise: `Last check-in {relative}` in muted
 - Balance row:
-  - `.sv-number-xl` balance, 5dp, `NIM` at 12px muted
+  - `.sv-number-xl` balance, 2dp, `NIM` at 12px muted
   - right: delta chip if `deltaLuna !== 0`, else streak chip if `streakCurrent > 0`
-- Support line: `Shields ◈ ◈ ◈ · {checkInCount} check-ins` in `.sv-label text-fg-faint`; shields dim when spent.
 - Check-in `Button`:
   - default: `variant="primary"`, 64px, `Check in now`
   - busy: `Reading balance…`
@@ -220,3 +220,5 @@ Home still uses `usePlayerSession` for `level`, `xp`, `bracket`, `balanceLuna`, 
 4. **Battle CTA is coral.** The handoff draws a dark button inside the cream card; the design rule makes the advancing CTA coral.
 5. **First check-in wins over bracket climb.** The first check-in usually crosses the Entry threshold; the celebration screen shows the Entry items and Home carries the bracket awards.
 6. **Delta hidden on reload.** It is a post-check-in affordance, not persisted state.
+7. **Balance is 2dp on Home.** The handoff shows `12.40`; the 5dp value remains available on Vault/receipts where precision matters.
+8. **Shields/check-ins are not on Home.** The handoff Home has no support line; keeping it pushed the Battle card below the fold. Check-ins remain on Profile and shields remain in the streak model.

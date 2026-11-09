@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne — Home UI review</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; padding:32px 24px 80px; background:#10171a; color:#e8efe9; font:14px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .lede { color:#9fb8ae; margin:0 0 28px; max-width:78ch; }
+  .screen { margin:0 0 40px; padding:20px; border:1px solid #2b3a35; border-radius:10px; background:#141d1f; }
+  .screen h2 { font-size:16px; margin:0; }
+  .route { color:#9fb8ae; font-size:12px; margin:2px 0 16px; }
+  .strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  figure { margin:0; }
+  figcaption { color:#9fb8ae; font-size:12px; margin:0 0 6px; }
+  img { display:block; width:100%; height:auto; border:1px solid #2b3a35; border-radius:6px; background:#0b1112; }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:#6fd0ae; font-size:13px; }
+  details .strip { margin-top:12px; }
+  .note { color:#9fb8ae; font-size:12px; margin-top:10px; }
+  @media (max-width:760px) { .strip { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>Home UI — current review</h1>
+<p class="lede">
+  Home default, checked-in and First check-in at 360, 390 and 430. The Before
+  strip is the Foundation 2 Home. Corrections go in <code>NOTES.md</code>.
+</p>
+
+<section class="screen">
+  <h2>Home</h2>
+  <p class="route">/ — wordmark header, character card, savings card, missions, Battle</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/home@360.png" alt="Home at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/home@390.png" alt="Home at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/home@430.png" alt="Home at 430px"></figure>
+  </div>
+  <details><summary>Before (Foundation 2 Home)</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="before/home@360.png" alt="Home before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="before/home@390.png" alt="Home before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="before/home@430.png" alt="Home before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen">
+  <h2>Home — checked in</h2>
+  <p class="route">/ — disabled check-in, checked-in status, Daily Check-in ticked</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/home-checked-in@360.png" alt="Home checked in at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/home-checked-in@390.png" alt="Home checked in at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/home-checked-in@430.png" alt="Home checked in at 430px"></figure>
+  </div>
+  <p class="note">The delta chip is a post-check-in transient; this static render shows the streak chip.</p>
+</section>
+
+<section class="screen">
+  <h2>First check-in</h2>
+  <p class="route">/first-checkin — First Steps, +20 XP, balance, bracket items</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="current/first-checkin@360.png" alt="First check-in at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="current/first-checkin@390.png" alt="First check-in at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="current/first-checkin@430.png" alt="First check-in at 430px"></figure>
+  </div>
+</section>
+
+<p class="note">
+  Renders are 2× device-scale PNGs from the headless CDP harness. The real
+  Supabase backend is not configured in this sandbox, so these use fixture data.
+</p>
+</body>
+</html>

@@ -585,3 +585,56 @@ The full suite is now 227 tests.
 ### Remaining step
 
 The real-device pass in Nimiq Pay at 360–430px is still the user's final sign-off step.
+
+---
+
+## 12. Home UI status — 2026-11-09
+
+**Branch:** `home-ui-redesign` (from `main` at `24836e0`).
+**Verdict:** Home and the First check-in screen match the handoff structure. The checked-in state and the first-check-in handoff are implemented.
+
+### What landed
+
+- **Header:** Silkscreen `Savborne` wordmark; bracket outline chip and mint `Lv N` chip. The display name moved into the character card.
+- **Character card:** 132x176 sprite well, `CharacterArt` at 96px, name, level/bracket, bordered XP bar and "N XP to Level N+1". XP uses the shared `xpProgress` (cumulative split).
+- **Savings card:** 2dp balance in Silkscreen, streak/delta chip, coral `Check in now` inside the card. After a check-in the button is disabled (`Checked in today` with a check glyph), the status is mint, and the delta appears for that session. `Open vault` remains a ghost link because Vault has no tab.
+- **Missions:** two 58px rows (Daily Check-in, Quick Duel) with 24px mint checkboxes and trailing XP; done rows are muted and say `+XP earned`.
+- **Battle card:** cream `PixelPanel`, `BATTLE.dailyLimit - battlesToday` battles left, coral `Choose opponent`.
+- **First check-in (`/first-checkin`):** First Steps badge, +20 XP, recorded balance, bracket items through `ItemArt`, CTA Home. It wins over withdrawal and bracket climb; the rest of the award summary is read on Home.
+- **Checked-in helper:** `checkedInToday(lastCheckInAt, now)` compares UTC dates and is unit-tested.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 236 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 49 warnings, 0 errors |
+| `npm run build` | exit 0 |
+| Type floor | no `text-[10px]`/`text-[11px]` |
+| Audit | Home default/checked-in and First at 360/390/430: `overflowX: 0`, no wide elements, no target <44x44, min font 12 (13 on First), clean focus and mint outline |
+
+### 360 behaviour
+
+- Header wordmark and both chips fit.
+- The 12-character fixture name wraps inside the character card.
+- Balance and chip wrap rather than truncate.
+- `Choose opponent` keeps its label; the Battle card stays on the handoff's one-screen height.
+- First check-in tiles and item names fit in two columns.
+
+### Rulings
+
+- No new logo asset; the Silkscreen wordmark is the header.
+- Home shows 2dp; Vault/receipts keep full precision.
+- Shields/check-ins are not on Home, because the support line pushed the Battle card below the fold. Check-ins remain on Profile.
+- The Battle CTA is coral, not the handoff's dark button.
+- First check-in wins over Bracket Climb.
+- The delta chip is a post-check-in transient and is not in the static checked-in render; a reload shows the streak chip.
+
+### Renders
+
+9 PNGs in `docs/superpowers/renders/home/after/` (Home, Home checked-in, First at 360/390/430), plus `docs/superpowers/renders/home/review/` with the Foundation 2 Home before pair and notes.
+
+### Remaining
+
+The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code, tests, build and fixture renders do not.
