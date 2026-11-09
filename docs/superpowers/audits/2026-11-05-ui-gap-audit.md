@@ -476,15 +476,18 @@ The emulated sweep is the agent's evidence. The real-device pass in Nimiq Pay at
 - **`/settings/delete`** (`src/app/settings/delete/page.tsx` + `src/components/settings/DeleteAccountFlow.tsx`): the existing proof gate, phrase matching, signed `DELETE /api/players/me` and error mapping moved unchanged out of Profile. The flow starts in `checking`, shows one square per step plus an active label, and the destructive call only runs from a `BottomSheet` (`Yes, delete everything`).
 - **Disconnect** is local only: it clears the session and, when present, this device's vault key, then lands on `/setup`. The sheet says plainly that the profile, level, streak and vault stay on the server.
 - **Setup reconnect** (`src/lib/reconnect.ts` + `src/app/setup/page.tsx`): the account picker probes `GET /api/players/me` with the picked address before creating anything. A 200 restores the session from the profile; a 404 continues onboarding; any other status shows an error and creates nothing. This removes the `vault_exists` dead end Disconnect would otherwise hit.
+- **Reconnect validation:** the 200 body is validated and its address must match the picked wallet before a session is written. A malformed or mismatched body shows an error instead of a session Home immediately rejects.
 - **Shared `PrivacyNotice`** (`src/components/PrivacyNotice.tsx`): one copy for Setup and the Settings sheet.
 - **Profile**: header is `Profile` + the handoff's flag icon; the display name, level and bracket moved into the body identity strip. Delete, Backup, Help and the footer left Profile.
 - **Primitive fix:** `ScreenShell`'s back link is now `shrink-0`. At 360px on `/settings/delete`, the wrapping title had squeezed it to 43×44; it is 44×44 again.
+- **Delete cleanup:** once the server confirms deletion, clearing the vault key, session and tour flag is best-effort and the route always leaves for `/setup`. A blocked storage API cannot turn a successful delete into a retry loop. Disconnect's cleanup is guarded the same way.
+- **Sheet focus:** `BottomSheet` keeps its close callback in a ref, so a `busy` re-render no longer tears down and re-runs the focus trap.
 
 ### Verification evidence
 
 | Check | Result |
 |---|---|
-| `npm test` | 206 pass, 0 fail |
+| `npm test` | 208 pass, 0 fail |
 | `npx tsc --noEmit` | clean |
 | `npm run lint` | exit 0, 44 warnings, 0 errors (three new `set-state-in-effect` warnings follow the existing session-read pattern) |
 | `npm run build` | exit 0, `/settings` and `/settings/delete` compiled |
@@ -499,7 +502,9 @@ Run with the CDP harness at 360/390/430 over `/profile`, `/settings` and `/setti
 - Minimum rendered font is 12px (13px on `/settings/delete`).
 - Focus runs in reading order, every stop is visible and uncovered, and every stop shows the 2px mint outline.
 
-The sheets were opened with the harness (`--click`) and captured at 360 and 390. Escape and focus restore are inherited from the Foundation 2 `BottomSheet` and its source contract.
+The sheets were opened with the harness (`--click`) and captured at 360 and 390. Escape and focus restore are inherited from the Foundation 2 `BottomSheet` and its source contract. The reveal and quiz states were not target-audited: the headless fixture cannot type the passphrase. Their controls are the existing `CopyButton`, checkbox, `BackupQuiz` and buttons, covered by the Foundation 2 audit and the source checks; the route, proof, review and sheet states were audited and rendered.
+
+The reveal and quiz states were not target-audited: the headless fixture cannot type the passphrase. Their controls are the existing `CopyButton`, checkbox, `BackupQuiz` and buttons, covered by the Foundation 2 audit and their source contracts; the proof, review and sheet states were audited and rendered.
 
 ### 360px behaviour
 
@@ -510,7 +515,7 @@ The sheets were opened with the harness (`--click`) and captured at 360 and 390.
 
 ### Renders
 
-21 PNGs in `docs/superpowers/renders/economy/after/`: Profile, Settings and Delete at 360/390/430, plus the Settings full-page shots and the Review, delete confirmation, Disconnect and Privacy sheet states. The review copy with before/after pairs is at `docs/superpowers/renders/economy/review/`.
+21 PNGs in `docs/superpowers/renders/economy/after/`: Profile, Settings and Delete at 360/390/430, plus the Settings full-page shots and the Review, delete confirmation, Disconnect and Privacy sheet states. The review copy with before/after pairs is at `docs/superpowers/renders/economy/review/`. The Privacy sheet image predates the final copy correction from “app footer” to “Settings → Help”; the layout is unchanged. The Privacy sheet PNG predates the final “Settings → Help” copy correction; its layout is unchanged.
 
 ### Remaining step
 

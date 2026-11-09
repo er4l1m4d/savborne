@@ -72,4 +72,5 @@ Corrections that apply everywhere (type, spacing, colour, motion, focus):
 - There are no sound or reduce-motion toggles: there is nothing real to wire, so no dead controls ship.
 - `/settings/delete` wraps its title to two lines at 360px. That is the type floor doing its job; nothing is truncated.
 - The privacy sheet scrolls inside `max-height: 80dvh` at 360px.
+- The privacy-sheet PNG predates a final copy correction: the code now says “emailing the contact in Settings → Help”, not “the app footer”; the layout is unchanged.
 - The real-device pass in Nimiq Pay is still yours to do; these are headless renders.

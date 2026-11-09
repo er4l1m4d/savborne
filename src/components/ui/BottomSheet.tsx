@@ -23,6 +23,14 @@ type BottomSheetProps = {
 export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
+  // Keep the latest close callback without re-running the focus/scroll effect
+  // whenever the parent re-renders. Consumers pass an inline arrow, so an
+  // `onClose` dependency would tear down and re-run the effect on every busy
+  // state change, briefly moving focus back to the trigger.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     if (!open) return
@@ -36,7 +44,7 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
-        onClose()
+        onCloseRef.current()
         return
       }
       if (event.key !== 'Tab' || !panel) return
@@ -65,7 +73,7 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
       document.body.style.overflow = previousOverflow
       previous?.focus()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 

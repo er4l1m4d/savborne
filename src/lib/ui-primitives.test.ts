@@ -88,6 +88,8 @@ test('BottomSheet traps focus, closes on Escape and locks scroll', () => {
   assert.match(src, /document\.body\.style\.overflow\s*=\s*'hidden'/)
   assert.match(src, /focusable\.length === 0/)
   assert.match(src, /panel\.focus\(\)/)
+  assert.match(src, /onCloseRef/)
+  assert.match(src, /\}, \[open\]\)/)
   assert.match(CSS, /\.sv-scrim\s*\{[^}]*position:\s*fixed/)
   assert.match(CSS, /\.sv-sheet-panel\s*\{[^}]*max-height:\s*80dvh/)
 })

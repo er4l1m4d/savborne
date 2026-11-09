@@ -24,6 +24,24 @@ export function sessionFromProfile(profile: ReconnectProfile): Session {
   }
 }
 
+/**
+ * Validate the body of a 200 before it reaches `sessionFromProfile`. A partial
+ * body would otherwise be written as a session that `readSession()` rejects,
+ * bouncing the player between Home and Setup with no error.
+ */
+export function reconnectProfile(value: unknown): ReconnectProfile | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  if (typeof v.address !== 'string' || v.address.length === 0) return null
+  if (typeof v.displayName !== 'string' || v.displayName.length === 0) return null
+  if (typeof v.savingsAddress !== 'string' || v.savingsAddress.length === 0) return null
+  return {
+    address: v.address,
+    displayName: v.displayName,
+    savingsAddress: v.savingsAddress,
+  }
+}
+
 export type ReconnectDecision = 'reconnect' | 'create' | 'error'
 
 /**

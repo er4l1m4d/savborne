@@ -121,10 +121,18 @@ export default function SettingsPage() {
   function disconnect() {
     if (!playerAddress || busy) return
     setBusy(true)
-    if (disconnectPlan(hasLocalVault) === 'vault-and-session') {
-      clearVault(playerAddress)
+    try {
+      if (disconnectPlan(hasLocalVault) === 'vault-and-session') {
+        clearVault(playerAddress)
+      }
+    } catch {
+      // A blocked storage API must not trap the player on a disabled sheet.
     }
-    writeSession(null)
+    try {
+      writeSession(null)
+    } catch {
+      // Best-effort.
+    }
     // A hard navigation drops cached player state and every mounted hook.
     window.location.replace('/setup')
   }

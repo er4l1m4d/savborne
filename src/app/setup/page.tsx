@@ -21,7 +21,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { listAccounts, hostNetwork, WalletError } from '@/lib/nimiq'
 import { writeSession, PLAYER_HEADER } from '@/lib/session'
-import { reconnectDecision, sessionFromProfile, type ReconnectProfile } from '@/lib/reconnect'
+import { reconnectDecision, reconnectProfile, sessionFromProfile } from '@/lib/reconnect'
+import { sameAddress } from '@/lib/vault/address'
 import type { Network } from '@/lib/nimiq'
 import { encryptPhrase } from '@/lib/vault/crypto'
 import { deriveVaultAddress, generatePhrase } from '@/lib/vault/phrase'
@@ -92,8 +93,12 @@ export default function SetupPage() {
       const decision = reconnectDecision(res.status)
 
       if (decision === 'reconnect') {
-        const body = (await res.json()) as { player: ReconnectProfile }
-        writeSession(sessionFromProfile(body.player))
+        const body = (await res.json()) as { player?: unknown }
+        const profile = reconnectProfile(body.player)
+        if (!profile || !sameAddress(profile.address, identityAddress)) {
+          throw new Error('Could not check this wallet. Try again.')
+        }
+        writeSession(sessionFromProfile(profile))
         router.replace('/')
         return
       }

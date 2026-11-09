@@ -54,6 +54,10 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
     setError(null)
     try {
       const res = await fetch('/api/vaults', { headers: authHeaders() })
+      if (res.status === 401) {
+        router.replace('/setup')
+        return
+      }
       if (!res.ok) throw new Error(`Could not check your vault (${res.status}).`)
       const body = (await res.json()) as { vault: { address: string } | null }
 
@@ -65,7 +69,7 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
       setError(describe(err))
       // Stay in `checking` so the Try again button is reachable.
     }
-  }, [playerAddress])
+  }, [playerAddress, router])
 
   useEffect(() => {
     void start()
@@ -115,6 +119,7 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
   }
 
   async function deleteAccount() {
+    if (busy) return
     setBusy(true)
     setError(null)
     try {
@@ -142,16 +147,21 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
         throw new Error(deleteErrorMessage(body?.error, res.status))
       }
 
-      clearVault(playerAddress)
-      writeSession(null)
+      // The server row is gone at this point. Cleanup is best-effort: a
+      // storage failure must never turn a successful delete into an error the
+      // player can only "retry" forever.
       try {
+        clearVault(playerAddress)
+        writeSession(null)
         window.localStorage.removeItem(TOUR_FLAG_KEY)
       } catch {
-        // Non-fatal.
+        // Best-effort.
+      } finally {
+        // A hard navigation drops every cached hook and the deleted player
+        // state. `busy` stays true on purpose: this component is about to
+        // unmount.
+        window.location.replace('/setup')
       }
-      // A hard navigation drops every cached hook and the deleted player state.
-      // `busy` stays true on purpose: this component is about to unmount.
-      window.location.replace('/setup')
     } catch (err) {
       setError(describe(err))
       // A failed delete must leave the button usable for a retry.
@@ -168,7 +178,7 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
         : ['Review']
 
   const activeStep =
-    phase === 'unlock'
+    phase === 'unlock' || phase === 'type-words'
       ? 0
       : phase === 'reveal'
         ? 1
