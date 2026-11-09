@@ -1,27 +1,25 @@
-/**
- * Savborne — Version gate
- *
- * Client component that checks on mount whether the running Nimiq Pay build
- * exposes `getBalance`. If not, it renders an "Update Nimiq Pay" prompt
- * instead of children, so the rest of the app never tries to hit APIs that
- * would silently misbehave. If it is available, children render as normal.
- *
- * Also detects when the app is opened in a plain browser (outside Nimiq Pay)
- * and shows a friendly notice rather than an infinite spinner.
- */
-
 'use client'
+
+/**
+ * Savborne - Nimiq Pay gate
+ *
+ * The gate is a state machine, not a set of routes: every route sits behind it,
+ * so a gate route would either be gated too or need an exemption. The three
+ * states are the handoff's Preparing, Open inside Nimiq Pay and Update screens.
+ *
+ * `/card/*` is the one exception: shared cards are opened by link, outside the
+ * wallet, so gating them on Nimiq Pay would defeat their purpose.
+ */
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import { isGetBalanceAvailable, isInsideNimiqPay, WalletError } from '@/lib/nimiq'
+import { BrandMark } from '@/components/BrandMark'
 import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Glyph } from '@/components/Glyphs'
+import { ScreenShell } from '@/components/ui/ScreenShell'
 
-/**
- * Paths that must render outside Nimiq Pay: they are opened by link, not by a
- * player inside the wallet. A shared flex card is the whole point of the card
- * route, so gating it on the wallet would make it useless.
- */
 const PUBLIC_PREFIXES = ['/card/']
 
 type State =
@@ -32,6 +30,7 @@ type State =
 
 export function VersionGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>({ phase: 'checking' })
+  const [attempt, setAttempt] = useState(0)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -52,13 +51,14 @@ export function VersionGate({ children }: { children: ReactNode }) {
         setState({ phase: 'update_required', reason })
       }
     }
-    // Async call inside effect body — React Compiler's set-state-in-effect
-    // rule is a false positive on this pattern; see ERRORS.md 2026-10-15.
+
+    // Async call inside the effect body. The set-state-in-effect rule is a false
+    // positive on this pattern; see ERRORS.md 2026-10-15.
     check()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [attempt])
 
   // Public routes render anywhere: they are opened by shared link, outside the
   // wallet, and gating them on Nimiq Pay would defeat their purpose.
@@ -68,29 +68,54 @@ export function VersionGate({ children }: { children: ReactNode }) {
 
   if (state.phase === 'checking') {
     return (
-      <div className="min-h-dvh flex items-center justify-center text-fg-muted sv-body">
-        Preparing Savborne…
-      </div>
+      <ScreenShell variant="pushed" bodyClassName="items-center justify-center pt-0">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <BrandMark />
+          <span className="sv-body text-fg-muted">Preparing Savborne…</span>
+        </div>
+      </ScreenShell>
     )
   }
 
   if (state.phase === 'outside_nimiq') {
     return (
-      <GateShell
+      <GateScreen
         title="Open inside Nimiq Pay"
-        body="Savborne is a Nimiq Pay Mini App. Open this URL inside the Nimiq Pay app to connect your savings account."
+        icon={<Glyph name="phone" size={72} />}
+        headline="Savborne lives inside Nimiq Pay"
+        body="Savborne is a Nimiq Pay Mini App. Open this URL inside the Nimiq Pay app to create your vault."
       />
     )
   }
 
   if (state.phase === 'update_required') {
     return (
-      <GateShell
+      <GateScreen
         title="Update Nimiq Pay"
-        body={
-          state.reason
-            ? `Savborne could not reach the wallet: ${state.reason}. Please update Nimiq Pay and try again.`
-            : 'Savborne needs a newer version of Nimiq Pay that supports balance reads. Please update Nimiq Pay from your app store, then reopen this Mini App.'
+        icon={<Glyph name="update" size={72} className="text-mint" />}
+        headline="Update Nimiq Pay to continue"
+        body="This version of Nimiq Pay can't share your vault balance with Savborne yet. Update it, then reopen Savborne. Nothing has been recorded."
+        reason={state.reason}
+        actions={
+          <>
+            <ButtonLink
+              href="https://nimiq.com"
+              target="_blank"
+              rel="noreferrer"
+              variant="primary"
+            >
+              Update Nimiq Pay
+            </ButtonLink>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setState({ phase: 'checking' })
+                setAttempt((n) => n + 1)
+              }}
+            >
+              I&apos;ve updated, try again
+            </Button>
+          </>
         }
       />
     )
@@ -99,13 +124,37 @@ export function VersionGate({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
-function GateShell({ title, body }: { title: string; body: string }) {
+function GateScreen({
+  title,
+  icon,
+  headline,
+  body,
+  reason,
+  actions,
+}: {
+  title: string
+  icon: ReactNode
+  headline: string
+  body: string
+  reason?: string
+  actions?: ReactNode
+}) {
   return (
-    <div className="min-h-dvh flex items-center justify-center p-(--gut)">
-      <PixelPanel className="p-6 max-w-90 w-full flex flex-col gap-3">
-        <h1 className="sv-heading">{title}</h1>
-        <p className="sv-body text-fg-muted">{body}</p>
-      </PixelPanel>
-    </div>
+    <ScreenShell variant="pushed" bodyClassName="gap-5 pt-0">
+      <span className="sv-number-m text-balance">{title}</span>
+
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+        <PixelPanel className="w-[132px] h-[132px] flex items-center justify-center">
+          {icon}
+        </PixelPanel>
+        <div className="flex flex-col gap-2">
+          <h1 className="sv-subheading-lg">{headline}</h1>
+          <p className="sv-body text-fg-muted">{body}</p>
+          {reason && <p className="sv-label text-fg-faint">{reason}</p>}
+        </div>
+      </div>
+
+      {actions && <div className="flex flex-col gap-3.5">{actions}</div>}
+    </ScreenShell>
   )
 }
