@@ -6,6 +6,7 @@ import { sessionFromProfile, reconnectDecision, disconnectPlan } from './reconne
 const source = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8')
 
 const SETUP = source('../app/setup/page.tsx')
+const SETTINGS = source('../app/settings/page.tsx')
 const DELETE_ROUTE = source('../app/settings/delete/page.tsx')
 const FLOW = source('../components/settings/DeleteAccountFlow.tsx')
 
@@ -63,4 +64,13 @@ test('the delete route keeps the proof gate and the signed request', () => {
   assert.match(FLOW, /deleteAuthHeaders/)
   assert.match(FLOW, /<BottomSheet/)
   assert.doesNotMatch(FLOW, /phase === 'closed'/)
+})
+
+test('Settings is a pushed screen with both destructive actions', () => {
+  assert.match(SETTINGS, /variant="pushed"/)
+  assert.match(SETTINGS, /backHref="\/profile"/)
+  assert.match(SETTINGS, /Disconnect savings account/)
+  assert.match(SETTINGS, /href="\/settings\/delete"/)
+  assert.match(SETTINGS, /<BottomSheet/)
+  assert.match(SETTINGS, /<PrivacyNotice \/>/)
 })
