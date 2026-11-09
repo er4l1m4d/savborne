@@ -116,6 +116,8 @@ test('Settings is a pushed screen with both destructive actions', () => {
   assert.match(SETTINGS, /Disconnect savings account/)
   assert.match(SETTINGS, /href="\/settings\/how-it-works"/)
   assert.match(SETTINGS, /How Savborne works/)
+  assert.match(SETTINGS, /<CharacterPicker/)
+  assert.match(SETTINGS, /method: 'PATCH'/)
   assert.match(SETTINGS, /href="\/settings\/delete"/)
   assert.match(SETTINGS, /<BottomSheet/)
   assert.match(SETTINGS, /<PrivacyNotice \/>/)

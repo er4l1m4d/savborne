@@ -15,6 +15,7 @@ import { BRACKETS, RANKED, xpProgress, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeKey } from '@/lib/game/badges'
 import { BadgeArt, Glyph } from '@/components/Glyphs'
+import type { Avatar } from '@/lib/avatar'
 import { CharacterArt } from '@/components/CharacterArt'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
@@ -26,6 +27,7 @@ type ProfileData = {
   player: {
     address: string
     displayName: string
+    avatar: Avatar
     level: number
     xp: number
     rating: number
@@ -115,7 +117,7 @@ export default function ProfilePage() {
           className="w-28 h-[148px] shrink-0 flex items-center justify-center"
           style={{ background: 'var(--sprite-well)' }}
         >
-          <CharacterArt bracket={b} />
+          <CharacterArt bracket={b} character={data.player.avatar} />
         </div>
         <div className="min-w-0 flex flex-1 flex-col gap-1.5">
           <h2 className="sv-heading sv-break">{data.player.displayName}</h2>

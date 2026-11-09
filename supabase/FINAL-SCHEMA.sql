@@ -34,6 +34,7 @@ create table if not exists players (
   address                 text primary key,
   savings_account_address text not null,
   display_name            text not null check (char_length(display_name) between 1 and 32),
+  avatar                  text not null default 'hero' check (avatar in ('hero','heroine')),
   created_at              timestamptz not null default now(),
   last_check_in_at        timestamptz,
   level                   int not null default 1,
@@ -228,6 +229,12 @@ alter table players add column if not exists shields_earned int not null default
 -- moment the row is created.
 alter table players add column if not exists privacy_consent_at     timestamptz;
 alter table players add column if not exists privacy_notice_version text;
+
+-- The chosen Hero/Heroine drawing. Existing rows default to Hero.
+alter table players add column if not exists avatar text not null default 'hero';
+do $$ begin
+  alter table players add constraint players_avatar_check check (avatar in ('hero','heroine'));
+exception when duplicate_object then null; end $$;
 
 -- ─── Check-in integrity (release gate) ─────────────────────────────────────
 -- Ranked requires five check-ins. One reading per player per UTC day is the
@@ -539,6 +546,7 @@ grant execute on function leaderboard_stats() to service_role;
 -- new overload for CREATE OR REPLACE, so drop the old signature first; re-running
 -- this file is still safe.
 drop function if exists create_player_with_vault(text,text,text,text,text,boolean);
+drop function if exists create_player_with_vault(text,text,text,text,text,boolean,text);
 
 create or replace function create_player_with_vault(
   p_address               text,
@@ -547,7 +555,8 @@ create or replace function create_player_with_vault(
   p_network               text,
   p_card_token            text,
   p_backup_verified       boolean,
-  p_privacy_notice_version text
+  p_privacy_notice_version text,
+  p_avatar                text
 ) returns jsonb
 language plpgsql security definer set search_path = public
 as $$
@@ -559,11 +568,11 @@ begin
   select exists(select 1 from players p where p.address = p_address) into v_existed;
 
   insert into players (
-    address, savings_account_address, display_name, current_balance_luna,
+    address, savings_account_address, display_name, avatar, current_balance_luna,
     privacy_notice_version, privacy_consent_at
   )
   values (
-    p_address, p_vault_address, p_display_name, 0,
+    p_address, p_vault_address, p_display_name, coalesce(p_avatar, 'hero'), 0,
     p_privacy_notice_version,
     case when p_privacy_notice_version is null then null else now() end
   )
@@ -597,8 +606,8 @@ begin
 end;
 $$;
 
-revoke all on function create_player_with_vault(text,text,text,text,text,boolean,text) from public;
-grant execute on function create_player_with_vault(text,text,text,text,text,boolean,text) to service_role;
+revoke all on function create_player_with_vault(text,text,text,text,text,boolean,text,text) from public;
+grant execute on function create_player_with_vault(text,text,text,text,text,boolean,text,text) to service_role;
 
 -- ─── Account deletion ────────────────────────────────────────────────────────
 -- Deleting a profile does not touch the on-chain vault; the 24-word phrase

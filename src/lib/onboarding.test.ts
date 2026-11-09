@@ -26,6 +26,8 @@ test('the onboarding group shares one provider', () => {
   assert.match(PROVIDER, /generatePhrase\(\)/)
   assert.match(PROVIDER, /encryptPhrase\(phrase, passphrase\)/)
   assert.match(PROVIDER, /writeVault\(picked,/)
+  assert.match(PROVIDER, /setAvatar/)
+  assert.match(PROVIDER, /avatar,\n\s+privacyNoticeVersion: acceptedNoticeVersion/)
 })
 
 test('the phrase never reaches browser storage', () => {
@@ -101,7 +103,9 @@ test('Privacy is step 4 and hands the accepted version to the draft', () => {
 test('Name is step 5 with the preview, counter and error slot', () => {
   const NAME = source('../app/(onboarding)/name/page.tsx')
   assert.match(NAME, /<OnboardingScreen step=\{5\} backHref="\/privacy">/)
-  assert.match(NAME, /<CharacterArt bracket=\{null\} size=\{128\} \/>/)
+  assert.match(NAME, /<CharacterArt bracket=\{null\} character=\{avatar\} size=\{128\} \/>/)
+  assert.match(NAME, /<CharacterPicker value=\{avatar\} onChange=\{setAvatar\} \/>/)
+  assert.match(NAME, /legend className="sv-label text-fg-muted">Character/)
   assert.match(NAME, /maxLength=\{DISPLAY_NAME_MAX\}/)
   assert.match(NAME, /aria-describedby="name-hint name-count name-error"/)
   assert.match(NAME, /\{displayName\.length\}\/\{DISPLAY_NAME_MAX\}/)

@@ -120,7 +120,7 @@ export default function FriendChallengePage() {
     meta: player
       ? `Level ${player.level} · ${bracket ? BRACKETS[bracket].label : 'Entry'}`
       : 'Level —',
-    art: <CharacterArt bracket={bracket} size={76} />,
+    art: <CharacterArt bracket={bracket} character={player?.avatar} size={76} />,
   }
   const friend = {
     name: 'Friend',

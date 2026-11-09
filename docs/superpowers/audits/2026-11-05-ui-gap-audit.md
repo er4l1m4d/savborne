@@ -813,7 +813,7 @@ privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
 ### Remaining
 
 1. Apply `supabase/FINAL-SCHEMA.sql` before deploying this build: the new API
-   route calls the 7-argument `create_player_with_vault`.
+   route calls the 8-argument `create_player_with_vault`.
 2. Run the check-in acceptance checks and confirm onboarding stores
    `privacy_consent_at` and `privacy_notice_version`.
 3. The real-device Nimiq Pay pass at 360-430 is the user's final sign-off step.
@@ -910,6 +910,88 @@ works. The review page is
 ### Remaining
 
 1. Apply `supabase/FINAL-SCHEMA.sql` before deploying: the API route calls the
-   7-argument `create_player_with_vault`.
+   8-argument `create_player_with_vault`.
+2. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step.
+3. Do not merge until the user signs off.
+
+
+---
+
+## 16. Onboarding character picker - 2026-11-09
+
+**Branch:** `onboarding-ui-redesign` (continues the Onboarding batch).
+**Verdict:** the Name step now chooses the Hero or Heroine drawing, the choice
+persists on the player, and Settings can change it later. The five-step flow is
+unchanged.
+
+### What landed
+
+- **Name step:** the 128px preview uses the chosen character. A "Character"
+  fieldset holds two 56px picker buttons with 48px art, `aria-pressed`, a mint
+  border and label on the selected option. Hero is the default; the preview
+  updates immediately. The body is two lines and the panel is 230px so the CTA
+  stays on screen at 360.
+- **Data:** `players.avatar text not null default 'hero' check (avatar in
+  ('hero','heroine'))`, inline and via ALTER with an idempotent check. The RPC
+  is now 8 arguments with `p_avatar`; the 6- and 7-argument signatures are
+  dropped first.
+- **API:** `POST /api/players` validates and forwards the avatar; `GET
+  /api/players/me` and `GET /api/profile` return it; `PATCH /api/players/me`
+  changes it; `GET /api/battles/[id]` adds `viewer.avatar`.
+- **Surfaces:** Home, Profile, Name, ranked queue me-card, friend challenge
+  me-card, arena me sprite and result me sprite use the chosen avatar. Opponent
+  sprites keep the default art in this pass.
+- **Settings:** Account gains a Character row with the same picker. A change
+  PATCHes `/api/players/me`, updates the local selection and shows a local error
+  banner on failure.
+- **Privacy:** the collect card now names the chosen character as game data.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 365 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 50 warnings, 0 errors |
+| `npm run build` | exit 0 |
+| Type floor | no `text-[10px]`/`text-[11px]`; min rendered font 12 |
+| Audit | 60 rows (20 states x 360/390/430): `overflowX: 0`, no wide elements, no target below 44px, every tab stop in view/uncovered with the mint outline; the picker buttons, Settings picker and disclosure summaries included |
+
+### 360 behaviour
+
+- Name: the two picker buttons fit side by side, the Heroine preview updates,
+  and the name field, counter and CTA stay on screen.
+- Settings: the Character row expands the Account panel; the page scrolls, the
+  two options fit side by side and the Help rows are unchanged.
+- Privacy: the longer collect card still fits the consent line and Continue
+  with the disclosure closed.
+- All other onboarding states are unchanged.
+
+### Rulings
+
+- **"Character", not "Gender".** The profile stores an art choice (`avatar`),
+  not an identity. The privacy notice names it as game data.
+- **Inside Name, not a sixth step.** The preview was already there; the picker
+  belongs beside it and the five-step count stays honest.
+- **Default Hero.** The choice is visible and one tap away; no extra required
+  field. The name remains the only required input.
+- **Changeable in Settings.** Appearance is not identity; the name stays fixed,
+  the avatar does not.
+- **Player sprites only.** Opponent avatars need their row in the battle
+  payload; that is deliberately out of this pass.
+- **`avatar` as the field name.** `character` collides with the SQL type name;
+  the UI still calls it Character.
+
+### Renders
+
+60 PNGs in `docs/superpowers/renders/onboarding/after/` (20 states at
+360/390/430), including Name Hero, Name Heroine and Settings Character. The
+review page is `docs/superpowers/renders/onboarding/review/index.html`; raw
+audit is `docs/superpowers/renders/onboarding/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. Apply `supabase/FINAL-SCHEMA.sql` before deploying: the API route calls the
+   8-argument `create_player_with_vault` (privacy notice version and avatar).
 2. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step.
 3. Do not merge until the user signs off.

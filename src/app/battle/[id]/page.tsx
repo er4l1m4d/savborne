@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
+import type { Avatar } from '@/lib/avatar'
 import { BATTLE, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { rivalForBattle } from '@/lib/game/rivals'
@@ -59,6 +60,7 @@ type State = {
     side: 'a' | 'b'
     address: string
     displayName: string
+    avatar: string
     level: number
     bracket: string | null
     hasMovedThisTurn: boolean
@@ -237,7 +239,13 @@ export default function BattleScreen() {
     const me = {
       name: viewer.displayName,
       meta: `Level ${viewer.level} · ${viewer.bracket ?? 'Entry'}`,
-      art: <CharacterArt bracket={(viewer.bracket as Bracket | null) ?? null} size={76} />,
+      art: (
+        <CharacterArt
+          bracket={(viewer.bracket as Bracket | null) ?? null}
+          character={viewer.avatar as Avatar}
+          size={76}
+        />
+      ),
     }
     const challenger = {
       name: battle.opponentName,
@@ -283,7 +291,13 @@ export default function BattleScreen() {
     ) : (
       <CharacterArt bracket={(battle.opponentBracket as Bracket | null) ?? null} size={96} />
     )
-  const myArt = <CharacterArt bracket={(viewer.bracket as Bracket | null) ?? null} size={112} />
+  const myArt = (
+    <CharacterArt
+      bracket={(viewer.bracket as Bracket | null) ?? null}
+      character={viewer.avatar as Avatar}
+      size={112}
+    />
+  )
   const lockedItems = ITEMS.filter((item) => !item.isBadge && !viewer.ownedItems.includes(item.key))
     .map((item) => item.key)
   const meStatus = offline

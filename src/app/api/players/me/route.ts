@@ -6,11 +6,15 @@
  * next level. Reads are trusted because RLS allows anyone to select the
  * public columns; here we still gate by the address header so a caller
  * cannot enumerate other players' rows through this endpoint.
+ *
+ * PATCH changes the chosen Hero/Heroine drawing only. It is the one profile
+ * field a player may change after onboarding.
  */
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
+import { isAvatar } from '@/lib/avatar'
 import { xpToNextLevel } from '@/lib/constants'
 import { utcDayOf, utcWeekStart } from '@/lib/game/time'
 import { readDeleteProof } from '@/lib/delete-request'
@@ -58,6 +62,7 @@ export async function GET(req: Request) {
     player: {
       address: player.address,
       displayName: player.display_name,
+      avatar: player.avatar,
       savingsAddress: player.savings_account_address,
       // Canonical ISO-8601. The delete proof signs this exact string, so the
       // client must not reformat it.
@@ -155,4 +160,43 @@ export async function DELETE(req: Request) {
   }
 
   return NextResponse.json(data)
+}
+
+/**
+ * PATCH /api/players/me
+ *
+ * Body: { avatar: 'hero' | 'heroine' }
+ * Response: 200 { avatar }, 400, 401, 404, 500.
+ */
+export async function PATCH(req: Request) {
+  const address = req.headers.get(PLAYER_HEADER)
+  if (!address) {
+    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
+  }
+
+  let body: { avatar?: unknown }
+  try {
+    body = (await req.json()) as { avatar?: unknown }
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  if (!isAvatar(body.avatar)) {
+    return NextResponse.json({ error: 'Invalid avatar' }, { status: 400 })
+  }
+
+  const db = supabaseAdmin()
+  const { data, error } = await db
+    .from('players')
+    .update({ avatar: body.avatar })
+    .eq('address', address)
+    .select('avatar')
+    .maybeSingle()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+  if (!data) {
+    return NextResponse.json({ error: 'Player not found' }, { status: 404 })
+  }
+  return NextResponse.json({ avatar: data.avatar })
 }

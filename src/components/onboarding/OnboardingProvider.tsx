@@ -28,6 +28,7 @@ import { encryptPhrase } from '@/lib/vault/crypto'
 import { deriveVaultAddress, generatePhrase } from '@/lib/vault/phrase'
 import { writeVault } from '@/lib/vault/storage'
 import { validateDisplayName } from '@/lib/display-name'
+import { DEFAULT_AVATAR, type Avatar } from '@/lib/avatar'
 
 type Draft = {
   accounts: string[]
@@ -37,6 +38,7 @@ type Draft = {
   phrase: string[] | null
   vaultLocked: boolean
   displayName: string
+  avatar: Avatar
   acceptedNoticeVersion: string | null
 }
 
@@ -46,6 +48,7 @@ type OnboardingContextValue = Draft & {
   lockVault: (passphrase: string) => Promise<void>
   acceptPrivacy: (version: string) => void
   setDisplayName: (value: string) => void
+  setAvatar: (value: Avatar) => void
   resetVault: () => void
   finish: (displayName: string) => Promise<void>
 }
@@ -66,6 +69,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [phrase, setPhrase] = useState<string[] | null>(null)
   const [vaultLocked, setVaultLocked] = useState(false)
   const [displayName, setDisplayName] = useState('')
+  const [avatar, setAvatar] = useState<Avatar>(DEFAULT_AVATAR)
   const [acceptedNoticeVersion, setAcceptedNoticeVersion] = useState<string | null>(null)
 
   /**
@@ -183,6 +187,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         vaultAddress,
         network: hostNetwork(),
         backupVerified: true,
+        avatar,
         privacyNoticeVersion: acceptedNoticeVersion,
       }),
     })
@@ -220,12 +225,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         phrase,
         vaultLocked,
         displayName,
+        avatar,
         acceptedNoticeVersion,
         startConnect,
         pickAccount,
         lockVault,
         acceptPrivacy,
         setDisplayName,
+        setAvatar,
         resetVault,
         finish,
       }}

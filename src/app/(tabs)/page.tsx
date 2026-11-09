@@ -306,7 +306,7 @@ function CharacterCard({ player, bracket }: { player: PlayerMe; bracket: Bracket
         className="w-[132px] h-[176px] shrink-0 flex items-center justify-center"
         style={{ background: 'var(--sprite-well)' }}
       >
-        <CharacterArt bracket={bracket} size={96} />
+        <CharacterArt bracket={bracket} character={player.avatar} size={96} />
       </div>
       <div className="min-w-0 flex flex-1 flex-col gap-1.5">
         <h2 className="sv-heading sv-break">{player.displayName}</h2>

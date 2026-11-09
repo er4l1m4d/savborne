@@ -216,7 +216,7 @@ export default function RankedQueuePage() {
   const me = {
     name: player?.displayName ?? 'You',
     meta: player ? `Rating ${player.rating}` : 'Rating —',
-    art: <CharacterArt bracket={bracket} size={80} />,
+    art: <CharacterArt bracket={bracket} character={player?.avatar} size={80} />,
   }
   const opponent = {
     name: 'Opponent',

@@ -19,6 +19,7 @@ import {
   resultSpriteSizes,
   type BattleResult,
 } from '@/lib/battle-ui'
+import type { Avatar } from '@/lib/avatar'
 import { rivalForBattle } from '@/lib/game/rivals'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { CharacterArt } from '@/components/CharacterArt'
@@ -49,6 +50,7 @@ type ResultState = {
     side: 'a' | 'b'
     address: string
     displayName: string
+    avatar: string
     level: number
     bracket: string | null
     activeItems: ItemKey[]
@@ -206,6 +208,7 @@ export default function BattleResultPage() {
                 art: (
                   <CharacterArt
                     bracket={(viewer.bracket as Bracket | null) ?? null}
+                    character={viewer.avatar as Avatar}
                     size={spriteSizes.me}
                   />
                 ),

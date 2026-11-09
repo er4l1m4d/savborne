@@ -8,22 +8,33 @@
 
 import art from '../../assets/characters.json'
 import type { Bracket } from '@/lib/constants'
+import type { Avatar } from '@/lib/avatar'
 
-const KEY: Record<Bracket, keyof typeof art> = {
-  entry: 'Hero · Entry',
-  bronze: 'Hero · Bronze',
-  silver: 'Hero · Silver',
-  gold: 'Hero · Gold',
+const KEY: Record<Avatar, Record<Bracket, keyof typeof art>> = {
+  hero: {
+    entry: 'Hero · Entry',
+    bronze: 'Hero · Bronze',
+    silver: 'Hero · Silver',
+    gold: 'Hero · Gold',
+  },
+  heroine: {
+    entry: 'Heroine · Entry',
+    bronze: 'Heroine · Bronze',
+    silver: 'Heroine · Silver',
+    gold: 'Heroine · Gold',
+  },
 }
 
 export function CharacterArt({
   bracket,
+  character = 'hero',
   size = 80,
 }: {
   bracket: Bracket | null
+  character?: Avatar
   size?: number
 }) {
-  const key = KEY[bracket ?? 'entry']
+  const key = KEY[character][bracket ?? 'entry']
   return (
     <svg
       width={size}

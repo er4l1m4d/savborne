@@ -79,7 +79,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   // shown to other players; the AI has no player row).
   const { data: names } = await db
     .from('players')
-    .select('address, display_name, level, bracket')
+    .select('address, display_name, level, bracket, avatar')
     .in('address', [battle.player_a, battle.player_b ?? battle.player_a])
   const infoOf = (a: string | null) =>
     a === AI_ADDRESS ? null : names?.find((n) => n.address === a) ?? null
@@ -142,6 +142,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       displayName: nameOf(address),
       level: viewerInfo?.level ?? 1,
       bracket: (viewerInfo?.bracket as string | null) ?? null,
+      avatar: viewerInfo?.avatar ?? 'hero',
       hasMovedThisTurn,
       specialAvailable: canSpecial,
       activeItems,

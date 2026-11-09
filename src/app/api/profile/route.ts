@@ -46,6 +46,7 @@ export async function GET(req: Request) {
     player: {
       address: player.address,
       displayName: player.display_name,
+      avatar: player.avatar,
       level: player.level,
       xp: player.xp,
       rating: player.rating,

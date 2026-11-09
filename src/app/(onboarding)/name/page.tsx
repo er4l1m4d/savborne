@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { OnboardingScreen } from '@/components/onboarding/OnboardingScreen'
 import { useOnboarding } from '@/components/onboarding/OnboardingProvider'
 import { CharacterArt } from '@/components/CharacterArt'
+import { CharacterPicker } from '@/components/CharacterPicker'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
@@ -22,6 +23,8 @@ export default function NamePage() {
   const {
     displayName,
     setDisplayName,
+    avatar,
+    setAvatar,
     vaultLocked,
     acceptedNoticeVersion,
     finish,
@@ -57,15 +60,19 @@ export default function NamePage() {
     <OnboardingScreen step={5} backHref="/privacy">
       <h1 className="sv-heading-lg">Name your character</h1>
       <p className="sv-body text-fg-muted">
-        Your display name is your character&apos;s name. It appears on the
-        leaderboard. Your address stays hidden.
+        Your display name appears on the leaderboard. Your address stays hidden.
       </p>
 
-      <PixelPanel className="h-[250px] flex items-center justify-center">
+      <PixelPanel className="h-[230px] flex items-center justify-center">
         <div className="w-[190px] h-[214px] bg-sprite-well flex items-center justify-center">
-          <CharacterArt bracket={null} size={128} />
+          <CharacterArt bracket={null} character={avatar} size={128} />
         </div>
       </PixelPanel>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="sv-label text-fg-muted">Character</legend>
+        <CharacterPicker value={avatar} onChange={setAvatar} />
+      </fieldset>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="display-name" className="sv-body font-bold">

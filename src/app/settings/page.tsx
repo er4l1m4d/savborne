@@ -19,6 +19,9 @@ import pkg from '../../../package.json'
 import { authHeaders, readSession, writeSession } from '@/lib/session'
 import { clearVault, readVault } from '@/lib/vault/storage'
 import { disconnectPlan } from '@/lib/reconnect'
+import type { Avatar } from '@/lib/avatar'
+import type { Bracket } from '@/lib/constants'
+import { CharacterPicker } from '@/components/CharacterPicker'
 import { TOUR_FLAG_KEY } from '@/components/VaultTour'
 import { BackupSettings } from '@/components/vault/BackupSettings'
 import { PrivacyNotice } from '@/components/PrivacyNotice'
@@ -35,6 +38,8 @@ type Profile = {
   player: {
     address: string
     displayName: string
+    avatar: Avatar
+    bracket: Bracket | null
   }
 }
 
@@ -49,6 +54,9 @@ export default function SettingsPage() {
   const router = useRouter()
   const [playerAddress, setPlayerAddress] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
+  const [avatar, setAvatar] = useState<Avatar>('hero')
+  const [bracket, setBracket] = useState<Bracket | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
   const [vault, setVault] = useState<SettingsVault | null>(null)
   const [vaultUnavailable, setVaultUnavailable] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -77,6 +85,8 @@ export default function SettingsPage() {
 
       const profile = (await profileRes.json()) as Profile
       setDisplayName(profile.player.displayName)
+      setAvatar(profile.player.avatar ?? 'hero')
+      setBracket(profile.player.bracket ?? null)
 
       if (vaultRes.ok) {
         const body = (await vaultRes.json()) as { vault: SettingsVault | null }
@@ -102,6 +112,28 @@ export default function SettingsPage() {
     setDisplayName(session.displayName)
     void load()
   }, [load, router])
+
+  async function changeAvatar(next: Avatar) {
+    if (busy || next === avatar) return
+    setBusy(true)
+    setAvatarError(null)
+    try {
+      const res = await fetch('/api/players/me', {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ avatar: next }),
+      })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(body.error ?? `Could not save (${res.status}).`)
+      }
+      setAvatar(next)
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Could not save the character.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   function showTourAgain() {
     try {
@@ -166,6 +198,17 @@ export default function SettingsPage() {
                 </div>
               </Row>
               <Row divider>
+                <div className="flex w-full flex-col gap-2 py-2">
+                  <span className="sv-label text-fg-muted">Character</span>
+                  <CharacterPicker
+                    value={avatar}
+                    onChange={changeAvatar}
+                    bracket={bracket}
+                    disabled={busy}
+                  />
+                </div>
+              </Row>
+              <Row divider>
                 <div className="flex flex-wrap items-baseline justify-between gap-2 py-2">
                   <span className="sv-label text-fg-muted">Vault address</span>
                   <span className="sv-figure font-mono sv-break text-right">{vaultValue}</span>
@@ -184,6 +227,7 @@ export default function SettingsPage() {
                 </div>
               </Row>
             </PixelPanel>
+            {avatarError && <Banner tone="error">{avatarError}</Banner>}
           </section>
 
           <BackupSettings />

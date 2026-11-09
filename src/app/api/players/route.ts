@@ -13,6 +13,7 @@
  *     network:       'mainnet' | 'testnet'
  *     backupVerified: boolean // a declared claim; the gate is enforced on deposit
  *     privacyNoticeVersion?: string // the notice version accepted in onboarding
+ *     avatar?:       'hero' | 'heroine' // the chosen character drawing
  *   }
  *
  * Response:
@@ -28,6 +29,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { validateDisplayName } from '@/lib/display-name'
+import { DEFAULT_AVATAR, isAvatar } from '@/lib/avatar'
 import { isPlausibleAddress } from '@/lib/vault/address'
 import { toVaultDto } from '@/lib/vault/dto'
 import { isNetwork } from '@/lib/vault/network'
@@ -43,6 +45,7 @@ type Body = {
   network?: unknown
   backupVerified?: unknown
   privacyNoticeVersion?: unknown
+  avatar?: unknown
 }
 
 type CreateResult = {
@@ -59,7 +62,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { address, displayName, vaultAddress, network, backupVerified, privacyNoticeVersion } = body
+  const {
+    address,
+    displayName,
+    vaultAddress,
+    network,
+    backupVerified,
+    privacyNoticeVersion,
+    avatar,
+  } = body
 
   if (typeof address !== 'string' || !isPlausibleAddress(address)) {
     return NextResponse.json({ error: 'Invalid player address' }, { status: 400 })
@@ -79,6 +90,9 @@ export async function POST(req: Request) {
   }
   if (typeof backupVerified !== 'boolean') {
     return NextResponse.json({ error: 'backupVerified must be a boolean' }, { status: 400 })
+  }
+  if (avatar !== undefined && !isAvatar(avatar)) {
+    return NextResponse.json({ error: 'Invalid avatar' }, { status: 400 })
   }
   if (
     privacyNoticeVersion !== undefined &&
@@ -104,6 +118,7 @@ export async function POST(req: Request) {
     p_backup_verified: backupVerified,
     p_privacy_notice_version:
       typeof privacyNoticeVersion === 'string' ? privacyNoticeVersion.trim() : null,
+    p_avatar: isAvatar(avatar) ? avatar : DEFAULT_AVATAR,
   })
 
   if (error) {

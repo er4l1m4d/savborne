@@ -7,6 +7,7 @@
  */
 
 import type { Bracket, MoveType } from './constants'
+import type { Avatar } from './avatar'
 
 export type Database = {
   public: {
@@ -16,6 +17,7 @@ export type Database = {
           address: string
           savings_account_address: string
           display_name: string
+          avatar: Avatar
           created_at: string
           privacy_consent_at: string | null
           privacy_notice_version: string | null

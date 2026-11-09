@@ -15,9 +15,11 @@ to, naming the width and the element where possible.
 - [ ] Backup - ready
 - [ ] Privacy notice - step 4 of 5
 - [ ] Privacy - public and storage open
-- [ ] Name - step 5 of 5
+- [ ] Name your character - Hero
+- [ ] Name your character - Heroine
 - [ ] Name at 16 characters
 - [ ] Name error
+- [ ] Settings - Character
 - [ ] How Savborne works - Settings
 - [ ] Balance error
 - [ ] Gate - Preparing
@@ -54,6 +56,12 @@ Corrections:
 
 -
 
+## Settings - Character
+
+Corrections:
+
+-
+
 ## How Savborne works - `/settings/how-it-works`
 
 Corrections:
@@ -68,25 +76,30 @@ Corrections:
 
 ## Known deliberate choices (not bugs)
 
-- Five steps: Welcome 1/5, Vault 2/5 (intro and account picker), Backup 3/5
+- **Five steps:** Welcome 1/5, Vault 2/5 (intro and account picker), Backup 3/5
   (words, quiz, passphrase, ready), Privacy 4/5, Name 5/5. The label switches
-  from 2 to 3 inside `/connect` when the phrase exists; no new route, so the
-  draft never crosses a route and the phrase stays in memory.
-- Welcome shows the indicator even though it is a landing screen: the count has
-  to be honest from the first screen.
-- The vault intro is a short paragraph, the can/cannot cards and a closed "How
-  your vault works" disclosure. The three-step explainer is not visible by
-  default; it is one tap away and also lives in Settings.
-- The 24-word warning is two sentences. The full backup explanation, including
-  the quiz and passphrase reset, is in Settings > How Savborne works.
-- Privacy shows the short version and two cards. Public visibility and storage
-  are behind one closed disclosure; the full four-card notice is in Settings >
-  How Savborne works and the compact sheet stays in Settings.
-- The 24-word risk is visible on Backup and in Settings; it is no longer in the
-  privacy short version. The no-custody promise is visible on the vault cards
-  and in the privacy short version.
-- The Settings Help section gained "How Savborne works"; the reference uses the
-  same copy module as onboarding, so the two cannot drift.
+  from 2 to 3 inside `/connect`; the character picker lives in Name, so the
+  count does not change to six.
+- **Character, not gender:** the screen says "Character" with Hero and Heroine.
+  The profile stores an art choice (`avatar`), not a gender identity, and the
+  privacy collect card names the chosen character as game data.
+- **Default Hero:** both options are visible and switching is one tap; no extra
+  required field. The preview updates immediately.
+- **Changeable:** Settings > Account > Character uses the same picker and saves
+  through `PATCH /api/players/me`. The name remains fixed; appearance does not.
+- **Player sprites only:** Home, Profile, Name, the ranked queue me-card, the
+  friend challenge me-card, the arena me sprite and the result me sprite use the
+  chosen avatar. Opponents keep the current default art in this pass.
+- **The vault intro** is a short paragraph, the can/cannot cards and a closed
+  "How your vault works" disclosure. The three-step explainer is one tap away
+  and also lives in Settings.
+- **The 24-word warning** is two sentences; the full backup explanation,
+  including the quiz and passphrase reset, is in Settings > How Savborne works.
+- **Privacy** shows the short version and two cards. Public visibility and
+  storage are behind one closed disclosure; the full four-card notice is in
+  Settings > How Savborne works and the compact sheet stays in Settings.
+- **The Settings reference** uses the same copy module as onboarding, so the
+  short and long versions cannot drift.
 - The privacy page fits the consent line and CTA at 360 when the disclosure is
   closed; opening the disclosure scrolls.
 - The Welcome headline remains 36px Silkscreen and wraps to three or four lines
@@ -100,9 +113,10 @@ Corrections:
 
 ## Deployment before this build
 
-1. Apply `supabase/FINAL-SCHEMA.sql`. The new API route calls the 7-argument
-   `create_player_with_vault`, so apply the SQL before deploying.
+1. Apply `supabase/FINAL-SCHEMA.sql`. The API route calls the 8-argument
+   `create_player_with_vault` (privacy notice version and avatar), so apply the
+   SQL before deploying.
 2. Run the check-in acceptance checks from
    `docs/superpowers/backlog/2026-11-09-check-in-integrity.md`.
-3. Confirm onboarding creates a player with `privacy_consent_at` and
-   `privacy_notice_version` set.
+3. Confirm onboarding creates a player with `privacy_consent_at`,
+   `privacy_notice_version` and `avatar` set.

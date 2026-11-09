@@ -25,7 +25,7 @@ export const PRIVACY_CARDS: PrivacyCard[] = [
     key: 'collect',
     title: 'What we collect',
     tone: 'mint',
-    body: 'Your wallet address, your vault address, balance snapshots at each check-in, game data and your display name.',
+    body: 'Your wallet address, your vault address, balance snapshots at each check-in, game data, your chosen character and your display name.',
   },
   {
     key: 'not-collect',

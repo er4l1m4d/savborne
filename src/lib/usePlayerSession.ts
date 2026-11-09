@@ -19,10 +19,12 @@ import { listAccounts, WalletError } from '@/lib/nimiq'
 import { playLevelUp } from '@/lib/level-up-sound'
 import { buzz } from '@/lib/haptics'
 import { observeLevel } from '@/lib/level-up'
+import type { Avatar } from '@/lib/avatar'
 
 export type PlayerMe = {
   address: string
   displayName: string
+  avatar: Avatar
   savingsAddress: string
   level: number
   xp: number
