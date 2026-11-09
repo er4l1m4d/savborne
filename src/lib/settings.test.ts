@@ -9,6 +9,7 @@ const SETUP = source('../app/setup/page.tsx')
 const SETTINGS = source('../app/settings/page.tsx')
 const DELETE_ROUTE = source('../app/settings/delete/page.tsx')
 const FLOW = source('../components/settings/DeleteAccountFlow.tsx')
+const PROFILE = source('../app/(tabs)/profile/page.tsx')
 
 test('Setup renders the shared privacy notice', () => {
   assert.match(SETUP, /from '@\/components\/PrivacyNotice'/)
@@ -73,4 +74,12 @@ test('Settings is a pushed screen with both destructive actions', () => {
   assert.match(SETTINGS, /href="\/settings\/delete"/)
   assert.match(SETTINGS, /<BottomSheet/)
   assert.match(SETTINGS, /<PrivacyNotice \/>/)
+})
+
+test('Profile links to Settings and no longer owns account deletion', () => {
+  assert.match(PROFILE, /href="\/settings"/)
+  assert.match(PROFILE, /aria-label="Settings"/)
+  assert.doesNotMatch(PROFILE, /DeleteAccount/)
+  assert.doesNotMatch(PROFILE, /BackupSettings/)
+  assert.doesNotMatch(PROFILE, /Show tour again/)
 })

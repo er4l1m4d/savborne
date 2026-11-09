@@ -14,19 +14,13 @@ import { authHeaders } from '@/lib/session'
 import { BRACKETS, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeKey } from '@/lib/game/badges'
-import { BadgeArt } from '@/components/Glyphs'
-import { TOUR_FLAG_KEY } from '@/components/VaultTour'
-import { BackupSettings } from '@/components/vault/BackupSettings'
-import { DeleteAccount } from '@/components/DeleteAccount'
+import { BadgeArt, Glyph } from '@/components/Glyphs'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Row } from '@/components/ui/Row'
 import { Chip } from '@/components/ui/Chip'
-import { Button } from '@/components/ui/Button'
+import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
-
-/** Single definition; the footer and the mailto both read it. */
-const CONTACT_EMAIL = 'damilareogooluwade@outlook.com'
 
 type ProfileData = {
   player: {
@@ -102,9 +96,16 @@ export default function ProfilePage() {
   return (
     <ScreenShell
       variant="tab"
-      title={data.player.displayName}
+      title="Profile"
       actions={
-        <div className="flex items-center gap-2">
+        <ButtonLink href="/settings" variant="icon" aria-label="Settings">
+          <Glyph name="flag" size={24} />
+        </ButtonLink>
+      }
+    >
+      <section className="flex flex-col gap-1">
+        <h2 className="sv-heading sv-break">{data.player.displayName}</h2>
+        <div className="flex flex-wrap items-center gap-2">
           <span className="sv-label text-fg-muted">Level {data.player.level}</span>
           {b && (
             <Chip variant="outline" color={BRACKETS[b].color}>
@@ -112,8 +113,8 @@ export default function ProfilePage() {
             </Chip>
           )}
         </div>
-      }
-    >
+      </section>
+
       <StatGrid data={data} />
 
       <section className="flex flex-col gap-2">
@@ -184,42 +185,6 @@ export default function ProfilePage() {
       </section>
 
       <ShareCardSection cardToken={data.cardToken} />
-
-      <BackupSettings />
-
-      <section className="flex flex-col gap-2">
-        <h2 className="sv-section-label text-mint">Help</h2>
-        <Button
-          variant="secondary"
-          className="justify-start"
-          onClick={() => {
-            try {
-              window.localStorage.removeItem(TOUR_FLAG_KEY)
-            } catch {
-              // Non-fatal.
-            }
-            router.push('/vault')
-          }}
-        >
-          Show tour again
-        </Button>
-      </section>
-
-      <DeleteAccount playerAddress={data.player.address} />
-
-      <footer className="flex flex-col items-center gap-1 pt-4 border-t border-line">
-        <a href={`mailto:${CONTACT_EMAIL}`} className="sv-link">
-          {CONTACT_EMAIL}
-        </a>
-        <p className="sv-label text-fg-faint text-center">
-          Savborne never holds your NIM. A 24-word phrase generated on your device controls your
-          vault. Balances are read from the chain, never stored by us.
-        </p>
-        <p className="sv-label text-fg-faint">
-          Your address:{' '}
-          <span className="sv-figure font-mono sv-break">{short(data.player.address)}</span>
-        </p>
-      </footer>
     </ScreenShell>
   )
 }
@@ -301,8 +266,4 @@ function Stat({ label, value }: { label: string; value: string | number }) {
       <span className="sv-label text-fg-muted">{label}</span>
     </div>
   )
-}
-
-function short(a: string) {
-  return a.length > 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a
 }
