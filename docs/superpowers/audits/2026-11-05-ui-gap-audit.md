@@ -520,3 +520,53 @@ The reveal and quiz states were not target-audited: the headless fixture cannot 
 ### Remaining step
 
 The emulated sweep is the agent's evidence. The real-device pass in Nimiq Pay at 360–430px is the user's final sign-off step.
+
+---
+
+## 11. Economy remainder — 2026-11-09
+
+**Branch:** `feat/economy-settings` (continued; stacked on the Settings slice).
+**Verdict:** the Economy remainder is implemented. Items, Bracket Climb and Balance dropped now exist as screens, and Profile is rebuilt around the character card.
+
+### What landed
+
+- **`/items`**: a pushed screen with the handoff's 2-column grid of all eight items, a `6 of 8 unlocked` chip, 16×16 item art at 48px, per-item bracket and state line, and the "Still yours" footer. Item art comes from `assets/items.json` through `ItemArt`; `ledger_scroll` uses the `Ledger Tome` drawing because the app kept its original item name.
+- **`/bracket-climb`**: a celebration screen with the bracket label, the threshold, `+50 XP` when the Bracket Climb mission actually awarded, the unlocked items, and `See my items`.
+- **`/withdrawal`**: the neutral "Your balance went down" screen with last/now balances, a mint "Still yours" card and a coral "Removed" card listing the badges actually revoked.
+- **Profile**: the identity strip is now a character card using the Hero sprite for the current bracket, the level/bracket line, a `Ranked unlocked` chip when eligible, and an XP bar. Stats and badges use stepped `PixelPanel`s, the full inventory list is gone, and an Items shortcut replaces it.
+- **Trigger**: Home routes a check-in with `checkInDestination`. A withdrawal wins over a bracket change; a bracket change below the entry floor goes Home. The result crosses the navigation in a one-shot `sessionStorage` handoff (`checkin-handoff.ts`) with a module cache so React StrictMode's double mount cannot lose it.
+- **Art components**: `CharacterArt` (Hero · Entry/Bronze/Silver/Gold) and `ItemArt` (eight items) render the shipped 16×16 paths at whole multiples.
+- **Focus fix**: a scrollable `.sv-shell__body` is focusable in Chrome; it now shows the 2px mint outline instead of the UA auto ring. This is why `/items` has a scroll-container focus stop at 360/390.
+
+### Verification evidence
+
+| Check | Result |
+|---|---|
+| `npm test` | 217 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 48 warnings, 0 errors (four new `set-state-in-effect` warnings follow the existing session-read pattern) |
+| `npm run build` | exit 0 |
+| `text-[10px]` / `text-[11px]` | none in `src/**/*.tsx` |
+| Audit 360/390/430 | Profile, Items, Bracket Climb, Withdrawal: `overflowX: 0`, no wide elements, no target <44×44, min font 12px (13px on the celebration screens), reading-order focus, mint outline, no covered stops |
+
+### 360px behaviour
+
+- **Profile:** the 12-character fixture name wraps to two lines inside the character card; the card grows, nothing is truncated.
+- **Items:** two columns hold all eight cards; the `6 of 8 unlocked` chip stays on the header line.
+- **Bracket Climb:** "Bracket Climb" wraps to two lines and `3 NIM` stays on one line (non-breaking space).
+- **Balance dropped:** the title wraps to two lines; the balance row keeps both values and the NIM labels.
+
+### Renders
+
+12 new PNGs in `docs/superpowers/renders/economy/after/` (Profile, Items, Bracket Climb, Withdrawal at 360/390/430), mirrored into `docs/superpowers/renders/economy/review/current/` with new sections in `index.html`. The review copy now covers the whole Economy batch.
+
+### Rulings
+
+- **Hero sprite:** the handoff's Profile uses `Hero · Silver`; the card uses the Hero sprite for the current bracket. No gender field exists in the app, so this is the only defensible choice.
+- **Ledger name:** the app keeps `Ledger Scroll`; the handoff and `assets/items.json` call the drawing `Ledger Tome`. The art is mapped, the name is not renamed.
+- **Withdrawal trigger:** the check-in API flags any lower reading, so the screen is shown for any drop; its Removed card lists only the badges actually revoked instead of promising one. The handoff's copy assumed a bracket/streak drop.
+- **Scroll focus:** the pushed scroll body is keyboard focusable by the browser; the mint outline makes that stop consistent rather than removing a useful way to scroll a screen with no other controls.
+
+### Remaining step
+
+The real-device pass in Nimiq Pay at 360–430px is still the user's final sign-off step.

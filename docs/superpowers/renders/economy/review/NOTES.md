@@ -8,6 +8,9 @@ the custody line”.
 ## Sign-off
 
 - [ ] Profile
+- [ ] Items
+- [ ] Bracket Climb
+- [ ] Balance dropped
 - [ ] Settings
 - [ ] Settings — Disconnect sheet
 - [ ] Settings — Privacy sheet
@@ -16,6 +19,24 @@ the custody line”.
 - [ ] Delete — confirmation sheet
 
 ## Profile — `/profile`
+
+Corrections:
+
+-
+
+## Items — `/items`
+
+Corrections:
+
+-
+
+## Bracket Climb — `/bracket-climb`
+
+Corrections:
+
+-
+
+## Balance dropped — `/withdrawal`
 
 Corrections:
 
@@ -73,4 +94,8 @@ Corrections that apply everywhere (type, spacing, colour, motion, focus):
 - `/settings/delete` wraps its title to two lines at 360px. That is the type floor doing its job; nothing is truncated.
 - The privacy sheet scrolls inside `max-height: 80dvh` at 360px.
 - The privacy-sheet PNG predates a final copy correction: the code now says “emailing the contact in Settings → Help”, not “the app footer”; the layout is unchanged.
+- Profile uses the Hero sprite for the current bracket; the app has no gender field, so one sprite set is the only option.
+- The app keeps the item name "Ledger Scroll"; the handoff drawing is "Ledger Tome", so the art is mapped by hand.
+- Balance dropped is shown for any lower check-in reading. The Removed card lists the badges actually revoked, so it never promises a streak badge that did not exist.
+- Item cards are display-only; the screen's scroll body is keyboard focusable so the list can be scrolled without another control.
 - The real-device pass in Nimiq Pay is still yours to do; these are headless renders.
