@@ -136,14 +136,17 @@ truncated or shrunk.
 
 - Leading: 24x24 box, `border-2`. Done: mint fill, mint border, ground check
   glyph (16px). Open: mint border, transparent fill. `aria-hidden`.
-- Body: label `sv-body font-semibold sv-break`. Done label `text-fg-muted` plus
-  `<span className="sr-only"> (completed)</span>`. Open label default text.
-- Optional body line: only when open, `sv-caption text-fg-muted` (12px).
+- Body: label 15px (`text-[15px] leading-[1.35] font-semibold`) with `sv-break`.
+  Done label `text-fg-muted` plus `<span className="sr-only"> (completed)</span>`.
+  Open label default text.
+- Optional body line: only when open, 12px/500/1.35 (`sv-caption font-medium
+  leading-[1.35] text-fg-muted`).
+- The body column carries `py-2` (8px top and bottom), so the last line never
+  sits on the divider.
 - Trailing: `.sv-figure` `+{xpReward} XP`; open `text-mint`, done
   `text-fg-muted`.
-- Done rows measure exactly 58px. Open rows with a one-line description measure
-  about 60px; a two-line description at 360 grows the row further. Rows never
-  clip or truncate.
+- Done and one-line rows measure 58px. A two-line description row grows to
+  about 71px with 8px of clearance under the text. Rows never clip or truncate.
 
 ### 4.3 Panel
 

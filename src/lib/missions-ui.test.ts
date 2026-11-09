@@ -65,6 +65,12 @@ test('the row shows a 24px status box, mint XP and open-row descriptions', () =>
   assert.match(PAGE, /\(completed\)/)
 })
 
+test('the row type fits the handoff and clears the divider', () => {
+  assert.match(PAGE, /text-\[15px\] leading-\[1\.35\] font-semibold/)
+  assert.match(PAGE, /sv-caption font-medium leading-\[1\.35\]/)
+  assert.match(PAGE, /flex flex-col gap-0\.5 py-2/)
+})
+
 test('the page keeps the states and drops the cap cards', () => {
   assert.match(PAGE, /Couldn't load missions\./)
   assert.match(PAGE, /Try again/)

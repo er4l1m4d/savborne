@@ -193,12 +193,20 @@ function MissionRow({ m, divider }: { m: Mission; divider: boolean }) {
         </span>
       }
     >
-      <div className="flex flex-col gap-0.5">
-        <span className={`sv-body font-semibold sv-break ${m.completed ? 'text-fg-muted' : ''}`}>
+      <div className="flex flex-col gap-0.5 py-2">
+        <span
+          className={`text-[15px] leading-[1.35] font-semibold sv-break ${
+            m.completed ? 'text-fg-muted' : ''
+          }`}
+        >
           {m.name}
           {m.completed && <span className="sr-only"> (completed)</span>}
         </span>
-        {!m.completed && <span className="sv-caption text-fg-muted">{m.description}</span>}
+        {!m.completed && (
+          <span className="sv-caption font-medium leading-[1.35] text-fg-muted">
+            {m.description}
+          </span>
+        )}
       </div>
     </Row>
   )
