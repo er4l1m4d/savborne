@@ -6,6 +6,7 @@ import { sessionFromProfile, reconnectDecision, disconnectPlan, reconnectProfile
 const source = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8')
 
 const SETUP = source('../app/setup/page.tsx')
+const PRIVACY = source('../app/(onboarding)/privacy/page.tsx')
 const SETTINGS = source('../app/settings/page.tsx')
 const DELETE_ROUTE = source('../app/settings/delete/page.tsx')
 const FLOW = source('../components/settings/DeleteAccountFlow.tsx')
@@ -14,6 +15,12 @@ const PROFILE = source('../app/(tabs)/profile/page.tsx')
 test('Setup redirects to the new welcome route', () => {
   assert.match(SETUP, /redirect\('\/welcome'\)/)
   assert.doesNotMatch(SETUP, /<PrivacyNotice \/>/)
+})
+
+test('Privacy renders the shared notice', () => {
+  assert.match(PRIVACY, /from '@\/components\/PrivacyNotice'/)
+  assert.match(PRIVACY, /<PrivacyNotice variant="full" \/>/)
+  assert.doesNotMatch(PRIVACY, /What we collect/)
 })
 
 test('a profile maps to exactly the session fields', () => {

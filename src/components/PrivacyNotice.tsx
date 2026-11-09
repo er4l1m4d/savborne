@@ -1,36 +1,68 @@
 /**
- * Savborne — privacy notice copy
+ * Savborne - privacy notice
  *
- * One source for the onboarding step and the Settings sheet. The vault is
- * non-custodial, so the important claims are what we never collect and the
- * risk of losing the 24 words.
+ * `full` is the onboarding step: the handoff's short version, four cards and
+ * consent line. `compact` is the Settings sheet, which keeps the same claims in
+ * a denser list. Both read `src/lib/privacy.ts`.
  */
 
-export function PrivacyNotice() {
+import { PixelPanel } from '@/components/ui/PixelPanel'
+import {
+  PRIVACY_CARDS,
+  PRIVACY_NOTICE_VERSION,
+  PRIVACY_RISK,
+  PRIVACY_SHORT_VERSION,
+  type PrivacyCard,
+} from '@/lib/privacy'
+
+function toneClass(tone: PrivacyCard['tone']): string {
+  if (tone === 'mint') return 'text-mint'
+  if (tone === 'coral') return 'text-coral-text'
+  return 'text-fg-muted'
+}
+
+function Card({ card, wide = false }: { card: PrivacyCard; wide?: boolean }) {
+  return (
+    <PixelPanel className={`${wide ? 'p-3.5' : 'p-3'} flex flex-col gap-2`}>
+      <h2 className={`sv-label ${toneClass(card.tone)}`}>{card.title}</h2>
+      <p className="text-[13px] leading-[1.45] font-medium text-fg-soft">{card.body}</p>
+    </PixelPanel>
+  )
+}
+
+export function PrivacyNotice({ variant = 'compact' }: { variant?: 'full' | 'compact' }) {
+  if (variant === 'full') {
+    return (
+      <div className="flex flex-col gap-3">
+        <PixelPanel tone="mint" className="p-4 flex flex-col gap-1.5">
+          <h2 className="sv-label text-mint">The short version</h2>
+          <p className="text-[15px] leading-[1.5] font-semibold">{PRIVACY_SHORT_VERSION}</p>
+        </PixelPanel>
+
+        <div className="grid grid-cols-2 gap-3">
+          {PRIVACY_CARDS.slice(0, 2).map((card) => (
+            <Card key={card.key} card={card} />
+          ))}
+        </div>
+
+        {PRIVACY_CARDS.slice(2).map((card) => (
+          <Card key={card.key} card={card} wide />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-2">
+      {PRIVACY_CARDS.map((card) => (
+        <p key={card.key} className="sv-label text-fg-soft">
+          <strong>{card.title}.</strong> {card.body}
+        </p>
+      ))}
       <p className="sv-label text-fg-soft">
-        <strong>What we collect.</strong> Your wallet address, your vault address, one
-        balance snapshot each time you check in, and game data (XP, missions, items,
-        badges, battle results). Your display name is stored for the leaderboard.
+        <strong>The risk you are accepting.</strong> {PRIVACY_RISK}
       </p>
-      <p className="sv-label text-fg-soft">
-        <strong>What we do NOT collect.</strong> Your 24 words, your vault passphrase, or
-        any data that would let us move or lock your funds. The key exists only on this
-        device, encrypted.
-      </p>
-      <p className="sv-label text-fg-soft">
-        <strong>What is public.</strong> Your display name, bracket, level, and leaderboard
-        score. Your balance is never shown to other players.
-      </p>
-      <p className="sv-label text-fg-soft">
-        <strong>Where it is stored.</strong> Supabase (US-East) and Vercel. You can request
-        deletion by emailing the contact in Settings ΓåÆ Help.
-      </p>
-      <p className="sv-label text-fg-soft">
-        <strong>The risk you are accepting.</strong> If you lose your 24 words and this
-        device, the NIM in your vault is unrecoverable. Savborne cannot restore it.
-      </p>
+      <p className="sv-label text-fg-faint">Privacy notice version {PRIVACY_NOTICE_VERSION}.</p>
     </div>
   )
 }

@@ -81,3 +81,11 @@ test('the backup quiz owns an h1 only in onboarding', () => {
   assert.match(QUIZ, /const Heading = inline \? 'h2' : 'h1'/)
   assert.match(QUIZ, /<Heading className=\{inline \? 'sv-heading' : 'sv-heading-lg'\}>/)
 })
+
+test('Privacy is step 2 and hands the accepted version to the draft', () => {
+  const PRIVACY_PAGE = source('../app/(onboarding)/privacy/page.tsx')
+  assert.match(PRIVACY_PAGE, /<OnboardingScreen step=\{2\} backHref="\/connect">/)
+  assert.match(PRIVACY_PAGE, /<PrivacyNotice variant="full" \/>/)
+  assert.match(PRIVACY_PAGE, /acceptPrivacy\(PRIVACY_NOTICE_VERSION\)/)
+  assert.match(PRIVACY_PAGE, /router\.push\('\/name'\)/)
+})
