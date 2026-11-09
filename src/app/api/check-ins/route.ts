@@ -12,7 +12,7 @@
  *
  * Header: X-Player-Address: <address>
  *
- * Integrity release gate (migration 20261109000000):
+ * Integrity release gate (supabase/FINAL-SCHEMA.sql):
  *   1. A database fixed-window rate limit runs before any table or chain read.
  *   2. A reading is one row per player per UTC day (`check_ins.utc_date`).
  *   3. A same-day POST returns the normal response shape with

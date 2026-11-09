@@ -10,7 +10,7 @@ You are taking over art direction and front-end work on **Savborne**, a crypto-s
 
 Solo developer, **zero budget**, ships to Vercel with Supabase, app runs inside the Nimiq Pay mini-app webview. Target is mobile — a real phone, and they have a second Android device for testing.
 
-**They handle all database operations manually.** Write migrations as files for them to paste; never apply them.
+**They handle all database operations manually.** Write SQL changes into `supabase/FINAL-SCHEMA.sql` for them to paste; never apply them.
 
 They prefer depth over breadth, want complete information rather than summaries, and want to be asked questions with concrete options they can pick — not long prose they have to respond to. Ask one question at a time. Offer 2–4 options with real trade-offs and a recommendation.
 

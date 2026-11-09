@@ -1,7 +1,7 @@
 /**
  * Savborne — Supabase database types (hand-written)
  *
- * Mirrors `supabase/migrations/0001_init.sql`. Regenerate with
+ * Mirrors `supabase/FINAL-SCHEMA.sql`. Regenerate with
  * `npx supabase gen types typescript --project-id <id>` once the project
  * is live and replace this file.
  */

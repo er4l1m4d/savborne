@@ -114,7 +114,7 @@ Corrections:
 
 ## Deployment before ranked is public
 
-1. Apply `supabase/migrations/20261109000000_check_in_integrity.sql`.
+1. Apply `supabase/FINAL-SCHEMA.sql` (the only SQL file).
 2. Run the acceptance checks in
    `docs/superpowers/backlog/2026-11-09-check-in-integrity.md`:
    five POSTs in one UTC day leave `check_in_count` at 1; two concurrent POSTs

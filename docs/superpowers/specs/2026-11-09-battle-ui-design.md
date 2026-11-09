@@ -479,7 +479,7 @@ UI change.
 
 ### 6.1 Migration
 
-New migration `supabase/migrations/20261109000000_check_in_integrity.sql`:
+Add to `supabase/FINAL-SCHEMA.sql` (the only SQL file; migrations were removed):
 
 1. Deduplicate existing `check_ins` rows by UTC day, keeping the earliest row
    per `(player_address, utc_date)`.

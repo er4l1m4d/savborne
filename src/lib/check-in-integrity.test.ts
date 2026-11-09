@@ -1,10 +1,10 @@
 /**
  * Check-in integrity release gate - SQL contract.
  *
- * These assertions do not execute Postgres. They pin the migration that the
- * live project needs before ranked is exposed, so a later edit cannot quietly
- * remove the unique day, the derived count, the atomic commit or the rate
- * limit. The live five-POST and concurrency checks are deployment steps.
+ * These assertions do not execute Postgres. They pin the single file the user
+ * pastes, so a later edit cannot quietly remove the unique day, the derived
+ * count, the atomic commit or the rate limit. The live five-POST and
+ * concurrency checks are deployment steps.
  */
 
 import { test } from 'node:test'
@@ -12,7 +12,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 const SQL = readFileSync(
-  new URL('../../supabase/migrations/20261109000000_check_in_integrity.sql', import.meta.url),
+  new URL('../../supabase/FINAL-SCHEMA.sql', import.meta.url),
   'utf8',
 )
 const QUEUE = readFileSync(

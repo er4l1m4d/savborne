@@ -6,11 +6,11 @@
  *    A player with a local vault unlocks with the passphrase; one whose vault is
  *    registered server-side but not stored on this device must type all 24
  *    words; one with no vault at all has nothing to protect.
- *  - The migration's delete order. `battles.player_a`, `battles.player_b`,
+ *  - The schema's delete order. `battles.player_a`, `battles.player_b`,
  *    `battle_moves.player_address` and `queue.battle_id` are the player
  *    references without a cascading delete, so deleting `players` or `battles`
  *    first fails at runtime with a foreign-key error no TypeScript check sees.
- *  - FINAL-SCHEMA.sql is the file that gets pasted, so it must carry the same
+ *  - FINAL-SCHEMA.sql is the file that gets pasted, so it must carry the
  *    function and the repair that clears stale matched queue rows.
  *  - The route must verify the wallet signature before it runs the RPC.
  */
@@ -20,11 +20,7 @@ import { readFileSync } from 'node:fs'
 
 import { deletionGate } from './account-deletion'
 
-const MIGRATION = readFileSync(
-  new URL('../../supabase/migrations/20261104000000_delete_player.sql', import.meta.url),
-  'utf8'
-)
-const FINAL_SCHEMA = readFileSync(
+const SCHEMA = readFileSync(
   new URL('../../supabase/FINAL-SCHEMA.sql', import.meta.url),
   'utf8'
 )
@@ -46,24 +42,24 @@ test('no vault anywhere means there is nothing to protect', () => {
   assert.equal(deletionGate(false, false), 'confirm')
 })
 
-test('the migration clears queue rows before the battles they reference', () => {
-  const queue = MIGRATION.indexOf('delete from queue')
-  const battles = MIGRATION.indexOf('delete from battles')
+test('the delete function clears queue rows before the battles they reference', () => {
+  const queue = SCHEMA.indexOf('delete from queue')
+  const battles = SCHEMA.indexOf('delete from battles')
 
   assert.ok(queue >= 0, 'no delete from queue')
   assert.ok(queue < battles, 'queue rows reference battles(id) without a cascade')
 
   // Both the player's own row and the opponent's matched row must go: leaving
   // the opponent's row pointing at a battle we delete fails the FK.
-  assert.match(MIGRATION, /player_address = p_address/)
-  assert.match(MIGRATION, /battle_id in \(\s*select id from battles/i)
-  assert.match(MIGRATION, /player_a = p_address or player_b = p_address/)
+  assert.match(SCHEMA, /player_address = p_address/)
+  assert.match(SCHEMA, /battle_id in \(\s*select id from battles/i)
+  assert.match(SCHEMA, /player_a = p_address or player_b = p_address/)
 })
 
-test('the migration deletes moves, then battles, then the player', () => {
-  const moves = MIGRATION.indexOf('delete from battle_moves')
-  const battles = MIGRATION.indexOf('delete from battles')
-  const players = MIGRATION.indexOf('delete from players')
+test('the delete function deletes moves, then battles, then the player', () => {
+  const moves = SCHEMA.indexOf('delete from battle_moves')
+  const battles = SCHEMA.indexOf('delete from battles')
+  const players = SCHEMA.indexOf('delete from players')
 
   assert.ok(moves >= 0, 'no delete from battle_moves')
   assert.ok(battles >= 0, 'no delete from battles')
@@ -72,37 +68,35 @@ test('the migration deletes moves, then battles, then the player', () => {
   assert.ok(battles < players, 'battles must be deleted before players')
 })
 
-test('the migration is privileged and executable only by the server', () => {
-  assert.match(MIGRATION, /security definer/i)
-  assert.match(MIGRATION, /revoke all on function delete_player\(text\) from public/i)
-  assert.match(MIGRATION, /revoke execute on function delete_player\(text\) from anon, authenticated/i)
-  assert.match(MIGRATION, /grant execute on function delete_player\(text\) to service_role/i)
+test('the delete function is privileged and executable only by the server', () => {
+  assert.match(SCHEMA, /security definer/i)
+  assert.match(SCHEMA, /revoke all on function delete_player\(text\) from public/i)
+  assert.match(SCHEMA, /revoke execute on function delete_player\(text\) from anon, authenticated/i)
+  assert.match(SCHEMA, /grant execute on function delete_player\(text\) to service_role/i)
 })
 
 test('the delete RPC only ever targets the address it is given', () => {
-  assert.match(MIGRATION, /where player_address = p_address/i)
-  assert.match(MIGRATION, /player_a = p_address or player_b = p_address/i)
-  assert.match(MIGRATION, /from players where address = p_address/i)
+  assert.match(SCHEMA, /where player_address = p_address/i)
+  assert.match(SCHEMA, /player_a = p_address or player_b = p_address/i)
+  assert.match(SCHEMA, /from players where address = p_address/i)
 })
 
-test('FINAL-SCHEMA carries the same delete function, not just the migration', () => {
-  // README calls FINAL-SCHEMA "the file you run"; a paste that lacks the
-  // function makes DELETE 500 with "function does not exist".
-  assert.match(FINAL_SCHEMA, /create or replace function delete_player\(p_address text\)/i)
-  assert.match(FINAL_SCHEMA, /revoke execute on function delete_player\(text\) from anon, authenticated/i)
-  assert.match(FINAL_SCHEMA, /grant execute on function delete_player\(text\) to service_role/i)
+test('the delete function is in the file that gets pasted', () => {
+  assert.match(SCHEMA, /create or replace function delete_player\(p_address text\)/i)
+  assert.match(SCHEMA, /revoke execute on function delete_player\(text\) from anon, authenticated/i)
+  assert.match(SCHEMA, /grant execute on function delete_player\(text\) to service_role/i)
 
-  const queue = FINAL_SCHEMA.indexOf('delete from queue q')
-  const battles = FINAL_SCHEMA.indexOf('delete from battles')
+  const queue = SCHEMA.indexOf('delete from queue q')
+  const battles = SCHEMA.indexOf('delete from battles')
   assert.ok(queue >= 0, 'no queue cleanup in FINAL-SCHEMA')
   assert.ok(queue < battles, 'queue must be cleared before battles in FINAL-SCHEMA')
 })
 
-test('FINAL-SCHEMA repairs matched queue rows left behind by finished battles', () => {
+test('the schema repairs matched queue rows left behind by finished battles', () => {
   // Those rows can never be consumed by match_me (it only pairs 'waiting'), so
   // without a repair they persist forever and block account deletion.
-  assert.match(FINAL_SCHEMA, /delete from queue q[\s\S]*?using battles b/i)
-  assert.match(FINAL_SCHEMA, /b\.status in \('completed', 'abandoned'\)/i)
+  assert.match(SCHEMA, /delete from queue q[\s\S]*?using battles b/i)
+  assert.match(SCHEMA, /b\.status in \('completed', 'abandoned'\)/i)
 })
 
 test('the player endpoint verifies the delete proof before the RPC', () => {

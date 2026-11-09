@@ -21,10 +21,10 @@ ranked without five days.
 
 The release gate is implemented on `battle-ui-redesign`:
 
-- `supabase/migrations/20261109000000_check_in_integrity.sql` adds the
-  generated `utc_date`, the unique `(player_address, utc_date)` index, the
-  distinct-day backfill, the `commit_check_in` transaction and the
-  `consume_rate_limit` fixed window.
+- `supabase/FINAL-SCHEMA.sql` adds the generated `utc_date`, the unique
+  `(player_address, utc_date)` index, the distinct-day backfill, the
+  `commit_check_in` transaction and the `consume_rate_limit` fixed window. It
+  is the only SQL file; the old migrations are in git history.
 - `POST /api/check-ins` rate-limits before any read, returns the idempotent
   full response on a same-day POST, and writes only through
   `commit_check_in`.
@@ -130,4 +130,5 @@ Closes gap 7 and the "stale at the moment of truth" risk. Full intraday accuracy
 - `src/app/api/leaderboards/route.ts`
 - `src/lib/game/streaks.ts`
 - `src/lib/vault/rpc.ts`
-- `supabase/migrations/` (`check_ins`, `players`, `daily_xp`)
+- `supabase/FINAL-SCHEMA.sql` (`check_ins`, `players`, `daily_xp`,
+  `api_rate_limits`)

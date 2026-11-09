@@ -31,10 +31,9 @@ npm run dev
 ```
 
 Apply the schema by pasting **`supabase/FINAL-SCHEMA.sql`** into the Dashboard
-SQL Editor and running it — it is fully idempotent (safe to re-run on any
-state of the database). Timestamped files in `supabase/migrations/` are the
-historical record and the path for `supabase db push` where the pooler is
-reachable.
+SQL Editor and running it - it is fully idempotent (safe to re-run on any
+state of the database). It is the only SQL file; the timestamped migrations
+were removed in favour of the single source of truth.
 
 ## Testing inside Nimiq Pay
 
@@ -59,7 +58,7 @@ Then open the URL inside Nimiq Pay, or via a deeplink:
 | `src/lib/` | Supabase + Nimiq SDK wrappers, vault crypto/signing, game logic (constants, awards, missions, streaks, time) |
 | `src/lib/vault/` | Vault: address, RPC, verification, settlement, phrase crypto, receipts, card data |
 | `src/components/` | Shared UI (VersionGate, VaultGuard, VaultTour, tab shell, battle widgets) |
-| `supabase/migrations/` | SQL schema and RPC functions |
+| `supabase/FINAL-SCHEMA.sql` | The one idempotent SQL file: schema, seeds, RLS, grants and RPCs |
 | `docs/` | Product spec, plans, handoff notes |
 | `scripts/vault-e2e.mjs` | Testnet end-to-end probe for the money path (`npm run vault:e2e`) |
 | `ERRORS.md` | Running log of every build-time and runtime error and its fix |

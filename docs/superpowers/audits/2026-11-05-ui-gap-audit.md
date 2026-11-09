@@ -694,6 +694,6 @@ The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code
 
 ### Remaining
 
-1. Apply `supabase/migrations/20261109000000_check_in_integrity.sql` to the live project and run the five-POST, concurrency and rate-limit acceptance checks.
+1. Apply `supabase/FINAL-SCHEMA.sql` to the live project and run the five-POST, concurrency and rate-limit acceptance checks.
 2. The real-device Nimiq Pay pass at 360-430 is the user's final sign-off step.
 3. Do not merge until the user signs off.
