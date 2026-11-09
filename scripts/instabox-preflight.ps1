@@ -195,11 +195,38 @@ if ($dirtyProjects.Count -gt 0) {
 
 if ($projects.Count -eq 0) { Fail "No git projects found under $Root" }
 
-Write-Host "==> Pushing project branches" -ForegroundColor Cyan
+Write-Host "==> Syncing and pushing project branches" -ForegroundColor Cyan
 foreach ($p in $projects) {
   Write-Host "    $($p.LocalName) -> origin/$($p.Branch)"
-  & git -C $p.Path push --quiet -u origin $p.Branch 2>&1 | Out-Null
-  if ($LASTEXITCODE -ne 0) { Fail "git push failed for $($p.LocalName)" }
+
+  & git -C $p.Path fetch --quiet origin 2>&1 | Out-Null
+  if ($LASTEXITCODE -ne 0) { Fail "git fetch failed for $($p.LocalName)" }
+
+  $remoteRef = "origin/$($p.Branch)"
+  $hasRemote = (& git -C $p.Path rev-parse --verify --quiet $remoteRef 2>$null) -join ""
+
+  if ($hasRemote) {
+    $counts = ((& git -C $p.Path rev-list --left-right --count "$remoteRef...HEAD" 2>$null) -join "").Trim()
+    if ($counts) {
+      $parts = $counts -split '\s+'
+      $behind = 0
+      if ($parts.Count -ge 2) { $behind = [int]$parts[0] }
+      if ($behind -gt 0) {
+        Write-Host "      remote is ahead by $behind; rebasing" -ForegroundColor Yellow
+        $rebaseOut = (& git -C $p.Path pull --rebase --autostash origin $p.Branch 2>&1) -join "`n"
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host $rebaseOut
+          Fail "Rebase conflict in $($p.LocalName). Resolve it in that repo, then re-run."
+        }
+      }
+    }
+  }
+
+  $pushOut = (& git -C $p.Path push --quiet -u origin $p.Branch 2>&1) -join "`n"
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host $pushOut
+    Fail "git push failed for $($p.LocalName)"
+  }
 }
 
 $gitName = ((& git config --global user.name 2>$null) -join "").Trim()
