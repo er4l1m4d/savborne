@@ -21,6 +21,11 @@ import { BRACKETS, LUNA_PER_NIM, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeAction } from '@/lib/game/badges'
 import { SHIELD_CAP } from '@/lib/game/streaks'
+import {
+  checkInDestination,
+  writeBracketHandoff,
+  writeWithdrawalHandoff,
+} from '@/lib/checkin-handoff'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button, ButtonLink } from '@/components/ui/Button'
@@ -40,6 +45,7 @@ type AwardSummary = {
   newLevel: number
   bracketChanged: boolean
   withdrawalDetected: boolean
+  bracket: Bracket | null
   balanceLuna: number
   unlockedItems: ItemKey[]
   badgeActions: BadgeAction[]
@@ -75,8 +81,31 @@ export default function HomePage() {
         throw new Error(`Check-in failed (${res.status}): ${text}`)
       }
       const json = (await res.json()) as AwardSummary & { ok: true }
-      setAwards(json)
       await refresh()
+
+      const destination = checkInDestination(json)
+      if (destination === 'withdrawal') {
+        writeWithdrawalHandoff({
+          fromLuna: player?.balanceLuna ?? json.balanceLuna,
+          toLuna: json.balanceLuna,
+          revoked: json.badgeActions
+            .filter((action) => action.kind === 'revoke')
+            .map((action) => action.badge),
+        })
+        router.push('/withdrawal')
+        return
+      }
+      if (destination === 'bracket-climb' && json.bracket) {
+        writeBracketHandoff({
+          bracket: json.bracket,
+          xp: json.awarded.find((award) => award.key === 'bracket_climb')?.xpApplied ?? 0,
+          items: json.unlockedItems,
+        })
+        router.push('/bracket-climb')
+        return
+      }
+
+      setAwards(json)
       void fetchDailyMissions()
     } catch (err) {
       setCheckError(describeError(err))
