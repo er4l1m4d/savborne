@@ -1,7 +1,7 @@
 # Check-in and standing integrity - backlog
 
 **Date:** 2026-11-09
-**Status:** backlog, not scheduled
+**Status:** release gate landed in code on `battle-ui-redesign`; migration pending deployment
 **Origin:** Home UI review discussion about automatic check-ins and players hiding withdrawals.
 **Release gate:** do not expose ranked battles publicly until item 1 below is fixed.
 
@@ -16,6 +16,23 @@ idempotent.
 That lets a player hide a withdrawal by not checking in, keep a stale bracket on
 the leaderboard, or spam the endpoint to inflate `check_in_count` and unlock
 ranked without five days.
+
+## Implementation status (2026-11-09)
+
+The release gate is implemented on `battle-ui-redesign`:
+
+- `supabase/migrations/20261109000000_check_in_integrity.sql` adds the
+  generated `utc_date`, the unique `(player_address, utc_date)` index, the
+  distinct-day backfill, the `commit_check_in` transaction and the
+  `consume_rate_limit` fixed window.
+- `POST /api/check-ins` rate-limits before any read, returns the idempotent
+  full response on a same-day POST, and writes only through
+  `commit_check_in`.
+- `/api/queue/join` continues to gate on the derived `check_in_count`.
+
+Route tests and the SQL contract test pass. The live five-POST, concurrency
+and rate-limit checks still require a Supabase project and `.env.local`; apply
+the migration before ranked is public.
 
 ## Gaps
 

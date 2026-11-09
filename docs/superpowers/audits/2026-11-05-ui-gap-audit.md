@@ -638,3 +638,62 @@ The real-device pass in Nimiq Pay at 360–430px is still the user's final sign-
 ### Remaining
 
 The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code, tests, build and fixture renders do not.
+
+---
+
+## 13. Battle UI status — 2026-11-09
+
+**Branch:** `battle-ui-redesign` (from `main` at `b9a8cbf`).
+**Verdict:** the Battle batch matches the handoff's structure across the menu, queue, friend challenge, arena, item sheet, wait, connection-lost and result screens. The check-in integrity release gate is landed in code and blocked on the live migration.
+
+### What landed
+
+- **Battle menu (`/battle`):** Ranked, Friend and AI cards. Ranked is coral when eligible; when locked it is an off panel with Level and Check-in `Meter`s and a Missions link, and AI becomes the coral action. The Daily Limit state has three used pips, a UTC-midnight countdown, three off cards and a Missions link.
+- **Ranked queue (`/battle/queue`):** joins on mount, polls every 10s, live timer and widening range, VS cards, Leave queue. At 3:05 it keeps searching and offers Battle the AI, Challenge a friend or Leave queue.
+- **Friend challenge (`/battle/friend/[id]`):** challenge sent, 24-hour countdown, copy link, cancel confirmation sheet, expired state. Pending creators on `/battle/[id]` redirect here; the joiner keeps the accept state.
+- **Arena (`/battle/[id]`):** Hero/Rival sprites, opponent coral and viewer mint HP, 2x2 move grid, compact turn result, Copper Compass line, item `BottomSheet`, in-battle wait with locked move and timer, and an in-page connection-lost state with the 60-second grace and Reconnect.
+- **Results (`/battle/[id]/result`):** win/loss/tie via `ResultPanel`, 250px result arena, XP and rating/record tiles, First Blade and items used. `/battle/[id]` redirects completed battles here.
+- **APIs:** additive battle GET fields (viewer/opponent level and bracket, owned items, current move) and `POST /api/battles/[id]/cancel`. Existing battle, queue, friend and AI contracts are unchanged.
+- **Check-in release gate:** generated `check_ins.utc_date`, unique `(player_address, utc_date)`, distinct-day `check_in_count`, one-transaction `commit_check_in`, and a DB fixed-window `consume_rate_limit`. The route is idempotent on a same-day POST and does not read the chain.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 295 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 50 warnings, 0 errors |
+| `npm run build` | exit 0 |
+| Type floor | no `text-[10px]`/`text-[11px]` in new code |
+| Audit | 42 renders (14 states x 360/390/430): `overflowX: 0`, no wide elements, no target <44x44, min font 12, clean focus and mint outline |
+| Item sheet | focus trapped, Escape closes, focus returns to the trigger |
+
+### 360 behaviour
+
+- The menu header and `{n} battles left today` chip fit; mode titles wrap.
+- Queue VS cards keep the 80px sprite; the timer and range stay on one row.
+- Friend cards and the three actions fit without truncation.
+- Arena plates stay 46% wide; names truncate with a title, status tags wrap to their own line; Special Move wraps to two lines.
+- The offline Reconnect button is in view at 360 after the turn log is hidden.
+- Result tiles stay two columns; both actions are visible at 360.
+
+### Rulings
+
+- Mode titles are 20px `.sv-subheading`; Foundation 2 has no 24px Jakarta role.
+- Ranked Locked is inline on the menu, matching the handoff figure.
+- Friend wait is `/battle/friend/[id]`, not `/battle/friend`.
+- Result shows the current rating, not a delta; unranked/AI show the record.
+- Daily Limit has a Missions link even though the figure does not draw one.
+- AI uses the existing rival art; the handoff's robot glyph is not in `assets/glyphs.json`.
+- Connection lost is an in-page state; polling continues.
+- The check-in gate migration is manual and still needs the live acceptance run.
+
+### Renders
+
+42 PNGs in `docs/superpowers/renders/battle/after/` plus the Foundation 2 before pair in `docs/superpowers/renders/battle/before/`. The review page is `docs/superpowers/renders/battle/review/index.html`; raw audit is `docs/superpowers/renders/battle/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. Apply `supabase/migrations/20261109000000_check_in_integrity.sql` to the live project and run the five-POST, concurrency and rate-limit acceptance checks.
+2. The real-device Nimiq Pay pass at 360-430 is the user's final sign-off step.
+3. Do not merge until the user signs off.

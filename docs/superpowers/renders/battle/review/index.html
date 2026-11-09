@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne — Battle UI review</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; padding:32px 24px 80px; background:#10171a; color:#e8efe9; font:14px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .lede { color:#9fb8ae; margin:0 0 28px; max-width:78ch; }
+  .screen { margin:0 0 40px; padding:20px; border:1px solid #2b3a35; border-radius:10px; background:#141d1f; }
+  .screen h2 { font-size:16px; margin:0; }
+  .route { color:#9fb8ae; font-size:12px; margin:2px 0 16px; }
+  .strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  figure { margin:0; }
+  figcaption { color:#9fb8ae; font-size:12px; margin:0 0 6px; }
+  img { display:block; width:100%; height:auto; border:1px solid #2b3a35; border-radius:6px; background:#0b1112; }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:#6fd0ae; font-size:13px; }
+  details .strip { margin-top:12px; }
+  .note { color:#9fb8ae; font-size:12px; margin-top:10px; }
+  table { border-collapse:collapse; width:100%; margin:12px 0 0; font-size:13px; }
+  th,td { border:1px solid #2b3a35; padding:8px 10px; text-align:left; }
+  th { color:#9fb8ae; font-weight:600; }
+  @media (max-width:760px) { .strip { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>Battle UI — current review</h1>
+<p class="lede">
+  The Battle batch at 360, 390 and 430: menu, ranked locked, daily limit, queue,
+  queue timeout, friend challenge, arena, item sheet, in-battle wait,
+  connection lost, and the three result screens. Renders are 2× device-scale
+  PNGs from the headless CDP harness with fixture data. Write corrections in
+  <code>NOTES.md</code>.
+</p>
+
+<section class="screen">
+  <h2>Battle menu</h2>
+  <p class="route">/battle — Ranked, Friend, AI; ranked is the coral action when eligible</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-menu@360.png" alt="Battle menu at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-menu@390.png" alt="Battle menu at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-menu@430.png" alt="Battle menu at 430px"></figure>
+  </div>
+  <details><summary>Before (Foundation 2 Battle)</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/battle@360.png" alt="Battle menu before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/battle@390.png" alt="Battle menu before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/battle@430.png" alt="Battle menu before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen">
+  <h2>Ranked locked</h2>
+  <p class="route">/battle — Level and Check-in meters, AI becomes the coral action, Missions link</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-menu-locked@360.png" alt="Ranked locked at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-menu-locked@390.png" alt="Ranked locked at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-menu-locked@430.png" alt="Ranked locked at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Daily limit</h2>
+  <p class="route">/battle — 0 battles left, reset countdown, all modes off, Missions link</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-menu-limit@360.png" alt="Daily limit at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-menu-limit@390.png" alt="Daily limit at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-menu-limit@430.png" alt="Daily limit at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Ranked queue</h2>
+  <p class="route">/battle/queue — timer, ±150 range, VS cards, Leave queue</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-queue@360.png" alt="Ranked queue at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-queue@390.png" alt="Ranked queue at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-queue@430.png" alt="Ranked queue at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Queue timeout</h2>
+  <p class="route">/battle/queue — 3:05, ±600, Battle the AI / Challenge a friend / Leave</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-queue-timeout@360.png" alt="Queue timeout at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-queue-timeout@390.png" alt="Queue timeout at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-queue-timeout@430.png" alt="Queue timeout at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Friend challenge sent</h2>
+  <p class="route">/battle/friend/[id] — 24-hour countdown, copy link, cancel</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-friend@360.png" alt="Friend challenge at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-friend@390.png" alt="Friend challenge at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-friend@430.png" alt="Friend challenge at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Challenge expired</h2>
+  <p class="route">/battle/friend/[id] — abandoned after 24 hours</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-friend-expired@360.png" alt="Challenge expired at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-friend-expired@390.png" alt="Challenge expired at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-friend-expired@430.png" alt="Challenge expired at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Battle arena</h2>
+  <p class="route">/battle/[id] — turn, HP plates, sprites, 2×2 moves, Auto-Defend</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-arena@360.png" alt="Battle arena at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-arena@390.png" alt="Battle arena at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-arena@430.png" alt="Battle arena at 430px"></figure>
+  </div>
+  <details><summary>Before (Foundation 2 battle detail)</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/battle-detail@360.png" alt="Battle detail before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/battle-detail@390.png" alt="Battle detail before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/battle-detail@430.png" alt="Battle detail before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen">
+  <h2>In-battle wait</h2>
+  <p class="route">/battle/[id] — locked move, opponent timer</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-wait@360.png" alt="In-battle wait at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-wait@390.png" alt="In-battle wait at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-wait@430.png" alt="In-battle wait at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Use an item</h2>
+  <p class="route">/battle/[id] — available, used and locked rows</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-items@360.png" alt="Item sheet at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-items@390.png" alt="Item sheet at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-items@430.png" alt="Item sheet at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Connection lost</h2>
+  <p class="route">/battle/[id] — dimmed arena, 60-second grace, Reconnect</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-offline@360.png" alt="Connection lost at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-offline@390.png" alt="Connection lost at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-offline@430.png" alt="Connection lost at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Result — win</h2>
+  <p class="route">/battle/[id]/result — mint headline, faded opponent, XP and rating</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-result-win@360.png" alt="Win at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-result-win@390.png" alt="Win at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-result-win@430.png" alt="Win at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Result — loss</h2>
+  <p class="route">/battle/[id]/result — coral headline, faded viewer</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-result-loss@360.png" alt="Loss at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-result-loss@390.png" alt="Loss at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-result-loss@430.png" alt="Loss at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Result — tie</h2>
+  <p class="route">/battle/[id]/result — cream headline, both fighters full</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-result-tie@360.png" alt="Tie at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-result-tie@390.png" alt="Tie at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-result-tie@430.png" alt="Tie at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Audit</h2>
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Horizontal overflow</td><td>0 on every state at 360/390/430</td></tr>
+    <tr><td>Targets under 44×44</td><td>none</td></tr>
+    <tr><td>Minimum font</td><td>12px</td></tr>
+    <tr><td>Focus</td><td>2px mint outline on every control; sheet traps focus</td></tr>
+    <tr><td>Renders</td><td>42 PNGs (14 states × 3 widths)</td></tr>
+  </table>
+  <p class="note">Raw audit: <code>../audit/final-audit.jsonl</code>.</p>
+</section>
+
+<p class="note">
+  The real Supabase backend and the live check-in migration are not configured
+  in this sandbox. Renders use fixture data; the database acceptance checks are
+  the deployment step in <code>NOTES.md</code>.
+</p>
+</body>
+</html>
