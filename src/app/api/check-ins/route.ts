@@ -347,6 +347,18 @@ export async function POST(req: Request) {
     }
   }
 
+  // The Golden Crown is an item as well as a badge. Persist the item row so a
+  // later demotion cannot re-lock it; /api/profile also backfills existing
+  // crown-badge rows that predate this write.
+  if (badgeActions.some((action) => action.kind === 'award' && action.badge === 'golden_crown')) {
+    const { error } = await db.from('player_items').upsert(
+      { player_address: address, item_key: 'golden_crown' },
+      { onConflict: 'player_address,item_key', ignoreDuplicates: true },
+    )
+    if (error) console.error('Failed to persist Golden Crown item:', error.message)
+    if (!unlockedItems.includes('golden_crown')) unlockedItems.push('golden_crown')
+  }
+
   // If a withdrawal just happened, restart the Steady Hand counter.
   if (badgeSnapshot.withdrawalJustNow) {
     const { error: steadyErr } = await db
@@ -373,7 +385,9 @@ export async function POST(req: Request) {
     shieldsEarned: streak.shieldsEarned,
     bracket: newBracket,
     bracketChanged: newBracket !== currentBracket,
+    previousBracket: currentBracket,
     withdrawalDetected: priorMostRecent !== null && balanceLuna < priorMostRecent,
+    previousBalanceLuna: priorMostRecent,
     balanceLuna: Math.floor(balanceLuna),
     unlockedItems,
     badgeActions,

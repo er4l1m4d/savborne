@@ -17,13 +17,15 @@ import { useRouter } from 'next/navigation'
 import { WalletError } from '@/lib/nimiq'
 import { authHeaders } from '@/lib/session'
 import { usePlayerSession, type PlayerMe } from '@/lib/usePlayerSession'
-import { BRACKETS, LUNA_PER_NIM, type Bracket } from '@/lib/constants'
+import { BRACKETS, LUNA_PER_NIM, xpProgress, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeAction } from '@/lib/game/badges'
 import { SHIELD_CAP } from '@/lib/game/streaks'
 import {
   checkInDestination,
+  takeCheckInAwards,
   writeBracketHandoff,
+  writeCheckInAwards,
   writeWithdrawalHandoff,
 } from '@/lib/checkin-handoff'
 import { ScreenShell } from '@/components/ui/ScreenShell'
@@ -46,7 +48,9 @@ type AwardSummary = {
   bracketChanged: boolean
   withdrawalDetected: boolean
   bracket: Bracket | null
+  previousBracket: Bracket | null
   balanceLuna: number
+  previousBalanceLuna: number | null
   unlockedItems: ItemKey[]
   badgeActions: BadgeAction[]
 }
@@ -85,24 +89,30 @@ export default function HomePage() {
 
       const destination = checkInDestination(json)
       if (destination === 'withdrawal') {
-        writeWithdrawalHandoff({
-          fromLuna: player?.balanceLuna ?? json.balanceLuna,
+        const stored = writeWithdrawalHandoff({
+          fromLuna: json.previousBalanceLuna ?? player?.balanceLuna ?? json.balanceLuna,
           toLuna: json.balanceLuna,
           revoked: json.badgeActions
             .filter((action) => action.kind === 'revoke')
             .map((action) => action.badge),
         })
-        router.push('/withdrawal')
-        return
+        if (stored) {
+          writeCheckInAwards(json)
+          router.push('/withdrawal')
+          return
+        }
       }
       if (destination === 'bracket-climb' && json.bracket) {
-        writeBracketHandoff({
+        const stored = writeBracketHandoff({
           bracket: json.bracket,
           xp: json.awarded.find((award) => award.key === 'bracket_climb')?.xpApplied ?? 0,
           items: json.unlockedItems,
         })
-        router.push('/bracket-climb')
-        return
+        if (stored) {
+          writeCheckInAwards(json)
+          router.push('/bracket-climb')
+          return
+        }
       }
 
       setAwards(json)
@@ -132,6 +142,8 @@ export default function HomePage() {
   }
 
   useEffect(() => {
+    const stored = takeCheckInAwards<AwardSummary>()
+    if (stored) setAwards(stored)
     void fetchDailyMissions()
   }, [])
 
@@ -217,15 +229,14 @@ function Chips({ player }: { player: PlayerMe }) {
 }
 
 function XpBar({ player }: { player: PlayerMe }) {
-  const prevLevelXp = cumulativeToLevel(player.level)
-  const inLevel = player.xp - prevLevelXp
-  const pct = Math.min(100, Math.round((inLevel / player.xpToNext) * 100))
+  const { inLevel, toNext } = xpProgress(player.level, player.xp)
+  const pct = Math.min(100, Math.round((inLevel / toNext) * 100))
   return (
     <div className="flex flex-col gap-2">
       <div className="flex justify-between text-fg-faint">
         <span className="sv-label">XP</span>
         <span className="sv-figure">
-          {inLevel} / {player.xpToNext}
+          {inLevel} / {toNext}
         </span>
       </div>
       <div className="vpx-soft h-3 bg-surface-low overflow-hidden">
@@ -357,17 +368,6 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
-
-/**
- * Cumulative XP a player had already spent on the way to reaching `level`.
- * Mirrors cumulativeXpForLevel in constants.ts, but avoids a server-only
- * import path in this client component.
- */
-function cumulativeToLevel(level: number): number {
-  let total = 0
-  for (let n = 1; n < level; n++) total += 25 * (n + 1)
-  return total
-}
 
 function describeError(err: unknown): string {
   if (err instanceof WalletError) {

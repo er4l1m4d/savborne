@@ -542,7 +542,7 @@ The emulated sweep is the agent's evidence. The real-device pass in Nimiq Pay at
 
 | Check | Result |
 |---|---|
-| `npm test` | 217 pass, 0 fail |
+| `npm test` | 227 pass, 0 fail |
 | `npx tsc --noEmit` | clean |
 | `npm run lint` | exit 0, 48 warnings, 0 errors (four new `set-state-in-effect` warnings follow the existing session-read pattern) |
 | `npm run build` | exit 0 |
@@ -560,7 +560,22 @@ The emulated sweep is the agent's evidence. The real-device pass in Nimiq Pay at
 
 12 new PNGs in `docs/superpowers/renders/economy/after/` (Profile, Items, Bracket Climb, Withdrawal at 360/390/430), mirrored into `docs/superpowers/renders/economy/review/current/` with new sections in `index.html`. The review copy now covers the whole Economy batch.
 
+### Final review fixes
+
+A fresh-context review found one critical and five important issues; all were fixed with tests:
+
+- **XP bar:** `players.xp` is cumulative, so Profile's `xp / xpToNextLevel(level)` pinned from level 3. `xpProgress(level, totalXp)` in `constants.ts` now splits cumulative XP for both Home and Profile; tests cover level 7 at 675 and 700.
+- **Handoff one-shot:** the module cache replayed celebrations for the rest of the page session. It is gone; each screen consumes the record once behind a `useRef` guard, so StrictMode's second effect run is ignored but a later mount really finds nothing. Storage write failures return `false`; Home keeps the awards panel rather than routing to a screen that would immediately redirect.
+- **Bracket direction:** `checkInDestination` now receives `previousBracket` and only celebrates a rank rise. A demotion cannot be framed as "You've reached".
+- **Awards:** the full check-in summary is stored separately and consumed by Home on return, so a climb that also levels up or awards First Steps is not lost behind the celebration route.
+- **Golden Crown:** the check-in now writes a `player_items` row when the crown badge is awarded; `/api/profile` backfills ownership from any crown badge row, including revoked ones, so a demotion cannot re-lock the item. `ownedItemKeys` is unit-tested.
+- **Withdrawal copy:** the Steady Saver reset is stated on every withdrawal; the "streak badge is removed" sentence appears only when a streak badge was actually revoked.
+- **Minor fixes:** 72px withdrawal glyph and 48px badge art (whole multiples), Items 401 redirect flash, Bracket Climb direct visits go Home, `text-fg`/`text-fg-soft` tokens added, `previousBalanceLuna` returned for the last-check-in figure, and badge descriptions are available to screen readers.
+
+The full suite is now 227 tests.
+
 ### Rulings
+- **Item state line:** Items shows the item's effect blurb rather than the handoff's generic "Active in battles"; the effect is more useful and the footer still carries the "items stay" rule.
 
 - **Hero sprite:** the handoff's Profile uses `Hero · Silver`; the card uses the Hero sprite for the current bracket. No gender field exists in the app, so this is the only defensible choice.
 - **Ledger name:** the app keeps `Ledger Scroll`; the handoff and `assets/items.json` call the drawing `Ledger Tome`. The art is mapped, the name is not renamed.

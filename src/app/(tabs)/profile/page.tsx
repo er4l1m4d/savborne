@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
-import { BRACKETS, RANKED, xpToNextLevel, type Bracket } from '@/lib/constants'
+import { BRACKETS, RANKED, xpProgress, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeKey } from '@/lib/game/badges'
 import { BadgeArt, Glyph } from '@/components/Glyphs'
@@ -95,8 +95,8 @@ export default function ProfilePage() {
 
   const b = data.player.bracket
   const bracketLabel = b ? BRACKETS[b].label : 'No bracket'
-  const xpToNext = xpToNextLevel(data.player.level)
-  const xpPct = Math.min(100, Math.round((data.player.xp / xpToNext) * 100))
+  const { inLevel, toNext: xpToNext } = xpProgress(data.player.level, data.player.xp)
+  const xpPct = Math.min(100, Math.round((inLevel / xpToNext) * 100))
   const rankedUnlocked =
     data.player.level >= RANKED.minLevel && data.player.checkInCount >= RANKED.minCheckIns
 
@@ -131,7 +131,7 @@ export default function ProfilePage() {
             <div className="flex justify-between gap-2 sv-label text-fg-muted">
               <span>XP</span>
               <span>
-                {data.player.xp} / {xpToNext}
+                {inLevel} / {xpToNext}
               </span>
             </div>
             <div className="h-2 bg-surface-low overflow-hidden">
@@ -156,10 +156,11 @@ export default function ProfilePage() {
                 >
                   {/* The locked drawing is already a muted two-tone, so no extra dimming here —
                       an opacity-40 on top of it double-dims a state the art already carries. */}
-                  <BadgeArt badge={badge.key} state={active ? 'earned' : 'locked'} size={32} />
+                  <BadgeArt badge={badge.key} state={active ? 'earned' : 'locked'} size={48} />
                   <span className={`sv-label leading-tight ${active ? '' : 'text-fg-muted'}`}>
                     {badge.name}
                   </span>
+                  <span className="sr-only"> {badge.description}</span>
                 </PixelPanel>
               </div>
             )

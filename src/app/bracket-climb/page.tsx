@@ -5,66 +5,39 @@
  *
  * A celebration shown once after a check-in lifts the player into a new
  * bracket. The check-in hands off the bracket, any Bracket Climb XP and the
- * items that unlocked; a direct visit falls back to the current profile
- * bracket so the route is never a dead end.
+ * items that unlocked. A direct visit goes Home rather than inventing a
+ * celebration for the current bracket.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { authHeaders, readSession } from '@/lib/session'
-import { BRACKETS, type Bracket } from '@/lib/constants'
-import { ITEMS, type ItemKey } from '@/lib/game/items'
+import { BRACKETS } from '@/lib/constants'
+import { ITEMS } from '@/lib/game/items'
 import { takeBracketHandoff, type BracketHandoff } from '@/lib/checkin-handoff'
 import { ItemArt } from '@/components/ItemArt'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { ButtonLink } from '@/components/ui/Button'
-import { Banner } from '@/components/ui/Banner'
 
 type State = BracketHandoff
 
 export default function BracketClimbPage() {
   const router = useRouter()
   const [state, setState] = useState<State | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const started = useRef(false)
 
   useEffect(() => {
+    // A ref survives StrictMode's double effect run; the hand-off is consumed
+    // exactly once per mount. A direct visit goes Home rather than inventing a
+    // celebration for the current bracket.
+    if (started.current) return
+    started.current = true
     const handoff = takeBracketHandoff()
-    if (handoff) {
-      setState(handoff)
+    if (!handoff) {
+      router.replace('/')
       return
     }
-
-    if (!readSession()) {
-      router.replace('/setup')
-      return
-    }
-
-    let cancelled = false
-    ;(async () => {
-      const res = await fetch('/api/profile', { headers: authHeaders() })
-      if (res.status === 401) {
-        router.replace('/setup')
-        return
-      }
-      if (!res.ok) throw new Error(`Could not load your bracket (${res.status}).`)
-      const json = (await res.json()) as { player: { bracket: Bracket | null } }
-      if (!json.player.bracket) {
-        router.replace('/')
-        return
-      }
-      if (!cancelled) {
-        setState({ bracket: json.player.bracket, xp: 0, items: [] })
-      }
-    })().catch((err: unknown) => {
-      if (!cancelled) {
-        setError(err instanceof Error ? err.message : 'Could not load your bracket.')
-      }
-    })
-
-    return () => {
-      cancelled = true
-    }
+    setState(handoff)
   }, [router])
 
   const bracket = state ? BRACKETS[state.bracket] : null
@@ -74,9 +47,7 @@ export default function BracketClimbPage() {
 
   return (
     <ScreenShell variant="pushed">
-      {error ? (
-        <Banner tone="error">{error}</Banner>
-      ) : !state || !bracket ? (
+      {!state || !bracket ? (
         <p className="sv-body text-fg-muted">Loading your bracket…</p>
       ) : (
         <>

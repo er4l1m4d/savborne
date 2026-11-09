@@ -33,6 +33,13 @@ export function bracketFromLuna(balanceLuna: number): Bracket | null {
   return null
 }
 
+/** Lowest to highest. A null bracket (below entry) ranks below entry. */
+export const BRACKET_ORDER: Bracket[] = ['entry', 'bronze', 'silver', 'gold']
+
+export function bracketRank(bracket: Bracket | null): number {
+  return bracket ? BRACKET_ORDER.indexOf(bracket) : -1
+}
+
 // ─── XP & Levels (spec Section 5, plan proposal) ─────────────────────────────
 /**
  * XP to advance from level N to level N+1 = 25 × (N + 1).
@@ -60,6 +67,17 @@ export function levelFromXp(totalXp: number): number {
     level++
     if (level > 100) return 100 // safety cap
   }
+}
+
+/**
+ * Split cumulative XP into the current level's progress. `players.xp` is the
+ * cumulative total, so a bar that divides it by `xpToNextLevel` pins at 100%
+ * from level 3 onwards. Both Home and Profile use this one helper.
+ */
+export function xpProgress(level: number, totalXp: number): { inLevel: number; toNext: number } {
+  const toNext = xpToNextLevel(level)
+  const base = cumulativeXpForLevel(level)
+  return { inLevel: Math.max(0, totalXp - base), toNext }
 }
 
 // XP table (spec Section 5.1)

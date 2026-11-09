@@ -8,7 +8,7 @@
  * items, non-streak badges) from what was removed (streak badges).
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LUNA_PER_NIM } from '@/lib/constants'
 import { BADGES } from '@/lib/game/badges'
@@ -21,8 +21,13 @@ import { ButtonLink } from '@/components/ui/Button'
 export default function WithdrawalPage() {
   const router = useRouter()
   const [state, setState] = useState<WithdrawalHandoff | null>(null)
+  const started = useRef(false)
 
   useEffect(() => {
+    // A ref survives StrictMode's double effect run; the hand-off is consumed
+    // exactly once per mount. A direct visit goes Home.
+    if (started.current) return
+    started.current = true
     const handoff = takeWithdrawalHandoff()
     if (!handoff) {
       router.replace('/')
@@ -42,19 +47,22 @@ export default function WithdrawalPage() {
   const removed = state.revoked
     .map((key) => BADGES.find((badge) => badge.key === key))
     .filter((badge): badge is (typeof BADGES)[number] => Boolean(badge))
+  const lostStreakBadge = state.revoked.some(
+    (key) => key === 'week_warrior' || key === 'iron_saver',
+  )
 
   return (
     <ScreenShell variant="pushed">
       <div className="flex flex-col items-center gap-3.5 text-center">
         <PixelPanel className="w-28 h-28 flex items-center justify-center" wrapperClassName="shrink-0">
-          <Glyph name="withdrawal" size={56} />
+          <Glyph name="withdrawal" size={72} />
         </PixelPanel>
         <h1 className="sv-number-xl">Your balance went down</h1>
         <p className="sv-body text-fg-muted">
           You can withdraw any time.{' '}
-          {state.revoked.length > 0
-            ? 'Your streak badge is removed, but the rest stays with you.'
-            : 'The rest stays with you.'}
+          {lostStreakBadge
+            ? 'Your streak badge is removed, but your XP, level and items stay with you.'
+            : 'Your XP, level and items stay with you.'}
         </p>
       </div>
 
@@ -92,7 +100,7 @@ export default function WithdrawalPage() {
           </span>
         ) : (
           <span className="sv-label text-fg-soft">
-            No badges were removed. Your streak and missions stay.
+            No badges were removed. This week&apos;s Steady Saver mission resets.
           </span>
         )}
       </PixelPanel>

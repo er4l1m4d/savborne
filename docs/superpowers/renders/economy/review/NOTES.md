@@ -96,6 +96,10 @@ Corrections that apply everywhere (type, spacing, colour, motion, focus):
 - The privacy-sheet PNG predates a final copy correction: the code now says “emailing the contact in Settings → Help”, not “the app footer”; the layout is unchanged.
 - Profile uses the Hero sprite for the current bracket; the app has no gender field, so one sprite set is the only option.
 - The app keeps the item name "Ledger Scroll"; the handoff drawing is "Ledger Tome", so the art is mapped by hand.
-- Balance dropped is shown for any lower check-in reading. The Removed card lists the badges actually revoked, so it never promises a streak badge that did not exist.
+- Balance dropped is shown for any lower check-in reading. The Removed card lists the badges actually revoked and always notes the Steady Saver reset.
+- The full check-in award summary appears on Home after the celebration screen.
+- The Golden Crown is owned once earned; a later demotion does not re-lock the item.
+- Profile splits cumulative XP into the current level; the bar is not a percentage of total XP.
+- Items show the effect blurb rather than the handoff's generic "Active in battles".
 - Item cards are display-only; the screen's scroll body is keyboard focusable so the list can be scrolled without another control.
 - The real-device pass in Nimiq Pay is still yours to do; these are headless renders.

@@ -34,11 +34,13 @@ export default function ItemsPage() {
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
+    let redirected = false
     setLoading(true)
     setError(null)
     try {
       const res = await fetch('/api/profile', { headers: authHeaders() })
       if (res.status === 401) {
+        redirected = true
         router.replace('/setup')
         return
       }
@@ -47,7 +49,7 @@ export default function ItemsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load items.')
     } finally {
-      setLoading(false)
+      if (!redirected) setLoading(false)
     }
   }, [router])
 

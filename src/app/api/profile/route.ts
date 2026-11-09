@@ -11,8 +11,8 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
 import type { Bracket } from '@/lib/constants'
-import type { ItemKey } from '@/lib/game/items'
 import type { BadgeKey } from '@/lib/game/badges'
+import { ownedItemKeys } from '@/lib/game/owned-items'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -30,9 +30,8 @@ export async function GET(req: Request) {
       db.from('player_items').select('item_key').eq('player_address', address),
       db
         .from('player_badges')
-        .select('badge_key')
-        .eq('player_address', address)
-        .is('revoked_at', null),
+        .select('badge_key, revoked_at')
+        .eq('player_address', address),
       db.from('vaults').select('card_token').eq('player_address', address).maybeSingle(),
     ])
 
@@ -61,8 +60,13 @@ export async function GET(req: Request) {
       losses: player.losses,
       ties: player.ties,
     },
-    ownedItems: (items ?? []).map((r) => r.item_key as ItemKey),
-    activeBadges: (badges ?? []).map((r) => r.badge_key as BadgeKey),
+    ownedItems: ownedItemKeys(
+      (items ?? []).map((r) => r.item_key),
+      badges ?? [],
+    ),
+    activeBadges: (badges ?? [])
+      .filter((r) => !r.revoked_at)
+      .map((r) => r.badge_key as BadgeKey),
     cardToken: (vault?.card_token as string | undefined) ?? null,
   })
 }

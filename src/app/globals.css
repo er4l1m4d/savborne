@@ -89,6 +89,8 @@
   --color-bevel: var(--bevel);
   --color-bevel-shadow: var(--bevel-shadow);
   --color-bevel-soft: var(--bevel-soft);
+  --color-fg: var(--fg);
+  --color-fg-soft: var(--fg-soft);
   --color-fg-muted: var(--fg-muted);
   --color-fg-faint: var(--fg-faint);
   --color-mint: var(--mint);
