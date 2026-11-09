@@ -192,13 +192,18 @@ export default function BattleScreen() {
     return (
       <ScreenShell variant="pushed" title="Battle" backHref="/battle">
         {error ? (
-          <>
-            <Banner tone="error">{error}</Banner>
-            <BackLink />
-          </>
+          <Banner tone="error">{error}</Banner>
+        ) : offline ? (
+          <Banner tone="error">Connection lost. Retrying...</Banner>
         ) : (
           <p className="sv-body text-fg-muted">Loading battle...</p>
         )}
+        {offline && !error && (
+          <Button variant="primary" onClick={reconnect} loading={reconnecting}>
+            Reconnect
+          </Button>
+        )}
+        <BackLink />
       </ScreenShell>
     )
   }

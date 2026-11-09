@@ -139,9 +139,9 @@ export default function BattleResultPage() {
 
   const opponentArt =
     battle.mode === 'ai' ? (
-      <RivalArt rival={rivalForBattle(id)} size={84} />
+      <RivalArt rival={rivalForBattle(id)} size={80} />
     ) : (
-      <CharacterArt bracket={(battle.opponentBracket as Bracket | null) ?? null} size={84} />
+      <CharacterArt bracket={(battle.opponentBracket as Bracket | null) ?? null} size={80} />
     )
 
   const firstBlade =
@@ -199,7 +199,7 @@ export default function BattleResultPage() {
                 art: (
                   <CharacterArt
                     bracket={(viewer.bracket as Bracket | null) ?? null}
-                    size={108}
+                    size={112}
                   />
                 ),
                 status: 'none',
