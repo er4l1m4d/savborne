@@ -32,7 +32,7 @@ die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
 [ -f "$BUNDLE" ] || die "Bundle not found: $BUNDLE (run the preflight on the PC first)"
 
 case "$HOME" in
-  /data/home/*) ;;
+  /data/home|/data/home/*) ;;
   *) warn "HOME=$HOME is not under /data/home; files may not survive a stop/start." ;;
 esac
 
@@ -90,20 +90,31 @@ node --version
 npm --version
 
 # ------------------------------------------------------------------ OpenCode
-if ! command -v opencode >/dev/null 2>&1; then
-  log "Installing OpenCode CLI"
-  npm install -g @opencode/cli
+OPENCODE_MAJOR=""
+if command -v opencode >/dev/null 2>&1; then
+  OPENCODE_MAJOR="$(opencode --version 2>/dev/null | sed -E 's/^[^0-9]*([0-9]+).*/\1/')"
 fi
-OPENCODE_BIN="$(command -v opencode)"
+if [ "$OPENCODE_MAJOR" != "2" ]; then
+  log "Installing OpenCode 2"
+  npm config set allow-scripts=@opencode/cli --location=user >/dev/null 2>&1 || true
+  npm install -g @opencode/cli@latest
+  hash -r
+  CLI_DIR="$(npm root -g)/@opencode/cli"
+  if [ -f "$CLI_DIR/postinstall.mjs" ]; then
+    ( cd "$CLI_DIR" && node ./postinstall.mjs ) || warn "OpenCode postinstall failed"
+  fi
+fi
+OPENCODE_BIN="$(npm prefix -g 2>/dev/null)/bin/opencode"
+[ -x "$OPENCODE_BIN" ] || OPENCODE_BIN="$(command -v opencode)"
 [ -n "$OPENCODE_BIN" ] || die "opencode was not installed"
 "$OPENCODE_BIN" --version
 
 # ------------------------------------------------------------------ OpenChamber
 if ! command -v openchamber >/dev/null 2>&1; then
   log "Installing OpenChamber"
-  # Install the package directly instead of the convenience script, which
-  # prefers pnpm/bun when present and can put the binary on a PATH we do not
-  # control. npm's global prefix is /opt/npm on this image and is on PATH.
+  # Allow node-pty's install scripts; without them the mobile terminal has no
+  # native module and OpenChamber logs a warning at startup.
+  npm config set allow-scripts=node-pty --location=user >/dev/null 2>&1 || true
   npm install -g @openchamber/web
 fi
 OPENCHAMBER_BIN="$(command -v openchamber || true)"
@@ -115,6 +126,19 @@ if [ -z "$OPENCHAMBER_BIN" ]; then
   fi
 fi
 [ -n "$OPENCHAMBER_BIN" ] || die "openchamber was not installed; run 'npm install -g @openchamber/web' manually and re-run this script"
+
+# node-pty ships prebuilds, but only if its install scripts were allowed.
+case "$(uname -m)" in
+  x86_64) PTY_ARCH=x64 ;;
+  aarch64|arm64) PTY_ARCH=arm64 ;;
+  *) PTY_ARCH=x64 ;;
+esac
+PTY_DIR="$(npm root -g)/@openchamber/web/node_modules/node-pty"
+if [ -d "$PTY_DIR" ] && [ ! -f "$PTY_DIR/prebuilds/linux-$PTY_ARCH/pty.node" ]; then
+  log "Building node-pty for linux-$PTY_ARCH"
+  ( cd "$PTY_DIR" && node scripts/prebuild.js || npx --yes node-gyp rebuild ) \
+    || warn "node-pty build failed; the OpenChamber terminal may not work"
+fi
 "$OPENCHAMBER_BIN" --version 2>/dev/null || true
 
 # ------------------------------------------------------------------ unpack
@@ -140,8 +164,18 @@ while IFS=$'\t' read -r local_name vm_dir remote branch; do
   dest="$WORK/$vm_dir"
   printf '\n  - %s (%s)\n' "$vm_dir" "$branch"
 
+  if [ -e "$dest" ] && [ ! -d "$dest/.git" ]; then
+    if [ -z "$(ls -A "$dest" 2>/dev/null)" ]; then
+      rmdir "$dest"
+    else
+      die "Leftover non-repo directory: $dest (remove it or finish the checkout)"
+    fi
+  fi
+
   if [ -d "$dest/.git" ]; then
-    git -C "$dest" fetch --all --prune
+    if ! git -C "$dest" fetch --all --prune; then
+      die "git fetch failed for $vm_dir. If it is private, run 'gh auth login' on the machine, then re-run."
+    fi
     if git -C "$dest" show-ref --verify --quiet "refs/heads/$branch"; then
       git -C "$dest" checkout "$branch"
     else
@@ -149,7 +183,9 @@ while IFS=$'\t' read -r local_name vm_dir remote branch; do
     fi
     git -C "$dest" pull --ff-only || warn "pull failed for $vm_dir (local changes?)"
   else
-    git clone "$remote" "$dest"
+    if ! git clone "$remote" "$dest"; then
+      die "git clone failed for $vm_dir. If it is private, run 'gh auth login' on the machine, then re-run."
+    fi
     git -C "$dest" checkout "$branch" 2>/dev/null \
       || git -C "$dest" checkout -B "$branch" "origin/$branch"
   fi
@@ -180,21 +216,27 @@ fi
 
 # ------------------------------------------------------------------ sessions
 log "Importing sessions"
-while IFS=$'\t' read -r sid vm_dir file title; do
-  [ -n "$sid" ] || continue
-  if [ "$vm_dir" = "." ] || [ -z "$vm_dir" ]; then
-    target="$WORK"
-  else
-    target="$WORK/$vm_dir"
-  fi
-  printf '  - %s -> %s\n' "$sid" "$target"
-  "$OPENCODE_BIN" session import "$STAGE/$file" --directory "$target" \
-    || warn "session import failed: $sid"
-done < <(read_manifest '
-  const fs=require("fs");
-  const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
-  for (const s of m.sessions||[]) console.log([s.id,s.vmDirectory,s.file,s.title||""].join("\t"));
-')
+IMPORT_MARKER="$CONFIG_DIR/sessions-imported"
+if [ -f "$IMPORT_MARKER" ]; then
+  echo "  already imported; delete $IMPORT_MARKER to force a re-import"
+else
+  while IFS=$'\t' read -r sid vm_dir file title; do
+    [ -n "$sid" ] || continue
+    if [ "$vm_dir" = "." ] || [ -z "$vm_dir" ]; then
+      target="$WORK"
+    else
+      target="$WORK/$vm_dir"
+    fi
+    printf '  - %s -> %s\n' "$sid" "$target"
+    "$OPENCODE_BIN" session import "$STAGE/$file" --directory "$target" \
+      || warn "session import failed: $sid"
+  done < <(read_manifest '
+    const fs=require("fs");
+    const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
+    for (const s of m.sessions||[]) console.log([s.id,s.vmDirectory,s.file,s.title||""].join("\t"));
+  ')
+  touch "$IMPORT_MARKER"
+fi
 
 "$OPENCODE_BIN" service stop >/dev/null 2>&1 || true
 
@@ -212,9 +254,21 @@ fi
 cat > "$CONFIG_DIR/openchamber-start.sh" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-exec "$OPENCHAMBER_BIN" --host 0.0.0.0 --port $OPENCHAMBER_PORT --ui-password "\$(cat "$PASS_FILE")"
+exec "$OPENCHAMBER_BIN" --foreground --host 0.0.0.0 --port $OPENCHAMBER_PORT --ui-password "\$(cat "$PASS_FILE")"
 EOF
 chmod 700 "$CONFIG_DIR/openchamber-start.sh"
+
+# Fixed OpenCode password. OpenCode 2 generates a random one and prints it on
+# every start otherwise, which makes clients and OpenChamber unpredictable.
+OPENCODE_ENV="$CONFIG_DIR/opencode.env"
+if [ ! -f "$OPENCODE_ENV" ]; then
+  if command -v openssl >/dev/null 2>&1; then
+    printf 'OPENCODE_PASSWORD=%s\n' "$(openssl rand -hex 32)" > "$OPENCODE_ENV"
+  else
+    printf 'OPENCODE_PASSWORD=%s\n' "$(head -c 32 /dev/urandom | base64 | tr -d '\n')" > "$OPENCODE_ENV"
+  fi
+  chmod 600 "$OPENCODE_ENV"
+fi
 
 RUN_USER="$(id -un)"
 RUN_GROUP="$(id -gn)"
@@ -237,6 +291,7 @@ Environment=HOME=$HOME
 Environment=PATH=$NODE_BIN_DIR:/opt/npm/bin:/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin
 Environment=TMPDIR=/data/tmp
 EnvironmentFile=-$CONFIG_DIR/providers.env
+EnvironmentFile=-$OPENCODE_ENV
 ExecStart=$OPENCODE_BIN serve --hostname 0.0.0.0 --port $OPENCODE_PORT
 Restart=always
 RestartSec=3
@@ -260,6 +315,7 @@ WorkingDirectory=$WORK
 Environment=HOME=$HOME
 Environment=PATH=$NODE_BIN_DIR:/opt/npm/bin:/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin
 Environment=TMPDIR=/data/tmp
+EnvironmentFile=-$OPENCODE_ENV
 Environment=OPENCODE_HOST=http://127.0.0.1:$OPENCODE_PORT
 Environment=OPENCODE_SKIP_START=true
 ExecStart=$CONFIG_DIR/openchamber-start.sh
@@ -304,6 +360,7 @@ Done.
   OpenCode:        http://127.0.0.1:$OPENCODE_PORT
   OpenChamber:     http://127.0.0.1:$OPENCHAMBER_PORT
   UI password:     $PASS_FILE
+  OpenCode auth:   $OPENCODE_ENV
   Env credentials: $CONFIG_DIR/providers.env
 
 Next:
@@ -313,7 +370,11 @@ Next:
 
   2. On the PC, publish the ports:
        instabox port publish <machine> $OPENCHAMBER_PORT --private
-       instabox port publish <machine> $OPENCODE_PORT --private
+       instabox port publish <machine> $OPENCODE_PORT --public
+
+     Port $OPENCHAMBER_PORT is the phone PWA (token link + UI password).
+     Port $OPENCODE_PORT is the native app/API (Basic auth, user "opencode",
+     password from the file above).
 
   3. Open the OpenChamber link on the phone, then add it to the home screen.
 

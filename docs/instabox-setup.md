@@ -12,8 +12,12 @@ InstaBox VM (agent-browser, 4 vCPU / 8 GB, /data persists)
 └─ openchamber    0.0.0.0:3000          UI over that server (no second agent)
         │
         ├─ private port 3000 → phone (OpenChamber PWA)
-        └─ private port 4096 → native OpenCode Mobile app (token header)
+        └─ public port 4096  → native app/API (Basic auth)
 ```
+
+OpenCode 2 requires a password on its API. The bootstrap generates one at
+`/data/home/.config/instabox/opencode.env`; OpenChamber reads the same file, and
+the native app uses it as Basic auth.
 
 > **Free-plan reality.** The machine pauses after 30 idle minutes and keeps its
 > memory and processes. A request to a published port wakes it (the request
@@ -30,7 +34,8 @@ On the PC:
 - Windows 10+ with PowerShell 5.1 or newer
 - Git for Windows (`git`)
 - Node.js 20+ (`node`)
-- OpenCode CLI (`npm install -g @opencode/cli`)
+- OpenCode CLI (`npm install -g @opencode/cli`, V2). The bootstrap replaces the
+  template's 1.19.5 binary if it finds one.
 - InstaBox CLI (`npm install -g instabox`) and a signed-in account (`instabox login`)
 
 On the InstaBox account:
@@ -38,7 +43,7 @@ On the InstaBox account:
 - An existing machine, or create one:
 
   ```powershell
-  instabox create --name work --template agent-browser
+  instabox create --name openode-anywhere --template agent-browser
   ```
 
   The free plan only permits `agent-browser`, `android`, `omarchy`, and `ci`.
@@ -53,15 +58,17 @@ On the InstaBox account:
 | `/data/home/work/<project>` | One git clone per repo, on its current branch |
 | `/data/home/work` | Workspace root; also the OpenCode working directory |
 | `/data/home/.config/instabox/openchamber-password` | OpenChamber UI password |
+| `/data/home/.config/instabox/opencode.env` | Fixed OpenCode API password (`OPENCODE_PASSWORD`) |
 | `/data/home/.config/instabox/providers.env` | Env-based provider keys (e.g. `TOKENROUTER_API_KEY`) |
 | `/etc/systemd/system/opencode.service` | `opencode serve` on `0.0.0.0:4096` |
 | `/etc/systemd/system/openchamber.service` | OpenChamber on `0.0.0.0:3000`, attached to the OpenCode server |
 
-OpenCode listens on `0.0.0.0:4096` with **no password**, because the InstaBox
-private port's token is the authentication for that route. OpenChamber is the
-authenticated UI surface (its own password) and proxies to OpenCode over
-loopback. If you would rather not use the private-token model, see
-[Security](#security).
+OpenCode 2 generates a random API password on every start unless
+`OPENCODE_PASSWORD` is set. The bootstrap writes a fixed 256-bit password to
+`opencode.env` and loads it into both services, so OpenChamber stays connected
+across restarts. Port 4096 is published **publicly** and protected by that
+password; port 3000 is published **privately** with an InstaBox token plus the
+OpenChamber UI password.
 
 ---
 
@@ -125,8 +132,12 @@ below instead.
 
 ## Step 2 — Bootstrap on the VM
 
+> If the preflight listed any **private or unreachable** repos (in this
+> workspace, `qestia` and `rii lashed it`), do [Step 3](#step-3--github-authentication-on-the-vm)
+> **first**. The bootstrap clones before it imports anything.
+
 ```powershell
-instabox ssh work
+instabox ssh openode-anywhere
 ```
 
 Then, inside the machine:
@@ -139,7 +150,9 @@ The script:
 
 - installs Node 24 under `~/.local/node` if the template's Node is older than
   24.14 (OpenChamber requires it);
-- installs `@opencode/cli` and OpenChamber;
+- installs OpenCode **2.x** (replacing the template's 1.19.5) and OpenChamber;
+- generates a fixed OpenCode API password in
+  `/data/home/.config/instabox/opencode.env`;
 - clones each repo and checks out the recorded branch;
 - imports provider credentials and all exported sessions (re-homed with
   `--directory`);
@@ -153,19 +166,20 @@ Check it:
 
 ```bash
 systemctl status opencode openchamber --no-pager
-curl -fsS http://127.0.0.1:4096/api/info
+set -a; source /data/home/.config/instabox/opencode.env; set +a
+curl -fsS -u "opencode:$OPENCODE_PASSWORD" http://127.0.0.1:4096/api/info
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/
 ```
 
-The OpenChamber HTTP code should be `200` or `401` (401 just means it is
-asking for the UI password).
+The OpenChamber HTTP code should be `200`. Its `/health` endpoint should report
+`"openCodeRunning": true` and `"openCodeAuthSource": "user-env"`.
 
 ---
 
 ## Step 3 — GitHub authentication on the VM
 
-Cloning works without credentials because all seven repos are public. Pushing
-from the phone or the VM needs auth, so do this once:
+Not all repos are public: `qestia` and `rii lashed it` are private. The
+bootstrap needs `gh` authenticated **before** it clones them. Do this once:
 
 ```bash
 gh auth login
@@ -192,19 +206,27 @@ git -C /data/home/work/savborne push
 On the PC:
 
 ```powershell
-instabox port publish work 3000 --private
-instabox port publish work 4096 --private
+instabox port publish openode-anywhere 3000 --private
+instabox port publish openode-anywhere 4096 --public
 ```
 
-Each command prints a URL containing `?_token=ibp_…`. **These links are shown
-once** — the server stores only a hash. Save them in your password manager.
+The `3000` command prints a URL containing `?_token=ibp_…`. That link is shown
+once — the server stores only a hash. Save it in your password manager.
 
-- `3000` is OpenChamber (phone UI).
-- `4096` is the OpenCode API (native app, optional).
+- `3000` is OpenChamber (phone PWA): private token + UI password.
+- `4096` is the OpenCode API and native app: public URL, Basic auth with
+  username `opencode` and the password from
+  `/data/home/.config/instabox/opencode.env`. This is deliberate: the private
+  port token and Basic auth both use the `Authorization` header, so a native
+  app cannot use both at once.
 
-If a port is already published and the command does not reprint the token,
-run `instabox port ls work` or rotate the token with
-`instabox port publish work 3000 --private --rotate-token`.
+If a private port is already published and the command does not reprint the
+token, rotate it with
+`instabox port publish openode-anywhere 3000 --private --rotate-token`.
+
+> The 4096 endpoint is reachable by anyone who knows the URL. Its only gate is
+> the 256-bit password. Rotate it by editing `opencode.env` and restarting both
+> services. Unpublish 4096 if you decide the PWA is enough.
 
 ---
 
@@ -226,12 +248,14 @@ The PWA is the recommended phone client: it is the only route that both
 The community Android app (`OpenCode Mobile`, Play Store / APK) is a pure
 client of an OpenCode server. To use it:
 
-- Server URL: the **4096** private link
-- Custom header: `Authorization: Bearer ibp_…` (the token from the link)
-- Username/password: leave blank — OpenCode has no password on this setup
+- Server URL: the **4096** public URL
+- Username: `opencode`
+- Password: from `/data/home/.config/instabox/opencode.env`
+  (`OPENCODE_PASSWORD=…`)
 
-If the app insists on Basic auth and the header conflicts, use the PWA
-instead, or publish 4096 publicly and set an OpenCode password.
+The public port wakes the paused VM on request, just like the PWA. Because the
+port is public, the password is the only gate — use a password manager and
+rotate it if the URL leaks.
 
 > OpenChamber's own native app pairs through OpenChamber's QR/Private Relay,
 > which does **not** wake a paused InstaBox machine. Use the PWA on the free
@@ -244,16 +268,24 @@ instead, or publish 4096 publicly and set an OpenCode password.
 ### OpenCode Desktop
 
 ```powershell
-instabox port-forward work 4096
+instabox port-forward openode-anywhere 4096
 ```
 
-Keep that terminal open, then point the desktop app's server address at:
+Keep that terminal open. Read the API password into your shell:
+
+```powershell
+$ocPass = ((instabox exec openode-anywhere -- "sed -n 's/^OPENCODE_PASSWORD=//p' /data/home/.config/instabox/opencode.env") -join "").Trim()
+$env:OPENCODE_PASSWORD = $ocPass
+```
+
+Then point the desktop app's server address at:
 
 ```text
 http://127.0.0.1:4096
 ```
 
-No password. The app, the phone, and the TUI now share the same sessions.
+Use username `opencode` and the password above if it asks. The app, the phone,
+and the TUI now share the same sessions.
 
 If the desktop app asks for a project folder rather than listing the server's
 projects, open a session from the phone/PWA first, or use the TUI over SSH
@@ -262,9 +294,10 @@ projects, open a session from the phone/PWA first, or use the TUI over SSH
 ### TUI on the VM (most reliable)
 
 ```powershell
-instabox ssh work
+instabox ssh openode-anywhere
 cd /data/home/work/savborne
-opencode
+set -a; source /data/home/.config/instabox/opencode.env; set +a
+opencode --server http://127.0.0.1:4096
 ```
 
 This avoids any Windows-vs-Linux path mismatch: the TUI runs where the files
@@ -272,7 +305,7 @@ actually are.
 
 ### OpenChamber desktop (optional)
 
-Point it at the forwarded OpenChamber port (`instabox port-forward work 3000`)
+Point it at the forwarded OpenChamber port (`instabox port-forward openode-anywhere 3000`)
 or use the connection link printed by `openchamber connect-url` on the VM.
 
 ---
@@ -282,7 +315,10 @@ or use the connection link printed by `openchamber connect-url` on the VM.
 On the VM:
 
 ```bash
-opencode session list --max-count 1000
+cd /data/home/work/savborne
+set -a; source /data/home/.config/instabox/opencode.env; set +a
+opencode --version        # must be 2.x
+opencode --server http://127.0.0.1:4096 session list -n 1000
 ```
 
 You should see the 23 sessions. In OpenChamber, the project picker should list
@@ -322,21 +358,22 @@ only truth once you switch the desktop app over.
 
 ## Security
 
-- The 3000 and 4096 links are bearer secrets. Anyone with a link can reach the
-  port. Treat them like passwords.
+- The 3000 link is a bearer secret: anyone with the `?_token=` can reach the
+  private port. Treat it like a password. The 4096 URL is public and is **not**
+  a secret; its gate is the OpenCode password.
 - OpenChamber is protected by its UI password. Rotate it by editing
   `/data/home/.config/instabox/openchamber-password` and running
   `sudo systemctl restart openchamber`.
-- OpenCode on 4096 has no password. Its protection is the InstaBox private
-  token. If you want a password too, stop publishing 4096 and use only the
-  PWA, or put a reverse proxy in front.
+- OpenCode's API password lives in
+  `/data/home/.config/instabox/opencode.env` (`chmod 600`) and is loaded into
+  both services. Rotate it by editing the file and restarting both units.
 - Provider keys live in
   `/data/home/.config/instabox/providers.env` (`chmod 600`) and in OpenCode's
   credential store.
 - The preflight staging directory on the PC contains credentials and
   transcripts. Delete it when done.
-- `instabox port publish` exposes a port for as long as it is published. Use
-  `instabox port unpublish work 4096` (or `3000`) when you no longer need one.
+- `instabox port publish` exposes a port for as long as it is published. If you
+  do not need the native app, run `instabox port unpublish openode-anywhere 4096`.
 
 ---
 
@@ -363,18 +400,41 @@ Check `Environment=PATH` in the unit; it must include the Node bin directory
 and `/opt/npm/bin`. Run `sudo systemctl daemon-reload` after edits.
 
 **OpenChamber says "OpenCode is restarting" forever**
-It cannot reach `OPENCODE_HOST`. Check:
+It cannot reach `OPENCODE_HOST` or lacks the password. Check:
 
 ```bash
-curl -fsS http://127.0.0.1:4096/api/info
+set -a; source /data/home/.config/instabox/opencode.env; set +a
+curl -fsS -u "opencode:$OPENCODE_PASSWORD" http://127.0.0.1:4096/api/info
+curl -s http://127.0.0.1:3000/health
 systemctl status opencode --no-pager
 ```
+
+The health JSON should say `"openCodeRunning": true` and
+`"openCodeAuthSource": "user-env"`.
+
+**OpenChamber restarts every few seconds**
+It exited 0 because it daemonized. The service wrapper must pass
+`--foreground` (the bootstrap does).
+
+**CLI says "requires a password" or returns 401**
+OpenCode 2 needs the fixed password:
+
+```bash
+set -a; source /data/home/.config/instabox/opencode.env; set +a
+opencode --server http://127.0.0.1:4096 ...
+```
+
+For HTTP, use `-u "opencode:$OPENCODE_PASSWORD"`. The 4096 port is Basic auth
+with username `opencode`.
 
 **Phone shows 503 when opening the link**
 The VM is waking. Wait and refresh; the next request should land.
 
 **Phone shows 401**
-The private-port cookie is missing. Reopen the `?_token=` link once.
+- On the **3000** link: the private-port cookie is missing. Reopen the
+  `?_token=` link once.
+- On the **4096** URL: the app needs Basic auth, username `opencode` and the
+  password from `opencode.env`.
 
 **OpenChamber login fails**
 Read the password directly:
@@ -383,9 +443,16 @@ Read the password directly:
 cat /data/home/.config/instabox/openchamber-password
 ```
 
-**Session import failed**
-The target directory must exist before import. Re-run the clone step, then the
-import loop in `instabox-bootstrap.sh`.
+**Session import failed / `session import` is not a command**
+The VM is running OpenCode 1.19.5 from the template. Check
+`opencode --version`; it must be 2.x. Install V2:
+
+```bash
+npm install -g @opencode/cli@latest
+/data/home/.local/node/bin/opencode --version
+```
+
+Then point the unit at `/data/home/.local/node/bin/opencode` and restart.
 
 **Disk full**
 `/data` is 20 GiB. Remove `.next`, `node_modules`, and build output you do not

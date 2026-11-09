@@ -139,10 +139,40 @@ if ($Machine) {
 }
 Write-Host "    using machine: $Machine" -ForegroundColor Green
 
+# A paused or stopped machine rejects file copies. Resume it before we start.
+$machineInfoPath = Join-Path $tmp "machine.json"
+$machineInfoJson = (& instabox get $Machine --json 2>$null) -join "`n"
+if ($machineInfoJson) {
+  Write-Utf8NoBom $machineInfoPath $machineInfoJson
+  $jsState = @'
+const fs = require("fs");
+const o = JSON.parse(fs.readFileSync(process.argv[2], "utf8").replace(/^\uFEFF/, ""));
+console.log(o.state || o.desiredState || "");
+'@
+  $state = (Invoke-NodeScript $jsState @($machineInfoPath) | Select-Object -First 1)
+
+  if ($state -eq "suspended" -or $state -eq "paused") {
+    Write-Host "    machine is $state; resuming" -ForegroundColor Yellow
+    & instabox resume $Machine 2>&1 | Out-Null
+  } elseif ($state -eq "stopped") {
+    Write-Host "    machine is stopped; starting" -ForegroundColor Yellow
+    & instabox start $Machine 2>&1 | Out-Null
+  }
+
+  if ($state -ne "running") {
+    for ($i = 0; $i -lt 30; $i++) {
+      $current = (& instabox get $Machine --json 2>$null) -join "`n"
+      if ($current -match '"state"\s*:\s*"running"') { break }
+      Start-Sleep -Seconds 2
+    }
+  }
+}
+
 # ---------------------------------------------------------------- projects
 Write-Host "==> Scanning projects under $Root" -ForegroundColor Cyan
 $projects = @()
 $dirtyProjects = @()
+$privateRepos = @()
 
 foreach ($dir in (Get-ChildItem $Root -Directory -ErrorAction SilentlyContinue)) {
   if (-not (Test-Path (Join-Path $dir.FullName ".git"))) { continue }
@@ -152,6 +182,10 @@ foreach ($dir in (Get-ChildItem $Root -Directory -ErrorAction SilentlyContinue))
     Write-Warning "Skipping '$($dir.Name)': no origin remote"
     continue
   }
+
+  # No credential helper: this answers whether the VM can clone it anonymously.
+  & git -c credential.helper= ls-remote --heads $remote *> $null
+  if ($LASTEXITCODE -ne 0) { $privateRepos += $dir.Name }
 
   $branch = (& git -C $dir.FullName branch --show-current 2>$null) -join ""
   if (-not $branch) { Fail "'$($dir.Name)' has a detached HEAD. Check out a branch first." }
@@ -183,6 +217,14 @@ foreach ($dir in (Get-ChildItem $Root -Directory -ErrorAction SilentlyContinue))
     Branch    = $branch
     Path      = $dir.FullName
   }
+}
+
+if ($privateRepos.Count -gt 0) {
+  Write-Host ""
+  Write-Host "Private or unreachable repos (need GitHub auth on the VM):" -ForegroundColor Yellow
+  $privateRepos | ForEach-Object { Write-Host "  - $_" }
+  Write-Host "  Before the bootstrap: instabox ssh $Machine  ->  gh auth login"
+  Write-Host ""
 }
 
 if ($dirtyProjects.Count -gt 0) {
@@ -390,8 +432,8 @@ $bundle = Join-Path $tmp "bundle.tgz"
 & tar -czf $bundle -C $tmp manifest.json sessions auth env 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) { Fail "tar failed while creating $bundle" }
 
-& instabox cp $bundle "${Machine}:/data/home/.instabox-bundle.tgz" 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) { Fail "instabox cp failed for the bundle" }
+$cpBundle = (& instabox cp $bundle "${Machine}:/data/home/.instabox-bundle.tgz" 2>&1) -join "`n"
+if ($LASTEXITCODE -ne 0) { Write-Host $cpBundle; Fail "instabox cp failed for the bundle" }
 
 # Guarantee LF endings: a CRLF bash script fails on the VM with `\r` errors.
 $bootstrapLf = Join-Path $tmp "instabox-bootstrap.sh"
@@ -399,9 +441,8 @@ $bootstrapText = [System.IO.File]::ReadAllText($bootstrap)
 $bootstrapText = $bootstrapText -replace "`r`n", "`n"
 Write-Utf8NoBom $bootstrapLf $bootstrapText
 
-& instabox cp $bootstrapLf "${Machine}:/data/home/instabox-bootstrap.sh" 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) { Fail "instabox cp failed for the bootstrap script" }
-
+$cpBoot = (& instabox cp $bootstrapLf "${Machine}:/data/home/instabox-bootstrap.sh" 2>&1) -join "`n"
+if ($LASTEXITCODE -ne 0) { Write-Host $cpBoot; Fail "instabox cp failed for the bootstrap script" }
 Write-Host "    bundle copied" -ForegroundColor Green
 
 if ($Run) {
@@ -418,12 +459,12 @@ if ($Run) {
 if ($PublishPorts) {
   Write-Host "==> Publishing private ports" -ForegroundColor Cyan
   $url3000 = (& instabox port publish $Machine 3000 --private 2>&1) -join "`n"
-  $url4096 = (& instabox port publish $Machine 4096 --private 2>&1) -join "`n"
+  $url4096 = (& instabox port publish $Machine 4096 --public 2>&1) -join "`n"
   Write-Host ""
-  Write-Host "OpenChamber (phone):" -ForegroundColor Green
+  Write-Host "OpenChamber (phone PWA):" -ForegroundColor Green
   Write-Host $url3000
   Write-Host ""
-  Write-Host "OpenCode API (native app):" -ForegroundColor Green
+  Write-Host "OpenCode API (native app, Basic auth user 'opencode'):" -ForegroundColor Green
   Write-Host $url4096
   Write-Host ""
   Write-Host "Private links are shown once. Store them somewhere safe." -ForegroundColor Yellow
