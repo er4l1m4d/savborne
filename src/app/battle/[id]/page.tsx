@@ -299,8 +299,11 @@ export default function BattleScreen() {
     <ScreenShell
       variant="pushed"
       title={`Turn ${battle.currentTurn} of ${battle.maxTurns}`}
-      backHref="/battle"
-      backLabel="Leave battle"
+      actions={
+        <ButtonLink href="/battle" variant="icon" aria-label="Leave battle">
+          <Glyph name="leave" size={24} />
+        </ButtonLink>
+      }
     >
       <span className="sv-label text-fg-muted">
         {modeLabel}. Opponent: {battle.opponentName}.

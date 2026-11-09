@@ -258,8 +258,8 @@ The joiner's pending state stays on `/battle/[id]`: `{name} challenges you`,
 
 ### 4.7 Battle arena (`/battle/[id]`)
 
-`ScreenShell variant="pushed" title={`Turn {n} of 5`} backHref="/battle"
-backLabel="Leave battle"`.
+`ScreenShell variant="pushed" title={`Turn {n} of 5`}`, with a 44px leave
+icon action (`Glyph name="leave"`) linked to `/battle`.
 
 Body:
 
