@@ -25,12 +25,11 @@ test('Preparing is the brand mark and one line, with no spinner', () => {
   assert.doesNotMatch(checking, /sv-dots|animate-spin/)
 })
 
-test('Open inside Nimiq Pay has the phone panel and no CTA', () => {
+test('the outside state has the phone panel and no CTA', () => {
   const outside = GATE.slice(
     GATE.indexOf("phase === 'outside_nimiq'"),
     GATE.indexOf("phase === 'update_required'"),
   )
-  assert.match(outside, /Open inside Nimiq Pay/)
   assert.match(outside, /<Glyph name="phone" size=\{72\} \/>/)
   assert.match(outside, /Savborne lives inside Nimiq Pay/)
   assert.doesNotMatch(outside, /<Button/)
@@ -45,6 +44,12 @@ test('Update Nimiq Pay offers the site link and a retry', () => {
   assert.match(update, /I&apos;ve updated, try again/)
   assert.match(update, /<Glyph name="update" size=\{72\} className="text-mint" \/>/)
   assert.match(update, /setAttempt\(\(n\) => n \+ 1\)/)
+})
+
+test('the gate has no Silkscreen header above the centred headline', () => {
+  assert.doesNotMatch(GATE, /sv-number-m/)
+  assert.doesNotMatch(GATE, /title="Open inside Nimiq Pay"/)
+  assert.doesNotMatch(GATE, /title="Update Nimiq Pay"/)
 })
 
 test('a wallet error reason is a muted diagnostic line', () => {

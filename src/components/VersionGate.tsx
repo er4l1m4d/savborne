@@ -80,7 +80,6 @@ export function VersionGate({ children }: { children: ReactNode }) {
   if (state.phase === 'outside_nimiq') {
     return (
       <GateScreen
-        title="Open inside Nimiq Pay"
         icon={<Glyph name="phone" size={72} />}
         headline="Savborne lives inside Nimiq Pay"
         body="Savborne is a Nimiq Pay Mini App. Open this URL inside the Nimiq Pay app to create your vault."
@@ -91,7 +90,6 @@ export function VersionGate({ children }: { children: ReactNode }) {
   if (state.phase === 'update_required') {
     return (
       <GateScreen
-        title="Update Nimiq Pay"
         icon={<Glyph name="update" size={72} className="text-mint" />}
         headline="Update Nimiq Pay to continue"
         body="This version of Nimiq Pay can't share your vault balance with Savborne yet. Update it, then reopen Savborne. Nothing has been recorded."
@@ -125,14 +123,12 @@ export function VersionGate({ children }: { children: ReactNode }) {
 }
 
 function GateScreen({
-  title,
   icon,
   headline,
   body,
   reason,
   actions,
 }: {
-  title: string
   icon: ReactNode
   headline: string
   body: string
@@ -141,8 +137,6 @@ function GateScreen({
 }) {
   return (
     <ScreenShell variant="pushed" bodyClassName="gap-5 pt-0">
-      <span className="sv-number-m text-balance">{title}</span>
-
       <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
         <PixelPanel className="w-[132px] h-[132px] flex items-center justify-center">
           {icon}

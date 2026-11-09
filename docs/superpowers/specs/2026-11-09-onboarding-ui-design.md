@@ -252,20 +252,22 @@ One component, four phases, no new routes. Public `/card/*` stays exempt.
 
 - `checking`: centered `BrandMark` + "Preparing Savborne..." 16px muted; no
   spinner and no action.
-- `outside_nimiq`: top title "Open inside Nimiq Pay" in `.sv-number-m`, then a
-  centered 132px `PixelPanel` with a 72px `phone` glyph, `<h2 class="sv-subheading-lg">Savborne lives inside Nimiq Pay</h2>`
-  and the handoff body. No CTA.
-- `update_required`: top title "Update Nimiq Pay", centered 132px panel with the
-  `update` glyph at 72px mint, "Update Nimiq Pay to continue" and the handoff
-  body, then two actions:
+- `outside_nimiq`: a centered 132px `PixelPanel` with a 72px `phone` glyph,
+  `<h1 class="sv-subheading-lg">Savborne lives inside Nimiq Pay</h1>` and the
+  handoff body. The centred headline is the only heading; there is no top
+  Silkscreen header and no CTA.
+- `update_required`: a centered 132px panel with the `update` glyph at 72px
+  mint, the h1 "Update Nimiq Pay to continue" and the handoff body, then two
+  actions:
   - `ButtonLink href="https://nimiq.com" target="_blank" rel="noreferrer"` coral
     "Update Nimiq Pay".
   - `Button variant="secondary"` "I've updated, try again" that re-runs the
     check and returns to Preparing while it runs.
   - If a wallet error reason exists, show it as a small muted diagnostic line,
     not as the headline.
-- All gate screens use the handoff's 24px gutter and 22px side padding; the
-  Preparing state is vertically centered.
+- All gate screens use the handoff's 22px side padding; the Preparing state is
+  vertically centered. Open and Update centre the panel, headline, body and
+  actions with no top header.
 
 ### 6.2 Balance error - `/balance-error`
 

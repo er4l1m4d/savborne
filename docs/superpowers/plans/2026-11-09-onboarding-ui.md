@@ -667,14 +667,15 @@ action, full viewport, 22px gutters.
 
 - [ ] **Step 2: Outside Nimiq Pay**
 
-Top title "Open inside Nimiq Pay" in `.sv-number-m`. Centered 132px
-`PixelPanel`, `Glyph name="phone"` at 72px, `<h2 class="sv-subheading-lg">` and
-the handoff body. No CTA.
+Centered 132px `PixelPanel`, `Glyph name="phone"` at 72px,
+`<h1 class="sv-subheading-lg">Savborne lives inside Nimiq Pay</h1>` and the
+handoff body. The centred headline is the only heading; no top Silkscreen
+header and no CTA.
 
 - [ ] **Step 3: Update Nimiq Pay**
 
-Top title "Update Nimiq Pay". Centered 132px panel with the `update` glyph at
-72px mint, the handoff headline/body, then:
+Centered 132px panel with the `update` glyph at 72px mint, the h1
+"Update Nimiq Pay to continue" and the handoff body, then:
 
 ```tsx
 <ButtonLink href="https://nimiq.com" target="_blank" rel="noreferrer" variant="primary">

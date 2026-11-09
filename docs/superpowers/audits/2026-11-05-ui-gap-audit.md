@@ -744,8 +744,9 @@ privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
   check-in. Every other failure keeps the inline banner.
 - **Gate:** Preparing is the brand mark and one line with no spinner; Open
   inside Nimiq Pay is the phone panel with no CTA; Update Nimiq Pay has the
-  update arrow, the Nimiq site link and a retry that re-runs the check.
-  `/card/*` stays public.
+  update arrow, the Nimiq site link and a retry that re-runs the check. The
+  Open and Update screens have no top Silkscreen header: the centred headline
+  is the screen heading. `/card/*` stays public.
 - **Foundation additions:** `.sv-display-sm` (36), `.sv-heading-lg` (32),
   `.sv-subheading-lg` (32 Jakarta), `.sv-input`, `.sv-steps`, `BrandMark`,
   `StepBars` and the hand-drawn `phone` glyph from the handoff.
@@ -754,7 +755,7 @@ privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
 
 | Check | Result |
 |---|---|
-| `npm test` | 344 pass, 0 fail |
+| `npm test` | 345 pass, 0 fail |
 | `npx tsc --noEmit` | clean |
 | `npm run lint` | exit 0, 50 warnings, 0 errors |
 | `npm run build` | exit 0, `/welcome`, `/connect`, `/privacy`, `/name`, `/balance-error` compiled |
@@ -775,8 +776,8 @@ privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
 - Name: the title takes two lines; the 250px character panel, field, counter and
   error fit. The error state keeps the CTA on screen at 360.
 - Balance error: the 24px top title wraps and is balanced; both actions fit.
-- Gate: the outside top title balances to "OPEN INSIDE" / "NIMIQ PAY"; the
-  Update title fits one line and both actions fit.
+- Gate: the outside and update screens centre the panel, headline, body and
+  actions with no top header; both update actions fit at 360.
 
 ### Rulings
 
@@ -793,7 +794,8 @@ privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
 - **Balance Error only for `rpc_unreachable`.** Other check-in failures keep the
   inline banner, where the copy is accurate.
 - **The gate stays one component with states.** A gate route would be gated
-  itself or need an exemption.
+  itself or need an exemption. The Open and Update screens have no top
+  Silkscreen header; the centred headline is the only heading.
 - **Update opens https://nimiq.com.** No app-store deep link exists in the repo.
 - **The privacy page scrolls.** The handoff pins the consent footer; at 360 the
   cards and a pinned footer would obscure text, so the footer sits at the end.
