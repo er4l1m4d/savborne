@@ -41,7 +41,7 @@ export function CharacterPicker({
             }`.trim()}
             onClick={() => onChange(option)}
           >
-            <CharacterArt bracket={bracket} character={option} size={48} />
+            <CharacterArt bracket={bracket} character={option} size={32} />
             <span>{LABELS[option]}</span>
           </Button>
         )

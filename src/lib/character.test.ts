@@ -24,11 +24,11 @@ test('CharacterArt maps Hero and Heroine for every bracket, default Hero', () =>
   assert.match(ART, /character\?: Avatar/)
 })
 
-test('the picker is two 56px toggles with 48px art', () => {
+test('the picker is two 56px toggles with 32px art', () => {
   assert.match(PICKER, /role="group" aria-label="Character"/)
   assert.match(PICKER, /grid grid-cols-2 gap-3/)
   assert.match(PICKER, /aria-pressed=\{selected\}/)
-  assert.match(PICKER, /<CharacterArt bracket=\{bracket\} character=\{option\} size=\{48\} \/>/)
+  assert.match(PICKER, /<CharacterArt bracket=\{bracket\} character=\{option\} size=\{32\} \/>/)
   assert.match(PICKER, /variant="secondary"/)
   assert.match(PICKER, /border-mint text-mint/)
   assert.match(PICKER, /const LABELS: Record<Avatar, string> = \{ hero: 'Hero', heroine: 'Heroine' \}/)

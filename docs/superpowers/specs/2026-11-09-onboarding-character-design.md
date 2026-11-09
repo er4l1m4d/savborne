@@ -62,8 +62,8 @@ for all four brackets.
 
 - Two 56px buttons in a 2-column grid, `aria-pressed`, mint border and label on
   the selected one.
-- Each shows the 48px character art for the current bracket and the label Hero
-  or Heroine.
+- Each shows the 32px character art for the current bracket and the label Hero
+  or Heroine. The 56px card leaves 12px above and below the art.
 - Used in the Name step and Settings.
 
 Name step, under the 128px preview:

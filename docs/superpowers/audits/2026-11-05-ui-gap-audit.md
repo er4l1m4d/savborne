@@ -927,7 +927,7 @@ unchanged.
 ### What landed
 
 - **Name step:** the 128px preview uses the chosen character. A "Character"
-  fieldset holds two 56px picker buttons with 48px art, `aria-pressed`, a mint
+  fieldset holds two 56px picker buttons with 32px art, `aria-pressed`, a mint
   border and label on the selected option. Hero is the default; the preview
   updates immediately. The body is two lines and the panel is 230px so the CTA
   stays on screen at 360.

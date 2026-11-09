@@ -84,7 +84,8 @@ Corrections:
   The profile stores an art choice (`avatar`), not a gender identity, and the
   privacy collect card names the chosen character as game data.
 - **Default Hero:** both options are visible and switching is one tap; no extra
-  required field. The preview updates immediately.
+  required field. The preview updates immediately. The picker uses 32px art in
+  56px cards, so the sprite has 12px above and below.
 - **Changeable:** Settings > Account > Character uses the same picker and saves
   through `PATCH /api/players/me`. The name remains fixed; appearance does not.
 - **Player sprites only:** Home, Profile, Name, the ranked queue me-card, the

@@ -46,7 +46,7 @@
 - Test: `src/lib/character.test.ts`, `src/lib/onboarding.test.ts`
 
 - [ ] `CharacterArt` maps Hero and Heroine for every bracket; default Hero.
-- [ ] `CharacterPicker` with `aria-pressed`, 56px buttons, 48px art, selected
+- [ ] `CharacterPicker` with `aria-pressed`, 56px buttons, 32px art, selected
   mint border.
 - [ ] Provider draft `avatar` + `setAvatar`; `finish` sends it.
 - [ ] Name preview uses the avatar; picker under the preview; step stays 5.
