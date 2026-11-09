@@ -65,7 +65,7 @@ export function ModeCard({ onClick, disabled, primary, ...content }: ModeCardPro
   }
 
   return (
-    <PixelPanel tone="off" className="flex min-h-[96px] items-center gap-4 px-4 py-4">
+    <PixelPanel tone="off" className="flex min-h-[96px] items-start gap-4 px-4 py-4">
       <ModeCardBody {...content} />
     </PixelPanel>
   )
