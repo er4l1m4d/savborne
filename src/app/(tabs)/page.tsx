@@ -23,7 +23,6 @@ import {
 } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeAction } from '@/lib/game/badges'
-import { SHIELD_CAP } from '@/lib/game/streaks'
 import { checkedInToday } from '@/lib/checkin-state'
 import {
   checkInDestination,
@@ -225,7 +224,7 @@ export default function HomePage() {
         </div>
 
         <div className="flex flex-wrap items-baseline gap-2">
-          <span className="sv-number-xl">{(player.balanceLuna / LUNA_PER_NIM).toFixed(5)}</span>
+          <span className="sv-number-xl">{(player.balanceLuna / LUNA_PER_NIM).toFixed(2)}</span>
           <span className="sv-label text-fg-muted">NIM</span>
           <span className="ml-auto">
             {deltaLuna !== 0 ? (
@@ -243,17 +242,6 @@ export default function HomePage() {
             ) : null}
           </span>
         </div>
-
-        <p className="sv-label text-fg-faint" aria-label={`${player.shields} of ${SHIELD_CAP} streak shields`}>
-          <span aria-hidden>
-            {Array.from({ length: SHIELD_CAP }, (_, i) => (
-              <span key={i} className={i < player.shields ? 'text-mint' : 'opacity-40'}>
-                {i === 0 ? '' : ' '}◈
-              </span>
-            ))}
-          </span>{' '}
-          shields · {player.checkInCount} check-in{player.checkInCount === 1 ? '' : 's'}
-        </p>
 
         <Button
           variant="primary"
