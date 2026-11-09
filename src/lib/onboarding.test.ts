@@ -89,3 +89,16 @@ test('Privacy is step 2 and hands the accepted version to the draft', () => {
   assert.match(PRIVACY_PAGE, /acceptPrivacy\(PRIVACY_NOTICE_VERSION\)/)
   assert.match(PRIVACY_PAGE, /router\.push\('\/name'\)/)
 })
+
+test('Name is step 3 with the preview, counter and error slot', () => {
+  const NAME = source('../app/(onboarding)/name/page.tsx')
+  assert.match(NAME, /<OnboardingScreen step=\{3\} backHref="\/privacy">/)
+  assert.match(NAME, /<CharacterArt bracket=\{null\} size=\{128\} \/>/)
+  assert.match(NAME, /maxLength=\{DISPLAY_NAME_MAX\}/)
+  assert.match(NAME, /aria-describedby="name-hint name-count name-error"/)
+  assert.match(NAME, /\{displayName\.length\}\/\{DISPLAY_NAME_MAX\}/)
+  assert.match(NAME, /<Banner tone="error">/)
+  assert.match(NAME, /Start playing/)
+  assert.match(NAME, /router\.replace\('\/connect'\)/)
+  assert.match(NAME, /router\.replace\('\/privacy'\)/)
+})

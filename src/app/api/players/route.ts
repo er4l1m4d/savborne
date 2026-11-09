@@ -8,7 +8,7 @@
  * Body:
  *   {
  *     address:       string   // the player's Nimiq address (identity key)
- *     displayName:   string   // 1–32 chars, shown on leaderboard
+ *     displayName:   string   // 1-16 chars, shown on leaderboard
  *     vaultAddress:  string   // the vault the client generated on device
  *     network:       'mainnet' | 'testnet'
  *     backupVerified: boolean // a declared claim; the gate is enforced on deposit
@@ -27,6 +27,7 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { validateDisplayName } from '@/lib/display-name'
 import { isPlausibleAddress } from '@/lib/vault/address'
 import { toVaultDto } from '@/lib/vault/dto'
 import { isNetwork } from '@/lib/vault/network'
@@ -66,12 +67,12 @@ export async function POST(req: Request) {
   if (typeof vaultAddress !== 'string' || !isPlausibleAddress(vaultAddress)) {
     return NextResponse.json({ error: 'Invalid vault address' }, { status: 400 })
   }
-  if (
-    typeof displayName !== 'string' ||
-    displayName.trim().length < 1 ||
-    displayName.trim().length > 32
-  ) {
-    return NextResponse.json({ error: 'Display name must be 1–32 characters' }, { status: 400 })
+  if (typeof displayName !== 'string') {
+    return NextResponse.json({ error: 'Display name must be 1-16 characters.' }, { status: 400 })
+  }
+  const name = validateDisplayName(displayName)
+  if (!name.ok) {
+    return NextResponse.json({ error: name.error }, { status: 400 })
   }
   if (!isNetwork(network)) {
     return NextResponse.json({ error: 'Invalid network' }, { status: 400 })
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await db.rpc('create_player_with_vault', {
     p_address: address,
-    p_display_name: displayName.trim(),
+    p_display_name: name.value,
     p_vault_address: vaultAddress,
     p_network: network,
     p_card_token: cardToken,

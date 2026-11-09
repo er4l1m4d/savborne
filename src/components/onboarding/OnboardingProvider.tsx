@@ -27,6 +27,7 @@ import { sameAddress } from '@/lib/vault/address'
 import { encryptPhrase } from '@/lib/vault/crypto'
 import { deriveVaultAddress, generatePhrase } from '@/lib/vault/phrase'
 import { writeVault } from '@/lib/vault/storage'
+import { validateDisplayName } from '@/lib/display-name'
 
 type Draft = {
   accounts: string[]
@@ -40,11 +41,12 @@ type Draft = {
 }
 
 type OnboardingContextValue = Draft & {
-  startConnect: () => Promise<void>
+  startConnect: () => Promise<string[]>
   pickAccount: (address: string) => Promise<'reconnect' | 'created'>
   lockVault: (passphrase: string) => Promise<void>
   acceptPrivacy: (version: string) => void
   setDisplayName: (value: string) => void
+  resetVault: () => void
   finish: (displayName: string) => Promise<void>
 }
 
@@ -96,6 +98,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   async function startConnect() {
     const list = await listAccounts()
     setAccounts(list)
+    return list
   }
 
   /**
@@ -155,11 +158,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setAcceptedNoticeVersion(version)
   }
 
+  /** Drop an unregistered draft and return to the account picker. */
+  function resetVault() {
+    setPhrase(null)
+    setPicked(null)
+    setVaultAddress(null)
+    setVaultLocked(false)
+  }
+
   async function finish(name: string) {
-    const value = name.trim()
-    if (value.length < 1 || value.length > 16) {
-      throw new Error('Display name must be 1-16 characters.')
-    }
+    const result = validateDisplayName(name)
+    if (!result.ok) throw new Error(result.error)
+    const value = result.value
     if (!picked || !vaultAddress) {
       throw new Error('Your vault is not ready yet.')
     }
@@ -181,7 +191,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       const body = (await res.json().catch(() => ({}))) as { error?: string }
       if (body.error === 'vault_exists') {
         throw new Error(
-          'This wallet already has a vault. Open the Vault tab to restore it from your 24 words.',
+          'This wallet already has a vault. Reopen Savborne to restore your profile.',
         )
       }
       if (body.error === 'vault_taken') {
@@ -216,6 +226,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         lockVault,
         acceptPrivacy,
         setDisplayName,
+        resetVault,
         finish,
       }}
     >
