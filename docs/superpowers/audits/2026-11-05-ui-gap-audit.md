@@ -1158,9 +1158,11 @@ period XP counter. The cap cards are gone.
   `Never expires`. Titles are 20px default text; captions are the new 12px
   `.sv-caption` role.
 - **Rows:** one grouped `PixelPanel` per group; 24px box (mint fill + ground
-  check when done, mint outline when open), label, a 12px description on open
-  rows only, and `+N XP` in mint on open rows or muted on done rows. Done rows
-  are exactly 58px; open rows grow with the description. Rows are status only.
+  check when done, mint outline when open), a 15px/1.35 title, a 12px/500/1.35
+  description on open rows only, and `+N XP` in mint on open rows or muted on
+  done rows. The body column carries 8px vertical padding, so done and one-line
+  rows stay 58px and a two-line description row grows to about 71px with 8px of
+  clearance under the text. Rows are status only.
 - **Counters:** earned = sum of completed `xpReward` in the group, clamped to
   `counters.dailyXpCap` / `weeklyXpCap`. `src/lib/missions-ui.ts` owns
   `earnedXp` and `xpCounter`.
@@ -1178,7 +1180,7 @@ period XP counter. The cap cards are gone.
 
 | Check | Result |
 |---|---|
-| `npm test` | 380 pass, 0 fail (370 before the batch) |
+| `npm test` | 381 pass, 0 fail (370 before the batch) |
 | `npx tsc --noEmit` | clean |
 | `npm run lint` | exit 0, 50 warnings, 0 errors |
 | `npm run build` | exit 0; `/missions` compiles |
@@ -1190,7 +1192,8 @@ period XP counter. The cap cards are gone.
 - Both tabs and both group captions fit on one line: the Weekly caption is
   231px inside a 324px body, so the handoff copy stays intact.
 - `Steady Saver`'s description wraps to two lines at 360 and 390; the row grows
-  and nothing is clipped or truncated.
+  to about 71px with 8px of clearance under the last line. Nothing is clipped
+  or truncated.
 - Done rows stay at 58px; the one-time panel's six rows scroll with the body.
 - Loading centres the three dots in the remaining body; error and empty fit
   without scrolling; the retry button is 56px and left-aligned.
@@ -1204,6 +1207,11 @@ period XP counter. The cap cards are gone.
   and a visually hidden `(completed)`, not by colour alone.
 - **Descriptions on open rows only.** Done rows are scannable at 58px, matching
   the handoff; the explanation is only needed before the mission is earned.
+- **Row type pass.** The first renders showed two-line descriptions ending on
+  the divider. The title dropped from 16px to the handoff's 15px and the body
+  gained 8px vertical padding. The description is already at the 12px floor, so
+  only its weight (600 to 500) and line height (1.4 to 1.35) changed; two-line
+  rows grow to about 71px instead of pressing on the divider.
 - **Reset in the group caption only.** Repeating it per row duplicated
   information and pushed rows to three and four lines.
 - **One grouped panel per group.** One panel per mission (the old screen)

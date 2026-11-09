@@ -56,6 +56,10 @@ Corrections:
 - Rows are status only. Missions are credited by check-in and battle on the
   server; there is no client write, so the 24px box is not a control and the
   row is not a 44px target.
+- Row type follows the handoff: a 15px/1.35 title and a 12px/500/1.35
+  description. The body column carries 8px vertical padding, so a two-line
+  description row grows to about 71px and its last line clears the divider by
+  8px. Done and one-line rows stay 58px.
 - Done rows are exactly 58px with no description. Open rows grow when the
   description wraps (`Balance held or grew at every check-in this week` is two
   lines at 360/390); nothing is clipped.
