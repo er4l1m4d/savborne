@@ -34,3 +34,8 @@ test('Home has the mission rows and Battle card', () => {
   assert.match(HOME, /Choose opponent/)
   assert.match(HOME, /BATTLE\.dailyLimit/)
 })
+
+test('Home reads the mission payload field the API returns', () => {
+  assert.match(HOME, /xpReward: m\.xpReward \?\? m\.xp_reward/)
+  assert.doesNotMatch(HOME, /xpReward: m\.xp_reward\b/)
+})

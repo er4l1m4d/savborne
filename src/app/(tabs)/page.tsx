@@ -181,12 +181,23 @@ export default function HomePage() {
       const res = await fetch('/api/missions', { headers: authHeaders() })
       if (!res.ok) return
       const json = (await res.json()) as {
-        missions: { key: string; name: string; completed: boolean; xp_reward: number }[]
+        missions: {
+          key: string
+          name: string
+          completed: boolean
+          xpReward?: number
+          xp_reward?: number
+        }[]
         counters: { dailyXpEarned: number }
       }
       const filtered = (json.missions ?? [])
         .filter((m) => m.key === 'daily_check_in' || m.key === 'quick_duel')
-        .map((m) => ({ key: m.key, name: m.name, completed: m.completed, xpReward: m.xp_reward }))
+        .map((m) => ({
+          key: m.key,
+          name: m.name,
+          completed: m.completed,
+          xpReward: m.xpReward ?? m.xp_reward ?? 0,
+        }))
       setDailyMissions(filtered)
     } catch {
       /* non-fatal - daily missions are supplementary */
