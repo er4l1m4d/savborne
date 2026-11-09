@@ -7,7 +7,7 @@
 --   • types/tables/indexes are created only if missing
 --   • catalog seeds are re-asserted (ON CONFLICT DO UPDATE)
 --   • policies are dropped-then-created
---   • the function is CREATE OR REPLACE
+--   • the RPC is CREATE OR REPLACE, with an old signature dropped first
 --   • grants are idempotent by nature
 --
 -- Whenever the schema changes, edit this file and re-paste it. This is the only
@@ -53,7 +53,9 @@ create table if not exists players (
   last_withdrawal_at      timestamptz,
   steady_hand_started_at  timestamptz default now(),
   shields                 int not null default 1,
-  shields_earned          int not null default 0
+  shields_earned          int not null default 0,
+  privacy_consent_at      timestamptz,
+  privacy_notice_version  text
 );
 
 create table if not exists check_ins (
@@ -220,6 +222,12 @@ create index if not exists transfers_player_idx
 -- this file safe on a database created before the vault build.
 alter table players add column if not exists shields        int not null default 1;
 alter table players add column if not exists shields_earned int not null default 0;
+
+-- Privacy consent is recorded with the player row. The version is the notice
+-- string the onboarding client accepted; the timestamp is server time at the
+-- moment the row is created.
+alter table players add column if not exists privacy_consent_at     timestamptz;
+alter table players add column if not exists privacy_notice_version text;
 
 -- ─── Check-in integrity (release gate) ─────────────────────────────────────
 -- Ranked requires five check-ins. One reading per player per UTC day is the
@@ -526,13 +534,20 @@ grant execute on function leaderboard_stats() to service_role;
 -- rolls back the player insert too: a player and their vault exist together or
 -- not at all. Both error paths use 23505 so the route can distinguish them by
 -- message, not by inspecting Postgres internals.
+--
+-- The signature gained p_privacy_notice_version. An argument-list change is a
+-- new overload for CREATE OR REPLACE, so drop the old signature first; re-running
+-- this file is still safe.
+drop function if exists create_player_with_vault(text,text,text,text,text,boolean);
+
 create or replace function create_player_with_vault(
-  p_address         text,
-  p_display_name    text,
-  p_vault_address   text,
-  p_network         text,
-  p_card_token      text,
-  p_backup_verified boolean
+  p_address               text,
+  p_display_name          text,
+  p_vault_address         text,
+  p_network               text,
+  p_card_token            text,
+  p_backup_verified       boolean,
+  p_privacy_notice_version text
 ) returns jsonb
 language plpgsql security definer set search_path = public
 as $$
@@ -543,8 +558,15 @@ declare
 begin
   select exists(select 1 from players p where p.address = p_address) into v_existed;
 
-  insert into players (address, savings_account_address, display_name, current_balance_luna)
-  values (p_address, p_vault_address, p_display_name, 0)
+  insert into players (
+    address, savings_account_address, display_name, current_balance_luna,
+    privacy_notice_version, privacy_consent_at
+  )
+  values (
+    p_address, p_vault_address, p_display_name, 0,
+    p_privacy_notice_version,
+    case when p_privacy_notice_version is null then null else now() end
+  )
   on conflict (address) do nothing;
 
   select * into v_player from players where address = p_address;
@@ -575,8 +597,8 @@ begin
 end;
 $$;
 
-revoke all on function create_player_with_vault(text,text,text,text,text,boolean) from public;
-grant execute on function create_player_with_vault(text,text,text,text,text,boolean) to service_role;
+revoke all on function create_player_with_vault(text,text,text,text,text,boolean,text) from public;
+grant execute on function create_player_with_vault(text,text,text,text,text,boolean,text) to service_role;
 
 -- ─── Account deletion ────────────────────────────────────────────────────────
 -- Deleting a profile does not touch the on-chain vault; the 24-word phrase

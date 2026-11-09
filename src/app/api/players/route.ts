@@ -12,6 +12,7 @@
  *     vaultAddress:  string   // the vault the client generated on device
  *     network:       'mainnet' | 'testnet'
  *     backupVerified: boolean // a declared claim; the gate is enforced on deposit
+ *     privacyNoticeVersion?: string // the notice version accepted in onboarding
  *   }
  *
  * Response:
@@ -40,6 +41,7 @@ type Body = {
   vaultAddress?: unknown
   network?: unknown
   backupVerified?: unknown
+  privacyNoticeVersion?: unknown
 }
 
 type CreateResult = {
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { address, displayName, vaultAddress, network, backupVerified } = body
+  const { address, displayName, vaultAddress, network, backupVerified, privacyNoticeVersion } = body
 
   if (typeof address !== 'string' || !isPlausibleAddress(address)) {
     return NextResponse.json({ error: 'Invalid player address' }, { status: 400 })
@@ -77,6 +79,15 @@ export async function POST(req: Request) {
   if (typeof backupVerified !== 'boolean') {
     return NextResponse.json({ error: 'backupVerified must be a boolean' }, { status: 400 })
   }
+  if (
+    privacyNoticeVersion !== undefined &&
+    privacyNoticeVersion !== null &&
+    (typeof privacyNoticeVersion !== 'string' ||
+      privacyNoticeVersion.trim().length < 1 ||
+      privacyNoticeVersion.trim().length > 32)
+  ) {
+    return NextResponse.json({ error: 'Invalid privacy notice version' }, { status: 400 })
+  }
 
   const db = supabaseAdmin()
   // Server-minted: nothing is persisted before this point anyway, and a
@@ -90,6 +101,8 @@ export async function POST(req: Request) {
     p_network: network,
     p_card_token: cardToken,
     p_backup_verified: backupVerified,
+    p_privacy_notice_version:
+      typeof privacyNoticeVersion === 'string' ? privacyNoticeVersion.trim() : null,
   })
 
   if (error) {

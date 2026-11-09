@@ -17,6 +17,8 @@ export type Database = {
           savings_account_address: string
           display_name: string
           created_at: string
+          privacy_consent_at: string | null
+          privacy_notice_version: string | null
           last_check_in_at: string | null
           level: number
           xp: number
