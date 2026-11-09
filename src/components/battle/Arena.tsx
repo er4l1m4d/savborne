@@ -102,13 +102,17 @@ export function Arena({ me, opponent, variant = 'battle', dimmed, tone = 'defaul
   return (
     <PixelPanel
       tone={tone}
-      className={`relative overflow-hidden p-0 ${
+      className={`relative overflow-hidden bg-background p-0 ${
         result ? 'h-[250px]' : 'h-[380px] min-[390px]:h-[410px]'
       }`}
     >
       <div className={dimmed ? 'opacity-55' : ''}>
-        <Plate side={opponent} position="left-3 top-3" self={false} />
-        <Plate side={me} position="right-3 bottom-3" self />
+        {!result && (
+          <>
+            <Plate side={opponent} position="left-3 top-3" self={false} />
+            <Plate side={me} position="right-3 bottom-3" self />
+          </>
+        )}
         <div
           className={opponentArt}
           style={{ opacity: opponent.opacity ?? 1, transform: 'scaleX(-1)' }}

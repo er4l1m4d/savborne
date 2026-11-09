@@ -12,6 +12,8 @@ export type ResultTile = { label: string; value: string }
 type ResultPanelProps = {
   title: string
   tone: 'mint' | 'coral' | 'cream'
+  /** Rendered between the headline and the tiles, e.g. the result arena. */
+  header?: ReactNode
   tiles: ResultTile[]
   unlocks?: ReactNode[]
   actions: ReactNode
@@ -23,14 +25,20 @@ const TONE: Record<ResultPanelProps['tone'], string> = {
   cream: 'var(--fg)',
 }
 
-export function ResultPanel({ title, tone, tiles, unlocks, actions }: ResultPanelProps) {
+export function ResultPanel({ title, tone, header, tiles, unlocks, actions }: ResultPanelProps) {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="sv-display" style={{ color: TONE[tone] }}>
         {title}
       </h1>
 
-      <div className="grid grid-cols-3 gap-2">
+      {header}
+
+      <div
+        className={`grid gap-2 ${
+          tiles.length === 1 ? 'grid-cols-1' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+        }`}
+      >
         {tiles.map((tile) => (
           <div key={tile.label} className="vpx-soft p-3 flex flex-col gap-1">
             <span className="sv-number-m">{tile.value}</span>

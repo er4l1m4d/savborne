@@ -99,10 +99,12 @@ test('ResultPanel renders a display headline, tiles and actions', () => {
   const src = ui('ResultPanel.tsx')
   assert.match(src, /tone:\s*'mint'\s*\|\s*'coral'\s*\|\s*'cream'/)
   assert.match(src, /tiles:\s*ResultTile\[\]/)
+  assert.match(src, /header\?:\s*ReactNode/)
   assert.match(src, /unlocks\?/)
   assert.match(src, /sv-display/)
   assert.match(src, /vpx-soft/)
   assert.match(src, /sv-number-m/)
+  assert.match(src, /tiles\.length === 2 \? 'grid-cols-2' : 'grid-cols-3'/)
   assert.match(src, /actions/)
 })
 
