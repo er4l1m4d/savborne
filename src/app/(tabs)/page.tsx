@@ -1,13 +1,10 @@
 /**
- * Savborne — Home screen
+ * Savborne - Home
  *
- * Renders the player's current state (balance, level, XP bar, streak, bracket)
- * and the "Check In" button. Also redirects to /setup if the user has not
- * connected a savings account yet, and back to setup if the stored session
- * no longer matches the wallet.
- *
- * Awards summary from the check-in POST is displayed inline as a panel and
- * replaced on the next check-in.
+ * The handoff's landing screen: wordmark header with bracket/level chips, a
+ * character card and XP bar, a savings card that owns the check-in action, the
+ * two daily missions and a Battle card. The check-in summary appears inline
+ * when the player stays on Home.
  */
 
 'use client'
@@ -17,10 +14,17 @@ import { useRouter } from 'next/navigation'
 import { WalletError } from '@/lib/nimiq'
 import { authHeaders } from '@/lib/session'
 import { usePlayerSession, type PlayerMe } from '@/lib/usePlayerSession'
-import { BRACKETS, LUNA_PER_NIM, xpProgress, type Bracket } from '@/lib/constants'
+import {
+  BATTLE,
+  BRACKETS,
+  LUNA_PER_NIM,
+  xpProgress,
+  type Bracket,
+} from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeAction } from '@/lib/game/badges'
 import { SHIELD_CAP } from '@/lib/game/streaks'
+import { checkedInToday } from '@/lib/checkin-state'
 import {
   checkInDestination,
   takeCheckInAwards,
@@ -29,8 +33,11 @@ import {
   writeFirstCheckInHandoff,
   writeWithdrawalHandoff,
 } from '@/lib/checkin-handoff'
+import { CharacterArt } from '@/components/CharacterArt'
+import { Glyph } from '@/components/Glyphs'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Row } from '@/components/ui/Row'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Banner } from '@/components/ui/Banner'
@@ -63,9 +70,8 @@ export default function HomePage() {
   const [awards, setAwards] = useState<AwardSummary | null>(null)
   const [checkError, setCheckError] = useState<string | null>(null)
   const [dailyMissions, setDailyMissions] = useState<MissionStatus[] | null>(null)
+  const [deltaLuna, setDeltaLuna] = useState(0)
 
-  // Redirect rules — kept here (not in middleware) because the session lives
-  // in localStorage and cannot be read server-side.
   useEffect(() => {
     if (loading) return
     if (needsReconnect || session === null) router.replace('/setup')
@@ -86,12 +92,16 @@ export default function HomePage() {
         throw new Error(`Check-in failed (${res.status}): ${text}`)
       }
       const json = (await res.json()) as AwardSummary & { ok: true }
+      setDeltaLuna(
+        json.previousBalanceLuna === null ? 0 : json.balanceLuna - json.previousBalanceLuna,
+      )
       await refresh()
 
       const destination = checkInDestination({
         ...json,
         firstCheckIn: json.awarded.some((award) => award.key === 'first_steps'),
       })
+
       if (destination === 'first-checkin') {
         const first = json.awarded.find((award) => award.key === 'first_steps')
         const stored = writeFirstCheckInHandoff({
@@ -106,6 +116,7 @@ export default function HomePage() {
           return
         }
       }
+
       if (destination === 'withdrawal') {
         const stored = writeWithdrawalHandoff({
           fromLuna: json.previousBalanceLuna ?? player?.balanceLuna ?? json.balanceLuna,
@@ -120,6 +131,7 @@ export default function HomePage() {
           return
         }
       }
+
       if (destination === 'bracket-climb' && json.bracket) {
         const stored = writeBracketHandoff({
           bracket: json.bracket,
@@ -155,7 +167,7 @@ export default function HomePage() {
         .map((m) => ({ key: m.key, name: m.name, completed: m.completed, xpReward: m.xp_reward }))
       setDailyMissions(filtered)
     } catch {
-      /* non-fatal — daily missions are supplementary */
+      /* non-fatal - daily missions are supplementary */
     }
   }
 
@@ -167,7 +179,7 @@ export default function HomePage() {
 
   if (loading || !player) {
     return (
-      <ScreenShell variant="tab">
+      <ScreenShell variant="tab" title="Savborne">
         <p className="sv-body text-fg-muted">Loading your character…</p>
       </ScreenShell>
     )
@@ -175,154 +187,191 @@ export default function HomePage() {
 
   if (error) {
     return (
-      <ScreenShell variant="tab">
+      <ScreenShell variant="tab" title="Savborne">
         <Banner tone="error">{error}</Banner>
       </ScreenShell>
     )
   }
 
+  const bracket = player.bracket as Bracket | null
+  const alreadyCheckedIn = checkedInToday(player.lastCheckInAt)
+  const battlesLeft = Math.max(0, BATTLE.dailyLimit - player.battlesToday)
+
   return (
     <ScreenShell
       variant="tab"
-      title={player.displayName}
-      actions={<span className="sv-label text-fg-muted">Level {player.level}</span>}
+      title="Savborne"
+      actions={
+        <>
+          {bracket && (
+            <Chip variant="outline" color={BRACKETS[bracket].color}>
+              {BRACKETS[bracket].label}
+            </Chip>
+          )}
+          <Chip variant="fill">Lv {player.level}</Chip>
+        </>
+      }
     >
-      <Chips player={player} />
-      <XpBar player={player} />
-      <BalanceCard player={player} />
-      {dailyMissions && <DailyMissions missions={dailyMissions} />}
+      <CharacterCard player={player} bracket={bracket} />
 
+      <PixelPanel className="p-4 flex flex-col gap-3.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="sv-label font-bold text-fg-muted">Savings account</span>
+          <span
+            className={`sv-label ${alreadyCheckedIn ? 'text-mint font-bold' : 'text-fg-muted'}`}
+          >
+            {alreadyCheckedIn ? 'Checked in just now' : lastCheckInText(player.lastCheckInAt)}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="sv-number-xl">{(player.balanceLuna / LUNA_PER_NIM).toFixed(5)}</span>
+          <span className="sv-label text-fg-muted">NIM</span>
+          <span className="ml-auto">
+            {deltaLuna !== 0 ? (
+              <Chip
+                variant="outline"
+                color={deltaLuna > 0 ? 'var(--mint)' : 'var(--coral-text)'}
+              >
+                {deltaLuna > 0 ? '+' : '-'}
+                {(Math.abs(deltaLuna) / LUNA_PER_NIM).toFixed(2)} since last
+              </Chip>
+            ) : player.streakCurrent > 0 ? (
+              <Chip variant="outline" color="var(--coral-text)">
+                {player.streakCurrent}-day streak
+              </Chip>
+            ) : null}
+          </span>
+        </div>
+
+        <p className="sv-label text-fg-faint" aria-label={`${player.shields} of ${SHIELD_CAP} streak shields`}>
+          <span aria-hidden>
+            {Array.from({ length: SHIELD_CAP }, (_, i) => (
+              <span key={i} className={i < player.shields ? 'text-mint' : 'opacity-40'}>
+                {i === 0 ? '' : ' '}◈
+              </span>
+            ))}
+          </span>{' '}
+          shields · {player.checkInCount} check-in{player.checkInCount === 1 ? '' : 's'}
+        </p>
+
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={onCheckIn}
+          disabled={alreadyCheckedIn}
+          loading={checking}
+        >
+          {checking ? (
+            'Reading balance…'
+          ) : alreadyCheckedIn ? (
+            <>
+              <Glyph name="check" size={24} /> Checked in today
+            </>
+          ) : (
+            'Check in now'
+          )}
+        </Button>
+
+        {checkError && <Banner tone="error">{checkError}</Banner>}
+
+        <ButtonLink href="/vault" variant="ghost" className="self-start">
+          Open vault
+        </ButtonLink>
+      </PixelPanel>
+
+      {dailyMissions && <MissionsPanel missions={dailyMissions} />}
+      <BattleCard battlesLeft={battlesLeft} />
       {awards && <AwardsPanel awards={awards} />}
-      {checkError && <Banner tone="error">{checkError}</Banner>}
-
-      <Button variant="primary" size="lg" onClick={onCheckIn} loading={checking}>
-        {checking ? 'Reading balance…' : 'Check In'}
-      </Button>
-
-      <p className="sv-label text-fg-faint text-center">
-        Checking in reads the balance of your savings account and records one
-        snapshot. Savborne never moves your money.
-      </p>
     </ScreenShell>
   )
 }
 
-// ─── Subcomponents ────────────────────────────────────────────────────────
-
-function Chips({ player }: { player: PlayerMe }) {
-  const bracket = player.bracket as Bracket | null
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {bracket && (
-        <Chip variant="outline" color={BRACKETS[bracket].color}>
-          {BRACKETS[bracket].label}
-        </Chip>
-      )}
-      <Chip variant="outline" color="var(--butter-text)">
-        🔥 {player.streakCurrent} day{player.streakCurrent === 1 ? '' : 's'}
-      </Chip>
-      <span
-        aria-label={`${player.shields} of ${SHIELD_CAP} streak shields`}
-        title="Each shield absorbs one missed day"
-      >
-        <Chip variant="outline">
-          <span aria-hidden className="flex items-center gap-1.5">
-            {Array.from({ length: SHIELD_CAP }, (_, i) => (
-              <span
-                key={i}
-                className={i < player.shields ? 'text-mint' : 'text-fg-faint opacity-40'}
-              >
-                ◈
-              </span>
-            ))}
-            <span className="sv-label text-fg-faint">Shields</span>
-          </span>
-        </Chip>
-      </span>
-      <Chip variant="outline" color="var(--fg-muted)">
-        {player.checkInCount} check-in{player.checkInCount === 1 ? '' : 's'}
-      </Chip>
-    </div>
-  )
-}
-
-function XpBar({ player }: { player: PlayerMe }) {
+function CharacterCard({ player, bracket }: { player: PlayerMe; bracket: Bracket | null }) {
   const { inLevel, toNext } = xpProgress(player.level, player.xp)
   const pct = Math.min(100, Math.round((inLevel / toNext) * 100))
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex justify-between text-fg-faint">
-        <span className="sv-label">XP</span>
-        <span className="sv-figure">
-          {inLevel} / {toNext}
-        </span>
+    <PixelPanel className="p-4 flex items-center gap-4">
+      <div
+        className="w-[132px] h-[176px] shrink-0 flex items-center justify-center"
+        style={{ background: 'var(--sprite-well)' }}
+      >
+        <CharacterArt bracket={bracket} size={96} />
       </div>
-      <div className="vpx-soft h-3 bg-surface-low overflow-hidden">
-        <div
-          className="h-full bg-mint transition-[width] duration-500"
-          style={{ width: `${pct}%` }}
-        />
+      <div className="min-w-0 flex flex-1 flex-col gap-1.5">
+        <h2 className="sv-heading sv-break">{player.displayName}</h2>
+        <p className="sv-label text-fg-muted">
+          Level {player.level} · {bracket ? BRACKETS[bracket].label : 'No bracket'}
+        </p>
+        <div className="h-3.5 border-2 border-bevel bg-background mt-1">
+          <div className="h-full bg-mint" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="sv-label text-fg-faint">
+          {Math.max(0, toNext - inLevel)} XP to Level {player.level + 1}
+        </p>
       </div>
-    </div>
+    </PixelPanel>
   )
 }
 
-function BalanceCard({ player }: { player: PlayerMe }) {
-  const nim = player.balanceLuna / LUNA_PER_NIM
-  const last = player.lastCheckInAt
-    ? new Date(player.lastCheckInAt).toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-        timeZone: 'UTC',
-      })
-    : 'Not yet'
+function MissionsPanel({ missions }: { missions: MissionStatus[] }) {
   return (
-    <PixelPanel className="p-4 flex flex-col gap-1">
-      <h2 className="sv-section-label text-fg-faint">Savings balance</h2>
-      <p className="sv-number-xl text-foreground">
-        {nim.toFixed(5)} <span className="text-base text-fg-muted">NIM</span>
-      </p>
-      <p className="sv-label text-fg-faint">Last check-in: {last} UTC</p>
-      <ButtonLink href="/vault" variant="ghost" className="self-start">
-        Open vault
+    <PixelPanel className="px-4 py-0">
+      {missions.map((mission, index) => (
+        <Row key={mission.key} divider={index < missions.length - 1}>
+          <div className="flex items-center gap-3.5">
+            <span
+              className={`w-6 h-6 shrink-0 flex items-center justify-center border-2 ${
+                mission.completed ? 'bg-mint border-mint text-background' : 'border-mint'
+              }`}
+              aria-hidden
+            >
+              {mission.completed && <Glyph name="check" size={16} />}
+            </span>
+            <span
+              className={`sv-body font-semibold ${mission.completed ? 'text-fg-muted' : ''}`}
+            >
+              {mission.name}
+            </span>
+            <span
+              className={`ml-auto sv-label font-bold ${
+                mission.completed ? 'text-fg-muted' : 'text-mint'
+              }`}
+            >
+              +{mission.xpReward} XP{mission.completed ? ' earned' : ''}
+            </span>
+          </div>
+        </Row>
+      ))}
+    </PixelPanel>
+  )
+}
+
+function BattleCard({ battlesLeft }: { battlesLeft: number }) {
+  return (
+    <PixelPanel tone="cream" className="p-3.5 flex items-center gap-3.5">
+      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+        <span className="sv-subheading">Battle</span>
+        <span className="sv-label font-bold text-background/70">
+          {battlesLeft} battle{battlesLeft === 1 ? '' : 's'} left today
+        </span>
+      </div>
+      <ButtonLink href="/battle" variant="primary" size="md" fullWidth={false}>
+        Choose opponent
       </ButtonLink>
     </PixelPanel>
   )
 }
 
-function DailyMissions({ missions }: { missions: MissionStatus[] }) {
-  const completed = missions.filter((m) => m.completed).length
-  const total = missions.reduce((s, m) => s + m.xpReward, 0)
-  const earned = missions.filter((m) => m.completed).reduce((s, m) => s + m.xpReward, 0)
-  const pct = Math.min(100, Math.round((earned / total) * 100))
-  return (
-    <PixelPanel className="p-4 flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="sv-section-label text-fg-faint">Daily missions</h2>
-        <span className="sv-figure text-fg-muted">
-          {completed}/{missions.length} · {earned} / {total} XP
-        </span>
-      </div>
-      <div className="flex flex-col gap-2">
-        {missions.map((m) => (
-          <div key={m.key} className="flex items-center justify-between gap-3">
-            <span className={`sv-label min-w-0 ${m.completed ? 'text-mint' : 'text-fg-muted'}`}>
-              {m.completed ? '✓' : '·'} {m.name}
-            </span>
-            <span className={`sv-figure ${m.completed ? 'text-mint' : 'text-butter-text'}`}>
-              +{m.xpReward}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="h-1.5 bg-surface-low overflow-hidden">
-        <div
-          className="h-full bg-mint transition-[width] duration-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </PixelPanel>
-  )
+function lastCheckInText(iso: string | null): string {
+  if (!iso) return 'Not checked in yet'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return 'Not checked in yet'
+  return `Last check-in ${date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })}`
 }
 
 function AwardsPanel({ awards }: { awards: AwardSummary }) {
@@ -331,7 +380,7 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
   return (
     <PixelPanel tone="mint" className="p-4 flex flex-col gap-2">
       <h2 className="sv-subheading text-mint">
-        +{totalXp} XP{awards.leveledUp ? ` — Level up! Now level ${awards.newLevel}` : ''}
+        +{totalXp} XP{awards.leveledUp ? ` - Level up! Now level ${awards.newLevel}` : ''}
       </h2>
       <ul className="sv-label text-fg-soft flex flex-col gap-1">
         {awards.awarded.length === 0 && <li>Checked in. Balance recorded.</li>}
@@ -349,7 +398,7 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
       )}
       {awards.bracketChanged && (
         <p className="sv-label text-butter-text">
-          Your bracket changed — check your inventory for new items.
+          Your bracket changed - check your items for new unlocks.
         </p>
       )}
       {awards.withdrawalDetected && (
@@ -363,7 +412,7 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
           <li className="uppercase tracking-widest font-bold">New items unlocked</li>
           {awards.unlockedItems.map((k) => {
             const it = ITEMS.find((i) => i.key === k)
-            return it ? <li key={k}>◈ {it.name} — {it.blurb}</li> : null
+            return it ? <li key={k}>◈ {it.name} - {it.blurb}</li> : null
           })}
         </ul>
       )}
@@ -384,8 +433,6 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
     </PixelPanel>
   )
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────
 
 function describeError(err: unknown): string {
   if (err instanceof WalletError) {
