@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne — Missions UI review</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; padding:32px 24px 80px; background:#10171a; color:#e8efe9; font:14px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .lede { color:#9fb8ae; margin:0 0 28px; max-width:78ch; }
+  .screen { margin:0 0 40px; padding:20px; border:1px solid #2b3a35; border-radius:10px; background:#141d1f; }
+  .screen h2 { font-size:16px; margin:0; }
+  .route { color:#9fb8ae; font-size:12px; margin:2px 0 16px; }
+  .strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  figure { margin:0; }
+  figcaption { color:#9fb8ae; font-size:12px; margin:0 0 6px; }
+  img { display:block; width:100%; height:auto; border:1px solid #2b3a35; border-radius:6px; background:#0b1112; }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:#6fd0ae; font-size:13px; }
+  details .strip { margin-top:12px; }
+  .note { color:#9fb8ae; font-size:12px; margin-top:10px; }
+  table { border-collapse:collapse; width:100%; margin:12px 0 0; font-size:13px; }
+  th,td { border:1px solid #2b3a35; padding:8px 10px; text-align:left; }
+  th { color:#9fb8ae; font-weight:600; }
+  @media (max-width:760px) { .strip { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>Missions UI — current review</h1>
+<p class="lede">
+  The Missions batch at 360, 390 and 430: Repeating (Daily and Weekly groups),
+  One-time, all done, empty, error and loading. Renders are 2× device-scale
+  PNGs from the headless CDP harness with fixture data. Write corrections in
+  <code>NOTES.md</code>.
+</p>
+
+<section class="screen">
+  <h2>Repeating</h2>
+  <p class="route">/missions — Repeating tab; Daily 10 of 25 XP, Weekly 25 of 100 XP; done rows muted, open rows carry the description</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-repeating@360.png" alt="Repeating missions at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-repeating@390.png" alt="Repeating missions at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-repeating@430.png" alt="Repeating missions at 430px"></figure>
+  </div>
+  <details><summary>Before (Foundation 2 Missions)</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/missions@360.png" alt="Missions before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/missions@390.png" alt="Missions before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/missions@430.png" alt="Missions before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen">
+  <h2>One-time</h2>
+  <p class="route">/missions — One-time tab; one grouped panel, “Never expires”, no counter</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-one-time@360.png" alt="One-time missions at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-one-time@390.png" alt="One-time missions at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-one-time@430.png" alt="One-time missions at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>All done</h2>
+  <p class="route">/missions — every row completed; counters at the caps (25 of 25, 100 of 100)</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-done@360.png" alt="All missions done at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-done@390.png" alt="All missions done at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-done@430.png" alt="All missions done at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Empty</h2>
+  <p class="route">/missions — Repeating tab with an empty slate; the One-time tab has its own empty copy</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-empty@360.png" alt="Empty missions at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-empty@390.png" alt="Empty missions at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-empty@430.png" alt="Empty missions at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Error</h2>
+  <p class="route">/missions — “Couldn't load missions.” banner and a secondary Try again button</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-error@360.png" alt="Missions error at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-error@390.png" alt="Missions error at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-error@430.png" alt="Missions error at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Loading</h2>
+  <p class="route">/missions — tabs stay, the three-dot LoadingState waits in the body</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-loading@360.png" alt="Missions loading at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-loading@390.png" alt="Missions loading at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-loading@430.png" alt="Missions loading at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Audit</h2>
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Horizontal overflow</td><td>0 on every state at 360/390/430</td></tr>
+    <tr><td>Wide elements</td><td>none</td></tr>
+    <tr><td>Targets under 44×44</td><td>none (tabs and Try again pass; rows are not interactive)</td></tr>
+    <tr><td>Minimum font</td><td>12px</td></tr>
+    <tr><td>Focus</td><td>every tab stop in view, uncovered, 2px mint outline</td></tr>
+    <tr><td>Renders</td><td>18 PNGs (6 states × 3 widths)</td></tr>
+  </table>
+  <p class="note">Raw audit: <code>../audit/final-audit.jsonl</code>.</p>
+</section>
+
+<p class="note">
+  The real Supabase backend is not configured in this sandbox. Renders use
+  fixture data; the database and Nimiq Pay pass are the deployment step in
+  <code>NOTES.md</code>.
+</p>
+</body>
+</html>

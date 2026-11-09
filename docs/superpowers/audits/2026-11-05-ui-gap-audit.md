@@ -1137,3 +1137,109 @@ audit is `docs/superpowers/renders/onboarding/audit/final-audit.jsonl`.
 1. Apply `supabase/FINAL-SCHEMA.sql` before deploying.
 2. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step.
 3. Do not merge until the user signs off.
+
+
+---
+
+## 19. Missions UI status — 2026-11-09
+
+**Branch:** `missions-ui-redesign` (from `main` at `bbdc7f7`).
+**Verdict:** `/missions` is the handoff's Progress screen. Repeating holds Daily
+and Weekly, One-time holds the six one-time missions, every group is one
+grouped panel of 58px rows, and the group headers own the reset line and the
+period XP counter. The cap cards are gone.
+
+### What landed
+
+- **Tabs:** `Repeating` / `One-time` (`Tabs`, 44px). Repeating is selected on
+  mount; state is local, no query parameter.
+- **Group headers:** `Daily` with `Resets 00:00 UTC · 10 of 25 XP`, `Weekly`
+  with `Resets Monday 00:00 UTC · 25 of 100 XP`, `One-time` with
+  `Never expires`. Titles are 20px default text; captions are the new 12px
+  `.sv-caption` role.
+- **Rows:** one grouped `PixelPanel` per group; 24px box (mint fill + ground
+  check when done, mint outline when open), label, a 12px description on open
+  rows only, and `+N XP` in mint on open rows or muted on done rows. Done rows
+  are exactly 58px; open rows grow with the description. Rows are status only.
+- **Counters:** earned = sum of completed `xpReward` in the group, clamped to
+  `counters.dailyXpCap` / `weeklyXpCap`. `src/lib/missions-ui.ts` owns
+  `earnedXp` and `xpCounter`.
+- **States:** the branded `LoadingState` with the tabs still visible; error as
+  `Couldn't load missions.` plus a secondary `Try again`; per-tab empty panels;
+  an all-done slate with the counters at the caps; the 401 redirect unchanged.
+- **Removed:** `CapMeters`, `Cap`, the per-row reset lines, the `Done` chip and
+  the mint group titles.
+- **Home fix (separate commit):** Home now reads `xpReward` (with an
+  `xp_reward` fallback), so its two daily rows no longer print `+undefined XP`.
+- **Shared change:** one additive rule, `.sv-caption` (12px/600/1.4,
+  sentence case), pinned by `panels.test.ts`.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 380 pass, 0 fail (370 before the batch) |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 50 warnings, 0 errors |
+| `npm run build` | exit 0; `/missions` compiles |
+| Type floor | no `text-[10px]`/`text-[11px]`; min rendered font 12 |
+| Audit | 18 rows (6 states x 360/390/430): `overflowX: 0`, no wide elements, no interactive target below 44px, min font 12, every tab stop in view/uncovered with the mint outline |
+
+### 360 behaviour
+
+- Both tabs and both group captions fit on one line: the Weekly caption is
+  231px inside a 324px body, so the handoff copy stays intact.
+- `Steady Saver`'s description wraps to two lines at 360 and 390; the row grows
+  and nothing is clipped or truncated.
+- Done rows stay at 58px; the one-time panel's six rows scroll with the body.
+- Loading centres the three dots in the remaining body; error and empty fit
+  without scrolling; the retry button is 56px and left-aligned.
+
+### Rulings
+
+- **Tabs, not stacked sections.** The handoff uses tabs, and splitting
+  Repeating from One-time keeps the Daily and Weekly headers above the fold.
+- **Read-only checkboxes.** Missions are credited by check-in and battle on the
+  server; there is nothing to toggle. Completion is carried by the muted label
+  and a visually hidden `(completed)`, not by colour alone.
+- **Descriptions on open rows only.** Done rows are scannable at 58px, matching
+  the handoff; the explanation is only needed before the mission is earned.
+- **Reset in the group caption only.** Repeating it per row duplicated
+  information and pushed rows to three and four lines.
+- **One grouped panel per group.** One panel per mission (the old screen)
+  destroyed the grouped-row rhythm.
+- **One-time has no counter.** The API has no one-time budget; the tab shows
+  `Never expires` and the six rewards instead of an invented total.
+- **Earned XP is derived from the rows.** `counters.weeklyXpEarned` is a
+  check-in count in the current API, so displaying it would show `1 of 100 XP`
+  beside a ticked 25 XP row. The caps still come from the API, and the sum
+  equals the cap when the group is complete.
+- **The Weekly Strategist progress meter is deferred.** The handoff draws
+  `1 of 2 wins`, but the API returns only `completed`; a meter would need a new
+  payload field, which this UI batch does not add.
+- **Default text for group titles.** Mint is the success/progress/you colour;
+  the handoff draws the group names in default text.
+- **Try again.** The handoff has no Missions error screen, so the shared Banner
+  gains a secondary action; the error is recoverable without leaving the tab.
+- **Home's `xpReward` fix is separate.** It is a field-name bug, not a Missions
+  port, and it is committed on its own.
+
+### Renders
+
+18 PNGs in `docs/superpowers/renders/missions/after/` (6 states at
+360/390/430) and 3 before PNGs in `docs/superpowers/renders/missions/before/`.
+The review page is `docs/superpowers/renders/missions/review/index.html`;
+`NOTES.md` holds the sign-off list and deliberate choices. Raw audit is
+`docs/superpowers/renders/missions/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. `/api/missions` and `/api/players/me` still report weekly XP as a check-in
+   count; the header does not consume it, but a later API batch should sum the
+   week's weekly-mission rewards under the existing field names.
+2. Weekly Strategist progress needs a payload field before the handoff's
+   `1 of 2 wins` meter can land.
+3. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step; the
+   sandbox has no `.env.local`.
+4. Do not merge or push until the user signs off.
+
