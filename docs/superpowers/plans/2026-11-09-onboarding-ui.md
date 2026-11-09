@@ -212,11 +212,12 @@ type Draft = {
 }
 
 useOnboarding(): Draft & {
-  startConnect(): Promise<void>
+  startConnect(): Promise<string[]>
   pickAccount(address: string): Promise<'reconnect' | 'created'>
   lockVault(passphrase: string): Promise<void>
   acceptPrivacy(version: string): void
   setDisplayName(value: string): void
+  resetVault(): void
   finish(displayName: string): Promise<void>
 }
 ```

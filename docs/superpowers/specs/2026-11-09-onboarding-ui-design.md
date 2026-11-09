@@ -112,13 +112,15 @@ type Draft = {
 
 Methods:
 
-- `startConnect()` - calls `listAccounts()`, stores the list.
+- `startConnect()` - calls `listAccounts()`, stores the list and returns it.
 - `pickAccount(address)` - probes `GET /api/players/me` through
   `reconnectDecision`; a `200` writes the session and replaces to `/`; a `404`
   generates the phrase and vault address on device; anything else throws.
 - `lockVault(passphrase)` - encrypts, writes the local vault, clears the phrase,
   sets `vaultLocked` and pushes `/privacy`.
-- `acceptPrivacy()` - stores `PRIVACY_NOTICE_VERSION` in the draft.
+- `acceptPrivacy(version)` - stores the accepted notice version in the draft.
+- `resetVault()` - drops an unregistered phrase and returns to step 1's account
+  picker.
 - `finish(displayName)` - validates 1-16, posts `POST /api/players` with
   `privacyNoticeVersion`, writes the session and replaces to `/`.
 

@@ -9,6 +9,8 @@ const LAYOUT = source('../app/(onboarding)/layout.tsx')
 const PROVIDER = source('../components/onboarding/OnboardingProvider.tsx')
 const SCREEN = source('../components/onboarding/OnboardingScreen.tsx')
 const WELCOME = source('../app/(onboarding)/welcome/page.tsx')
+const CONNECT = source('../app/(onboarding)/connect/page.tsx')
+const QUIZ = source('../components/vault/BackupQuiz.tsx')
 
 test('/setup redirects to /welcome', () => {
   assert.match(SETUP, /redirect\('\/welcome'\)/)
@@ -48,4 +50,34 @@ test('Welcome uses the brand, character art, coral CTA and footer', () => {
   assert.match(WELCOME, /variant="primary"/)
   assert.match(WELCOME, /Built for Nimiq Pay/)
   assert.doesNotMatch(WELCOME, /StepBars/)
+})
+
+test('Connect is step 1 with the handoff explainer and can/cannot cards', () => {
+  assert.match(CONNECT, /<OnboardingScreen step=\{1\} backHref="\/welcome">/)
+  assert.match(CONNECT, /Create your vault/)
+  assert.match(CONNECT, /Create your vault\s*<\/Button>/s)
+  assert.match(CONNECT, /const EXPLAINER = \[/)
+  assert.match(CONNECT, /Savborne can/)
+  assert.match(CONNECT, /Savborne cannot/)
+  assert.match(CONNECT, /Read the vault balance/)
+  assert.match(CONNECT, /Move, lock or spend your NIM/)
+  assert.match(CONNECT, /reconnect it instead of/)
+})
+
+test('Connect keeps the 24-word ceremony and the ready state', () => {
+  assert.match(CONNECT, /<PhraseCeremony/)
+  assert.match(CONNECT, /<BackupQuiz/)
+  assert.match(CONNECT, /<PassphraseField onSet=\{onLock\} \/>/)
+  assert.match(CONNECT, /Your vault is ready/)
+  assert.match(CONNECT, /router\.push\('\/privacy'\)/)
+  assert.match(CONNECT, /resetVault/)
+  assert.match(CONNECT, /startConnect/)
+  assert.match(CONNECT, /pickAccount/)
+  assert.match(CONNECT, /lockVault/)
+  assert.doesNotMatch(CONNECT, /window\.(?:local|session)Storage/)
+})
+
+test('the backup quiz owns an h1 only in onboarding', () => {
+  assert.match(QUIZ, /const Heading = inline \? 'h2' : 'h1'/)
+  assert.match(QUIZ, /<Heading className=\{inline \? 'sv-heading' : 'sv-heading-lg'\}>/)
 })

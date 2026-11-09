@@ -44,6 +44,7 @@ export function BackupQuiz({
   const [error, setError] = useState<string | null>(null)
 
   const allFilled = positions.every((p) => (answers[p] ?? '').trim().length > 0)
+  const Heading = inline ? 'h2' : 'h1'
 
   function check() {
     const wrong = positions.filter(
@@ -59,8 +60,8 @@ export function BackupQuiz({
 
   return (
     <section className={`flex flex-col gap-4 ${inline ? 'mt-0' : 'mt-4'}`}>
-      {/* h2, not h1: this is always nested under the step's or the Account section's heading. */}
-      <h2 className="sv-heading">Confirm your backup</h2>
+      {/* The onboarding step owns its h1; the Settings use is nested under "Account". */}
+      <Heading className={inline ? 'sv-heading' : 'sv-heading-lg'}>Confirm your backup</Heading>
       <p className="sv-body text-fg-muted">
         Type these four words from your written copy, in order.
       </p>
