@@ -26,13 +26,14 @@ const PAGES = [
   '../app/settings/delete/page.tsx',
 ]
 
-test('the loader is the brand, three pixel dots and one label', () => {
-  assert.match(LOADER, /<BrandMark \/>/)
+test('the loader is three pixel dots and an accessible label only', () => {
   assert.match(LOADER, /className="sv-loader" aria-hidden/)
   assert.match(LOADER, /role="status"/)
-  assert.match(LOADER, /aria-live="polite"/)
-  assert.match(LOADER, /Loading Savborne\.\.\./)
+  assert.match(LOADER, /aria-label=\{label\}/)
+  assert.match(LOADER, /label = 'Loading Savborne\.\.\.'/)
   assert.match(LOADER, /setTimeout\(\(\) => setVisible\(true\), 150\)/)
+  assert.doesNotMatch(LOADER, /BrandMark/)
+  assert.doesNotMatch(LOADER, /<span className="sv-body/)
 })
 
 test('the dots are 8px mint and stop under reduced motion', () => {

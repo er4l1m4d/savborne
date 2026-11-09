@@ -1072,10 +1072,11 @@ in a grid row now share the same height.
 
 ### What landed
 
-- **Loading state:** `src/components/ui/LoadingState.tsx` renders the handoff
-  brand mark, three 8px mint dots and "Loading Savborne...". It waits 150ms
-  before appearing so a fast load does not flash it, is a polite status region,
-  and the dots stop under reduced motion. It replaces the plain loading text on
+- **Loading state:** `src/components/ui/LoadingState.tsx` renders three 8px
+  mint dots and nothing else. The status region keeps a non-visible "Loading
+  Savborne..." label for screen readers. It waits 150ms before appearing so a
+  fast load does not flash it, and the dots stop under reduced motion. It
+  replaces the plain loading text on
   Home, Profile, Missions, Ranks, Vault, Battle menu, Items, Receipts, ranked
   queue, arena, result, friend challenge, Bracket Climb, First check-in,
   Withdrawal, Settings and Delete account. The Nimiq Pay Preparing state keeps
@@ -1100,8 +1101,8 @@ in a grid row now share the same height.
 
 ### 360 behaviour
 
-- Loading: the brand and dots centre in the body under the existing header;
-  the label and dots fit at 360.
+- Loading: the three dots centre in the body under the existing header; no
+  text is drawn.
 - Privacy: the collect card and the don't card now end on the same line; the
   disclosure, consent line and Continue still fit with the disclosure closed.
 - Items: each row's two cards share a bottom edge; the taller description sets
@@ -1110,9 +1111,10 @@ in a grid row now share the same height.
 
 ### Rulings
 
-- **Brand + dots, not the character.** The chosen avatar is not known during the
-  first load, so a character loader could flash Hero before a Heroine profile
-  arrives. The dots are always correct.
+- **Dots only.** The wordmark and visible label were removed; the loader is
+  three mint dots. The status region keeps a non-visible "Loading Savborne..."
+  label for screen readers. No character art is used, so no wrong avatar can
+  flash before the profile arrives.
 - **150ms delay.** A fast page continues straight to content; the loader only
   appears when the wait is perceptible.
 - **Gate Preparing stays separate.** It is the wallet check, not a page data
