@@ -818,3 +818,98 @@ privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
    `privacy_consent_at` and `privacy_notice_version`.
 3. The real-device Nimiq Pay pass at 360-430 is the user's final sign-off step.
 4. Do not merge until the user signs off.
+
+---
+
+## 15. Onboarding focus pass - 2026-11-09
+
+**Branch:** `onboarding-ui-redesign` (continues the Onboarding batch).
+**Verdict:** the visible copy is shorter, the progress indicator now matches the
+five screens, and every trimmed explanation is reachable later in Settings.
+Section 14's three-step model is superseded by this pass.
+
+### What landed
+
+- **Five steps:** Welcome 1/5, Vault 2/5 (intro + account picker), Backup 3/5
+  (24 words, quiz, passphrase, ready), Privacy 4/5, Name 5/5. The label and the
+  five 8px bars switch from 2 to 3 inside `/connect` when the phrase appears.
+  Welcome shows the indicator in the brand row. `StepLabel` owns the
+  `aria-current="step"` text; the bars are decorative.
+- **Vault intro:** the three visible numbered steps are gone. The screen is a
+  short paragraph, the can/cannot cards and a closed "How your vault works"
+  disclosure. The same three steps are a section in Settings.
+- **Backup:** the warning is two sentences and the passphrase note is two
+  sentences, both from `src/lib/onboarding-copy.ts`. The quiz instruction is
+  unchanged; its role is explained in Settings.
+- **Privacy:** the short version is two sentences. Two cards stay visible
+  (collect/don't); public and storage sit behind one closed "What's public and
+  where it's stored" disclosure with the notice version. The full four-card
+  notice is in Settings; the compact Settings sheet stays.
+- **Settings > How Savborne works:** a pushed reference linked from Settings >
+  Help. Sections: Your vault, Backup and recovery, Privacy and data, Nimiq Pay.
+  It uses the same copy module as onboarding, so the long and short versions
+  cannot drift.
+- **Focus:** `summary` joins the global 2px mint focus ring; the disclosures are
+  44px targets and were included in the audit.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 354 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 50 warnings, 0 errors |
+| `npm run build` | exit 0; `/settings/how-it-works` added, all onboarding routes compiled |
+| Type floor | no `text-[10px]`/`text-[11px]`; the privacy consent line is 12px |
+| Audit | 54 rows (18 states x 360/390/430): `overflowX: 0`, no wide elements, no target below 44px, min font 12, every tab stop in view/uncovered with the mint outline; both disclosures audited closed and open |
+
+### 360 behaviour
+
+- Welcome: the brand row, "Step 1 of 5" and five bars fit on one line; the
+  headline keeps its three-to-four-line wrap and the CTA sits at the bottom.
+- Create your vault: the short intro and cards fit with the CTA; opening "How
+  your vault works" adds the three steps and the page scrolls. The account
+  picker and the step 2 label are unchanged.
+- Backup: the two-sentence warning, the 24-word grid, quiz and passphrase fit
+  without horizontal overflow; the step 3 label is consistent across all four
+  phases.
+- Privacy: with the disclosure closed, the consent line and Continue fit at
+  360. Opening the disclosure shows public and storage and the page scrolls.
+- Name: unchanged at step 5; the counter, error and CTA fit.
+- How Savborne works: the title wraps at 360 and every section scrolls; no
+  action is truncated.
+
+### Rulings
+
+- **Five steps, dynamic label in `/connect`.** No new route, so the phrase
+  never crosses a route and the browser back stack stays simple. Welcome is
+  counted because the count has to be honest from the first screen.
+- **Details live in Settings.** The onboarding disclosures are for the moment of
+  decision; the reference is for later. The compact privacy sheet remains the
+  quick check.
+- **The vault intro keeps the can/cannot cards.** The cards are the scannable
+  promise; the three numbered steps are detail, so they are closed and
+  repeated in Settings.
+- **The 24-word risk stays visible on Backup.** It is the one irreversible
+  fact, so it is two sentences on the screen and fully explained in Settings.
+- **The privacy short version drops the 24-word risk.** That risk is on Backup
+  and in Settings; the privacy screen keeps the no-custody promise and the
+  collect/don't cards.
+- **Native `<details>` for both disclosures.** No new primitive, no JS, keyboard
+  operable, and it gets the same mint focus ring.
+- **No API, SQL or gate changes.** The step and copy pass is UI-only.
+
+### Renders
+
+54 PNGs in `docs/superpowers/renders/onboarding/after/` (18 states at
+360/390/430), including the open vault and privacy disclosures and How Savborne
+works. The review page is
+`docs/superpowers/renders/onboarding/review/index.html`; raw audit is
+`docs/superpowers/renders/onboarding/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. Apply `supabase/FINAL-SCHEMA.sql` before deploying: the API route calls the
+   7-argument `create_player_with_vault`.
+2. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step.
+3. Do not merge until the user signs off.

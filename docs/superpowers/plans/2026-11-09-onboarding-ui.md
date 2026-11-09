@@ -5,6 +5,8 @@
 **Spec:** `docs/superpowers/specs/2026-11-09-onboarding-ui-design.md`
 **Reference:** `Savborne-handoff.html` figures `A_Welcome`, `A_Connect`, `A_Privacy`, `A_Name`, `A_Gate`, `A_Preparing`, `A_UpdatePay`, `A_BalanceError`.
 
+**Later revision:** the 2026-11-09 focus pass (`2026-11-09-onboarding-focus.md`) supersedes the step model and the visible copy in this plan.
+
 ## Global constraints
 
 - Branch `onboarding-ui-redesign` from `main`; no stacking.

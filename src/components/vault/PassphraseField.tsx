@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Savborne — vault passphrase field (onboarding step 3, part 3).
+ * Savborne — vault passphrase field (Backup step 3 of 5, part 3).
  *
  * The passphrase encrypts the phrase at rest. It is required to withdraw and
  * to re-display the phrase, and can be reset by re-entering the 24 words.
@@ -13,6 +13,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
+import { PASSPHRASE_NOTE } from '@/lib/onboarding-copy'
 
 export const MIN_PASSPHRASE_LENGTH = 8
 
@@ -45,11 +46,7 @@ export function PassphraseField({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="sv-body text-fg-muted">
-        Choose a passphrase. It locks your vault on this device and is asked for before every
-        withdrawal. Savborne cannot reset it — but you can reset it yourself with your 24
-        words, so it is not another thing to lose.
-      </p>
+      <p className="sv-body text-fg-muted">{PASSPHRASE_NOTE}</p>
 
       <label className="flex flex-col gap-1">
         <span className="sv-label text-fg-faint">Passphrase</span>

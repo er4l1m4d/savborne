@@ -222,6 +222,11 @@ body {
   outline-offset: 2px;
 }
 
+:where(summary):focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 2px;
+}
+
 /* ── Foundation 2: motion ─────────────────────────────────────────────── */
 @keyframes sv-sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes sv-dot { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }

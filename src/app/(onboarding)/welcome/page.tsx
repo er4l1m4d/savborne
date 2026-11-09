@@ -10,11 +10,16 @@ import { CharacterArt } from '@/components/CharacterArt'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { ButtonLink } from '@/components/ui/Button'
+import { StepBars, StepLabel } from '@/components/ui/StepBars'
 
 export default function WelcomePage() {
   return (
     <ScreenShell variant="pushed" bodyClassName="pt-0 gap-5">
-      <BrandMark />
+      <div className="flex h-11 items-center justify-between gap-3">
+        <BrandMark />
+        <StepLabel step={1} total={5} />
+      </div>
+      <StepBars step={1} total={5} />
 
       <PixelPanel className="h-[300px] flex items-center justify-center">
         <div className="w-[220px] h-[260px] bg-sprite-well flex items-center justify-center">

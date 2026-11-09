@@ -6,6 +6,8 @@
 **Reference:** `Savborne-handoff.html` figures `A_Welcome`, `A_Connect`, `A_Privacy`, `A_Name`, `A_Gate`, `A_Preparing`, `A_UpdatePay`, `A_BalanceError`.
 **Audit:** `docs/superpowers/audits/2026-11-05-ui-gap-audit.md` sections 3.1 and 6.
 
+**Later revision:** the 2026-11-09 focus pass (`2026-11-09-onboarding-focus-design.md`) changes the step model to five, shortens the visible copy and moves the details into Settings.
+
 ## 1. Goal
 
 Rebuild onboarding as the handoff's four screens, using the Foundation 2 shell,

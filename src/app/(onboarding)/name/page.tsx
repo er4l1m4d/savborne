@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Savborne - Name your character (step 3 of 3)
+ * Savborne - Name your character (step 5 of 5)
  *
  * Character preview, a 16-character field with a live counter, and a coral CTA
  * that creates the player and vault rows together. The address never appears.
@@ -54,7 +54,7 @@ export default function NamePage() {
   }
 
   return (
-    <OnboardingScreen step={3} backHref="/privacy">
+    <OnboardingScreen step={5} backHref="/privacy">
       <h1 className="sv-heading-lg">Name your character</h1>
       <p className="sv-body text-fg-muted">
         Your display name is your character&apos;s name. It appears on the

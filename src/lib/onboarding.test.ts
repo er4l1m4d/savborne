@@ -11,6 +11,7 @@ const SCREEN = source('../components/onboarding/OnboardingScreen.tsx')
 const WELCOME = source('../app/(onboarding)/welcome/page.tsx')
 const CONNECT = source('../app/(onboarding)/connect/page.tsx')
 const QUIZ = source('../components/vault/BackupQuiz.tsx')
+const STEPS = source('../components/ui/StepBars.tsx')
 
 test('/setup redirects to /welcome', () => {
   assert.match(SETUP, /redirect\('\/welcome'\)/)
@@ -33,11 +34,13 @@ test('the phrase never reaches browser storage', () => {
   assert.match(PROVIDER, /setPhrase\(null\)/)
 })
 
-test('the shared screen carries the step label and bars', () => {
-  assert.match(SCREEN, /aria-current="step"/)
-  assert.match(SCREEN, /Step \{step\} of 3/)
-  assert.match(SCREEN, /<StepBars step=\{step\} total=\{3\} \/>/)
+test('the shared screen carries the five-step label and bars', () => {
+  assert.match(SCREEN, /<StepLabel step=\{step\} total=\{total\} \/>/)
+  assert.match(SCREEN, /<StepBars step=\{step\} total=\{total\} \/>/)
+  assert.match(SCREEN, /total = 5/)
   assert.match(SCREEN, /variant="pushed"/)
+  assert.match(STEPS, /aria-current="step"/)
+  assert.match(STEPS, /Step \{current\} of \{safeTotal\}/)
 })
 
 test('Welcome uses the brand, character art, coral CTA and footer', () => {
@@ -49,18 +52,23 @@ test('Welcome uses the brand, character art, coral CTA and footer', () => {
   assert.match(WELCOME, /href="\/connect"/)
   assert.match(WELCOME, /variant="primary"/)
   assert.match(WELCOME, /Built for Nimiq Pay/)
-  assert.doesNotMatch(WELCOME, /StepBars/)
+  assert.match(WELCOME, /<StepLabel step=\{1\} total=\{5\} \/>/)
+  assert.match(WELCOME, /<StepBars step=\{1\} total=\{5\} \/>/)
 })
 
-test('Connect is step 1 with the handoff explainer and can/cannot cards', () => {
-  assert.match(CONNECT, /<OnboardingScreen step=\{1\} backHref="\/welcome">/)
+test('Connect is steps 2 and 3 with the vault cards', () => {
+  assert.match(CONNECT, /const step = stage === 'intro' \|\| stage === 'pick' \? 2 : 3/)
+  assert.match(CONNECT, /<OnboardingScreen step=\{step\} backHref="\/welcome">/)
   assert.match(CONNECT, /Create your vault/)
   assert.match(CONNECT, /Create your vault\s*<\/Button>/s)
-  assert.match(CONNECT, /const EXPLAINER = \[/)
-  assert.match(CONNECT, /Savborne can/)
-  assert.match(CONNECT, /Savborne cannot/)
-  assert.match(CONNECT, /Read the vault balance/)
-  assert.match(CONNECT, /Move, lock or spend your NIM/)
+  assert.match(CONNECT, /from '@\/lib\/onboarding-copy'/)
+  assert.match(CONNECT, /VAULT_INTRO/)
+  assert.match(CONNECT, /VAULT_STEPS/)
+  assert.match(CONNECT, /VAULT_CAN\b/)
+  assert.match(CONNECT, /VAULT_CANNOT/)
+  assert.match(CONNECT, /<details>/)
+  assert.match(CONNECT, /How your vault works/)
+  assert.doesNotMatch(CONNECT, /const EXPLAINER/)
   assert.match(CONNECT, /reconnect it instead of/)
 })
 
@@ -82,17 +90,17 @@ test('the backup quiz owns an h1 only in onboarding', () => {
   assert.match(QUIZ, /<Heading className=\{inline \? 'sv-heading' : 'sv-heading-lg'\}>/)
 })
 
-test('Privacy is step 2 and hands the accepted version to the draft', () => {
+test('Privacy is step 4 and hands the accepted version to the draft', () => {
   const PRIVACY_PAGE = source('../app/(onboarding)/privacy/page.tsx')
-  assert.match(PRIVACY_PAGE, /<OnboardingScreen step=\{2\} backHref="\/connect">/)
-  assert.match(PRIVACY_PAGE, /<PrivacyNotice variant="full" \/>/)
+  assert.match(PRIVACY_PAGE, /<OnboardingScreen step=\{4\} backHref="\/connect">/)
+  assert.match(PRIVACY_PAGE, /<PrivacyNotice variant="onboarding" \/>/)
   assert.match(PRIVACY_PAGE, /acceptPrivacy\(PRIVACY_NOTICE_VERSION\)/)
   assert.match(PRIVACY_PAGE, /router\.push\('\/name'\)/)
 })
 
-test('Name is step 3 with the preview, counter and error slot', () => {
+test('Name is step 5 with the preview, counter and error slot', () => {
   const NAME = source('../app/(onboarding)/name/page.tsx')
-  assert.match(NAME, /<OnboardingScreen step=\{3\} backHref="\/privacy">/)
+  assert.match(NAME, /<OnboardingScreen step=\{5\} backHref="\/privacy">/)
   assert.match(NAME, /<CharacterArt bracket=\{null\} size=\{128\} \/>/)
   assert.match(NAME, /maxLength=\{DISPLAY_NAME_MAX\}/)
   assert.match(NAME, /aria-describedby="name-hint name-count name-error"/)

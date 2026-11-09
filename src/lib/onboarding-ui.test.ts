@@ -81,3 +81,13 @@ test('the gate phone glyph is a 24x24 handoff drawing', () => {
   assert.match(GLYPHS.phone.paths, /fill="#6FD0AE"/)
   assert.match(GLYPHS.phone.paths, /fill="#F2735A"/)
 })
+
+test('StepLabel shows Step N of total and marks the current step', () => {
+  assert.match(STEPS, /export function StepLabel/)
+  assert.match(STEPS, /aria-current="step"/)
+  assert.match(STEPS, /Step \{current\} of \{safeTotal\}/)
+})
+
+test('the vault and privacy disclosures have a mint focus ring', () => {
+  assert.match(CSS, /:where\(summary\):focus-visible\s*\{[^}]*outline:\s*2px solid var\(--mint\)/s)
+})

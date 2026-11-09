@@ -1,11 +1,12 @@
 'use client'
 
 /**
- * Savborne - Create your vault (step 1 of 3)
+ * Savborne - Vault (step 2 of 5) and Backup (step 3 of 5)
  *
- * The handoff's Connect layout, rewritten for the non-custodial vault: the
- * numbered explainer and the can/cannot cards describe what actually happens,
- * and the existing 24-word ceremony runs inside the same step.
+ * The handoff's Connect layout, rewritten for the non-custodial vault: a short
+ * intro, the can/cannot cards and a closed vault explainer lead into the
+ * existing 24-word ceremony. The step label moves from 2 to 3 when the phrase
+ * exists, inside the same route.
  */
 
 import { useState } from 'react'
@@ -19,14 +20,14 @@ import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { describeWalletError } from '@/lib/wallet-errors'
+import {
+  VAULT_CAN,
+  VAULT_CANNOT,
+  VAULT_INTRO,
+  VAULT_STEPS,
+} from '@/lib/onboarding-copy'
 
 type CeremonyPhase = 'show' | 'quiz' | 'passphrase'
-
-const EXPLAINER = [
-  'Tap Create, then approve sharing your account address in Nimiq Pay.',
-  'Savborne generates 24 words on this device and derives a vault only you control.',
-  'Write the words down and lock the vault with a passphrase. Savborne reads its balance each time you check in.',
-]
 
 export default function ConnectPage() {
   const router = useRouter()
@@ -53,6 +54,8 @@ export default function ConnectPage() {
       : showPicker
         ? 'pick'
         : 'intro'
+
+  const step = stage === 'intro' || stage === 'pick' ? 2 : 3
 
   async function onCreate() {
     setLoading(true)
@@ -101,40 +104,40 @@ export default function ConnectPage() {
   }
 
   return (
-    <OnboardingScreen step={1} backHref="/welcome">
+    <OnboardingScreen step={step} backHref="/welcome">
       {stage === 'intro' && (
         <>
           <h1 className="sv-heading-lg">Create your vault</h1>
-          <p className="sv-body text-fg-muted">
-            Choose the wallet account that identifies you. Savborne generates a vault
-            only you control. You need at least 1 NIM in it to join.
-          </p>
-
-          <PixelPanel className="p-[18px]">
-            <ol className="flex flex-col gap-4">
-              {EXPLAINER.map((line, index) => (
-                <li key={line} className="flex items-start gap-[14px]">
-                  <span className="w-7 h-7 shrink-0 bg-mint text-background text-sm font-bold flex items-center justify-center">
-                    {index + 1}
-                  </span>
-                  <span className="text-[15px] leading-[1.45] font-semibold">{line}</span>
-                </li>
-              ))}
-            </ol>
-          </PixelPanel>
+          <p className="sv-body text-fg-muted">{VAULT_INTRO}</p>
 
           <div className="grid grid-cols-2 gap-3">
             <PixelPanel className="p-3 flex flex-col gap-1.5">
               <span className="sv-label text-mint">Savborne can</span>
-              <span className="text-sm font-semibold leading-snug">Read the vault balance</span>
+              <span className="text-sm font-semibold leading-snug">{VAULT_CAN}</span>
             </PixelPanel>
             <PixelPanel className="p-3 flex flex-col gap-1.5">
               <span className="sv-label text-coral-text">Savborne cannot</span>
-              <span className="text-sm font-semibold leading-snug">
-                Move, lock or spend your NIM
-              </span>
+              <span className="text-sm font-semibold leading-snug">{VAULT_CANNOT}</span>
             </PixelPanel>
           </div>
+
+          <details>
+            <summary className="sv-label text-mint min-h-11 cursor-pointer py-3">
+              How your vault works
+            </summary>
+            <PixelPanel className="p-[18px] mt-1">
+              <ol className="flex flex-col gap-4">
+                {VAULT_STEPS.map((line, index) => (
+                  <li key={line} className="flex items-start gap-[14px]">
+                    <span className="w-7 h-7 shrink-0 bg-mint text-background text-sm font-bold flex items-center justify-center">
+                      {index + 1}
+                    </span>
+                    <span className="text-[15px] leading-[1.45] font-semibold">{line}</span>
+                  </li>
+                ))}
+              </ol>
+            </PixelPanel>
+          </details>
 
           <div className="mt-auto flex flex-col gap-3">
             <Button variant="primary" loading={loading} onClick={onCreate}>

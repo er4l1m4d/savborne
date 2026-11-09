@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Savborne — backup quiz (onboarding step 3, part 2).
+ * Savborne — backup quiz (Backup step 3 of 5, part 2).
  *
  * Four random positions must be re-typed. This proves the player wrote
  * *something* down; it is a speed bump against tapping through, not

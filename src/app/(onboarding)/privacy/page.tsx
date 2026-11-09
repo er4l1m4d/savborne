@@ -1,11 +1,11 @@
 'use client'
 
 /**
- * Savborne - Privacy notice (step 2 of 3)
+ * Savborne - Privacy notice (step 4 of 5)
  *
- * The handoff's short version, four cards and consent line. Accepting records
- * the notice version in the draft; it is stored with the player when the Name
- * step creates the row.
+ * The short version, two cards, one closed disclosure and the consent line.
+ * Accepting records the notice version in the draft; it is stored with the
+ * player when the Name step creates the row.
  */
 
 import { useEffect } from 'react'
@@ -32,9 +32,9 @@ export default function PrivacyPage() {
   }
 
   return (
-    <OnboardingScreen step={2} backHref="/connect">
+    <OnboardingScreen step={4} backHref="/connect">
       <h1 className="sv-heading-lg">Privacy notice</h1>
-      <PrivacyNotice variant="full" />
+      <PrivacyNotice variant="onboarding" />
       <div className="mt-auto flex flex-col gap-3 border-t-2 border-bevel pt-3.5">
         <p className="text-xs leading-[1.45] font-semibold text-fg-muted">
           {PRIVACY_CONSENT_LINE}

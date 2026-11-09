@@ -9,7 +9,7 @@
 export const PRIVACY_NOTICE_VERSION = '2026-11-09'
 
 export const PRIVACY_SHORT_VERSION =
-  'Savborne never holds, moves, or controls your money. We read your vault balance to track check-ins and streaks. If you lose your 24 words and this device, the NIM in your vault is unrecoverable.'
+  'Savborne never holds, moves, or controls your money. We read your vault balance to track check-ins and streaks.'
 
 export type PrivacyCardTone = 'mint' | 'coral' | 'muted'
 
@@ -49,6 +49,8 @@ export const PRIVACY_CARDS: PrivacyCard[] = [
 
 export const PRIVACY_RISK =
   'If you lose your 24 words and this device, the NIM in your vault is unrecoverable. Savborne cannot restore it.'
+
+export const PRIVACY_DISCLOSURE_TITLE = "What's public and where it's stored"
 
 export const PRIVACY_CONSENT_LINE =
   'By tapping Continue, you agree to this notice and to Savborne storing your vault address, balance snapshots and game data as described.'

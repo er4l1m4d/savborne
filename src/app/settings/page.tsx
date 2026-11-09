@@ -192,6 +192,15 @@ export default function SettingsPage() {
             <h2 className="sv-section-label text-mint">Help</h2>
             <PixelPanel className="px-4 py-0">
               <Row divider>
+                <ButtonLink
+                  href="/settings/how-it-works"
+                  variant="ghost"
+                  className="w-full justify-start px-0 text-fg"
+                >
+                  How Savborne works
+                </ButtonLink>
+              </Row>
+              <Row divider>
                 <Button
                   variant="ghost"
                   className="w-full justify-start px-0 text-fg"

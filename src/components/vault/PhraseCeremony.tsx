@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Savborne — the 24-word backup ceremony (onboarding step 3, part 1).
+ * Savborne — the 24-word backup ceremony (Backup step 3 of 5, part 1).
  *
  * The words are shown once, in a numbered grid, and never leave this
  * component. There is deliberately no copy-to-clipboard button: the clipboard
@@ -11,6 +11,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
+import { BACKUP_RISK } from '@/lib/onboarding-copy'
 
 export function PhraseCeremony({
   phrase,
@@ -26,11 +27,7 @@ export function PhraseCeremony({
   return (
     <section className="flex flex-col gap-4">
       <h1 className="sv-heading">Your vault key</h1>
-      <p className="sv-body text-fg-muted">
-        These 24 words are the only key to your vault, and they never leave this device.
-        Savborne cannot see them and cannot recover your NIM without them. If you lose them
-        and this phone, the money in the vault is gone.
-      </p>
+      <p className="sv-body text-fg-muted">{BACKUP_RISK}</p>
 
       <ol className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {phrase.map((word, i) => (

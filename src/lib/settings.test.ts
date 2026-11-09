@@ -19,7 +19,7 @@ test('Setup redirects to the new welcome route', () => {
 
 test('Privacy renders the shared notice', () => {
   assert.match(PRIVACY, /from '@\/components\/PrivacyNotice'/)
-  assert.match(PRIVACY, /<PrivacyNotice variant="full" \/>/)
+  assert.match(PRIVACY, /<PrivacyNotice variant="onboarding" \/>/)
   assert.doesNotMatch(PRIVACY, /What we collect/)
 })
 
@@ -114,6 +114,8 @@ test('Settings is a pushed screen with both destructive actions', () => {
   assert.match(SETTINGS, /variant="pushed"/)
   assert.match(SETTINGS, /backHref="\/profile"/)
   assert.match(SETTINGS, /Disconnect savings account/)
+  assert.match(SETTINGS, /href="\/settings\/how-it-works"/)
+  assert.match(SETTINGS, /How Savborne works/)
   assert.match(SETTINGS, /href="\/settings\/delete"/)
   assert.match(SETTINGS, /<BottomSheet/)
   assert.match(SETTINGS, /<PrivacyNotice \/>/)
