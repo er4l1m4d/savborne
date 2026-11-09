@@ -66,22 +66,22 @@ function Plate({
     <div
       className={`absolute ${position} flex w-[46%] max-w-[168px] flex-col gap-1.5 bg-background px-3 py-2.5 ${plateBorder(side.status)}`}
     >
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <div className="flex items-baseline justify-between gap-2">
         <span className="sv-label min-w-0 flex-1 truncate text-fg" title={side.name}>
           {side.name}
         </span>
         {side.level !== null && (
           <span className="sv-label shrink-0 text-fg-muted">Lv {side.level}</span>
         )}
-        {label && (
-          <span
-            className="sv-section-label shrink-0"
-            style={{ color: statusColor(side.status) }}
-          >
-            {label}
-          </span>
-        )}
       </div>
+      {label && (
+        <span
+          className="sv-section-label"
+          style={{ color: statusColor(side.status) }}
+        >
+          {label}
+        </span>
+      )}
       <Meter value={side.hp} max={side.maxHp} tone={self ? 'mint' : 'coral'} />
       <span className="sv-label text-fg-muted">
         {side.hp} / {side.maxHp} HP
@@ -102,7 +102,9 @@ export function Arena({ me, opponent, variant = 'battle', dimmed, tone = 'defaul
   return (
     <PixelPanel
       tone={tone}
-      className={`sv-arena ${result ? 'sv-arena--result' : ''} p-0`}
+      className={`relative overflow-hidden p-0 ${
+        result ? 'h-[250px]' : 'h-[380px] min-[390px]:h-[410px]'
+      }`}
     >
       <div className={dimmed ? 'opacity-55' : ''}>
         <Plate side={opponent} position="left-3 top-3" self={false} />

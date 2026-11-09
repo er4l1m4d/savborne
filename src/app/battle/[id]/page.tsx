@@ -1,31 +1,38 @@
 /**
- * Savborne — Battle screen (`/battle/[id]`)
+ * Savborne - battle screen
  *
- * Full-screen (no tab bar) duel view. Polls GET /api/battles/[id] every 3
- * seconds — the same call drives timeout resolution server-side, so a
- * stalled opponent auto-plays Defend without any background worker.
+ * Polls GET /api/battles/[id] every 3 seconds. The same call drives timeout
+ * resolution server-side, so a stalled opponent auto-plays Defend without a
+ * background worker.
  *
- * States rendered:
- *   pending + creator  → "waiting for your friend" + 24h expiry note
- *   pending + joiner   → accept button (POST join)
- *   active             → HP bars, turn counter, four move buttons, countdown
- *   completed          → "You win!" / "You lost." / "It's a tie." + XP note
- *   abandoned          → expiry message
- *
- * Copy follows spec 9.8 exactly.
+ * States:
+ *   pending + creator   -> redirect to the friend challenge screen
+ *   pending + joiner    -> accept the challenge
+ *   active              -> arena, move grid, item sheet, wait or offline
+ *   completed           -> redirect to /battle/[id]/result
+ *   abandoned           -> expiry message
  */
 
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
+import { BATTLE, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
+import { rivalForBattle } from '@/lib/game/rivals'
 import { Glyph } from '@/components/Glyphs'
+import { CharacterArt } from '@/components/CharacterArt'
+import { RivalArt } from '@/components/RivalArt'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
+import { Chip } from '@/components/ui/Chip'
+import { Meter } from '@/components/ui/Meter'
+import { Arena } from '@/components/battle/Arena'
+import { ItemSheet } from '@/components/battle/ItemSheet'
+import { VersusCards } from '@/components/battle/VersusCards'
 
 type MoveInfo = { move: string; itemKey: string | null; damage: number } | null
 
@@ -43,6 +50,8 @@ type State = {
     createdAt: string
     opponentAddress: string | null
     opponentName: string
+    opponentLevel: number | null
+    opponentBracket: string | null
     maxTurns: number
     startingHp: number
   }
@@ -50,10 +59,14 @@ type State = {
     side: 'a' | 'b'
     address: string
     displayName: string
+    level: number
+    bracket: string | null
     hasMovedThisTurn: boolean
     specialAvailable: boolean
     activeItems: ItemKey[]
     ownedInactiveItems: ItemKey[]
+    ownedItems: ItemKey[]
+    currentMove: { move: string; itemKey: ItemKey | null } | null
     opponentLastMove: string | null
   }
   lastTurn: { turnNumber: number; a: MoveInfo; b: MoveInfo } | null
@@ -63,12 +76,18 @@ const POLL_MS = 3_000
 
 export default function BattleScreen() {
   const { id } = useParams<{ id: string }>()
+  const router = useRouter()
   const [state, setState] = useState<State | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [showItems, setShowItems] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [offline, setOffline] = useState(false)
+  const [offlineSince, setOfflineSince] = useState<number | null>(null)
+  const [reconnecting, setReconnecting] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const creatorRedirected = useRef(false)
+  const completedRedirected = useRef(false)
 
   const fetchState = useCallback(async () => {
     try {
@@ -80,19 +99,18 @@ export default function BattleScreen() {
       if (!res.ok) throw new Error(`${res.status}`)
       setState((await res.json()) as State)
       setError(null)
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Connection lost. Your move will be saved if you reconnect within 60 seconds.',
-      )
+      setOffline(false)
+      setOfflineSince(null)
+    } catch {
+      setOffline(true)
+      setOfflineSince((previous) => previous ?? Date.now())
     }
   }, [id])
 
   // Initial fetch + poll while the battle can still change.
   useEffect(() => {
     if (pollRef.current) clearInterval(pollRef.current)
-    fetchState()
+    void fetchState()
     pollRef.current = setInterval(fetchState, POLL_MS)
     const clock = setInterval(() => setNow(Date.now()), 1_000)
     return () => {
@@ -101,10 +119,28 @@ export default function BattleScreen() {
     }
   }, [fetchState])
 
+  // A pending creator belongs on the friend challenge screen.
+  useEffect(() => {
+    if (!state || creatorRedirected.current) return
+    if (state.battle.status === 'pending' && state.viewer.side === 'a') {
+      creatorRedirected.current = true
+      router.replace(`/battle/friend/${id}`)
+    }
+  }, [state, id, router])
+
+  // A completed battle belongs on the result screen.
+  useEffect(() => {
+    if (!state || completedRedirected.current) return
+    if (state.battle.status === 'completed') {
+      completedRedirected.current = true
+      router.replace(`/battle/${id}/result`)
+    }
+  }, [state, id, router])
+
   async function submitMove(move: string, itemKey: ItemKey | null = null) {
     if (!state || submitting) return
     setSubmitting(true)
-    setShowItems(false)
+    setSheetOpen(false)
     try {
       const res = await fetch(`/api/battles/${id}/move`, {
         method: 'POST',
@@ -135,11 +171,22 @@ export default function BattleScreen() {
     }
   }
 
+  async function reconnect() {
+    setReconnecting(true)
+    await fetchState()
+    setReconnecting(false)
+  }
+
   const secondsLeft = useMemo(() => {
     if (!state?.battle.turnDeadline) return null
     const ms = new Date(state.battle.turnDeadline).getTime() - now
     return Math.max(0, Math.ceil(ms / 1000))
   }, [state, now])
+
+  const graceLeft =
+    offlineSince === null
+      ? BATTLE.reconnectGraceSeconds
+      : Math.max(0, BATTLE.reconnectGraceSeconds - Math.floor((now - offlineSince) / 1_000))
 
   if (!state) {
     return (
@@ -150,7 +197,7 @@ export default function BattleScreen() {
             <BackLink />
           </>
         ) : (
-          <p className="sv-body text-fg-muted">Loading battle…</p>
+          <p className="sv-body text-fg-muted">Loading battle...</p>
         )}
       </ScreenShell>
     )
@@ -160,16 +207,14 @@ export default function BattleScreen() {
   const myHp = viewer.side === 'a' ? battle.hpA : battle.hpB
   const oppHp = viewer.side === 'a' ? battle.hpB : battle.hpA
   const iAmCreator = viewer.side === 'a'
+  const modeLabel = battle.mode === 'ranked' ? 'Ranked' : 'Unranked'
 
   if (battle.status === 'abandoned') {
     return (
       <ScreenShell variant="pushed" title="Battle" backHref="/battle">
-        <PixelPanel className="p-6 flex flex-col gap-3">
+        <PixelPanel className="flex flex-col gap-3 p-6">
           <h1 className="sv-heading">Challenge expired</h1>
-          <p className="sv-body text-fg-muted">
-            Your challenge is still waiting. It expires in 24 hours.
-          </p>
-          <p className="sv-body text-fg-muted">Nobody answered in time — no XP lost.</p>
+          <p className="sv-body text-fg-muted">Nobody answered in time. No XP lost.</p>
           <BackLink />
         </PixelPanel>
       </ScreenShell>
@@ -177,88 +222,103 @@ export default function BattleScreen() {
   }
 
   if (battle.status === 'pending') {
-    return (
-      <ScreenShell variant="pushed" title="Battle" backHref="/battle">
-        {iAmCreator ? (
-          <PixelPanel className="p-6 flex flex-col gap-3">
-            <h1 className="sv-heading">Challenge sent</h1>
-            <p className="sv-body text-fg-muted">
-              Your challenge is still waiting. It expires in 24 hours.
-            </p>
-            <p className="sv-label text-fg-faint">Share the code from the Battle tab.</p>
-            <BackLink />
-          </PixelPanel>
+    if (iAmCreator) {
+      return (
+        <ScreenShell variant="pushed" title="Battle" backHref="/battle">
+          <p className="sv-body text-fg-muted">Opening challenge...</p>
+        </ScreenShell>
+      )
+    }
+    const me = {
+      name: viewer.displayName,
+      meta: `Level ${viewer.level} · ${viewer.bracket ?? 'Entry'}`,
+      art: <CharacterArt bracket={(viewer.bracket as Bracket | null) ?? null} size={76} />,
+    }
+    const challenger = {
+      name: battle.opponentName,
+      meta: battle.opponentLevel ? `Level ${battle.opponentLevel}` : 'Challenger',
+      art:
+        battle.mode === 'ai' ? (
+          <RivalArt rival={rivalForBattle(id)} size={76} />
         ) : (
-          <PixelPanel className="p-6 flex flex-col gap-3">
-            <h1 className="sv-heading">{battle.opponentName} challenges you</h1>
-            <p className="sv-body text-fg-muted">
-              5 turns. No chance. Winner has more health.
-            </p>
-            <Button variant="primary" onClick={join} disabled={submitting}>
-              {submitting ? 'Joining…' : 'Accept challenge'}
-            </Button>
-            <BackLink />
-          </PixelPanel>
-        )}
+          <CharacterArt bracket={(battle.opponentBracket as Bracket | null) ?? null} size={76} />
+        ),
+    }
+    return (
+      <ScreenShell
+        variant="pushed"
+        backHref="/battle"
+        actions={<Chip variant="outline">Friend · Unranked</Chip>}
+      >
+        <div className="flex flex-col gap-2">
+          <h1 className="sv-heading sv-break">{battle.opponentName} challenges you</h1>
+          <p className="sv-body text-fg-muted">5 turns. No chance. Winner has more health.</p>
+        </div>
+        <VersusCards me={me} opponent={challenger} height={230} />
+        {error && <Banner tone="error">{error}</Banner>}
+        <Button variant="primary" onClick={join} loading={submitting} disabled={submitting}>
+          Accept challenge
+        </Button>
+        <BackLink />
       </ScreenShell>
     )
   }
 
   if (battle.status === 'completed') {
-    const iWon = battle.winner === viewer.address
-    const isTie = battle.winner === null
     return (
       <ScreenShell variant="pushed" title="Battle" backHref="/battle">
-        <PixelPanel className="p-6 flex flex-col gap-3">
-          <h1
-            className="sv-display"
-            style={{
-              color: isTie ? 'var(--butter)' : iWon ? 'var(--mint)' : 'var(--coral-text)',
-            }}
-          >
-            {isTie ? "It's a tie." : iWon ? 'You win!' : 'You lost.'}
-          </h1>
-          <p className="sv-body text-fg-muted">
-            {isTie
-              ? 'Both characters held their ground. Each player gets 15 XP.'
-              : iWon
-                ? '+30 XP added.'
-                : '+10 XP — a loss still teaches.'}
-          </p>
-          <div className="flex justify-between sv-label text-fg-faint">
-            <span>You: {myHp} HP</span>
-            <span>
-              {battle.opponentName}: {oppHp} HP
-            </span>
-          </div>
-          <BackLink label="Back to battle" />
-        </PixelPanel>
+        <p className="sv-body text-fg-muted">Opening result...</p>
       </ScreenShell>
     )
   }
 
-  // ── Active battle ──
+  const opponentArt =
+    battle.mode === 'ai' ? (
+      <RivalArt rival={rivalForBattle(id)} size={96} />
+    ) : (
+      <CharacterArt bracket={(battle.opponentBracket as Bracket | null) ?? null} size={96} />
+    )
+  const myArt = <CharacterArt bracket={(viewer.bracket as Bracket | null) ?? null} size={112} />
+  const lockedItems = ITEMS.filter((item) => !item.isBadge && !viewer.ownedItems.includes(item.key))
+    .map((item) => item.key)
+  const meStatus = offline
+    ? 'offline'
+    : viewer.hasMovedThisTurn
+      ? 'acted'
+      : 'your-move'
+
+  const mine = lastTurn ? (viewer.side === 'a' ? lastTurn.a : lastTurn.b) : null
+  const theirs = lastTurn ? (viewer.side === 'a' ? lastTurn.b : lastTurn.a) : null
+
   return (
     <ScreenShell
       variant="pushed"
-      title="Battle"
+      title={`Turn ${battle.currentTurn} of ${battle.maxTurns}`}
       backHref="/battle"
-      actions={
-        <span className="sv-figure text-butter-text">
-          Turn {battle.currentTurn} of {battle.maxTurns}
-        </span>
-      }
+      backLabel="Leave battle"
     >
-      <span className="sv-section-label text-fg-faint">
-        {battle.mode === 'ai' ? 'Unranked. Opponent: Savborne AI.' : `vs ${battle.opponentName}`}
+      <span className="sv-label text-fg-muted">
+        {modeLabel}. Opponent: {battle.opponentName}.
       </span>
 
-      <HpBars
-        me={myHp}
-        opp={oppHp}
-        maxHp={battle.startingHp}
-        oppName={battle.opponentName}
-        meName={viewer.displayName}
+      <Arena
+        me={{
+          name: viewer.displayName,
+          level: viewer.level,
+          hp: myHp,
+          maxHp: battle.startingHp,
+          art: myArt,
+          status: meStatus,
+        }}
+        opponent={{
+          name: battle.opponentName,
+          level: battle.opponentLevel,
+          hp: oppHp,
+          maxHp: battle.startingHp,
+          art: opponentArt,
+          status: offline ? 'none' : viewer.hasMovedThisTurn ? 'theirs' : 'none',
+        }}
+        dimmed={offline}
       />
 
       {viewer.opponentLastMove && (
@@ -267,19 +327,71 @@ export default function BattleScreen() {
         </p>
       )}
 
-      {lastTurn && <TurnLog turn={lastTurn} meSide={viewer.side} />}
+      {!offline && lastTurn && (mine || theirs) && (
+        <p className="sv-label text-fg-muted">
+          Turn {lastTurn.turnNumber}: you used {mine?.move ?? '—'}
+          {mine?.damage ? ` (${mine.damage} dmg)` : ''} · they used {theirs?.move ?? '—'}
+          {theirs?.damage ? ` (${theirs.damage} dmg)` : ''}.
+        </p>
+      )}
 
-      {viewer.hasMovedThisTurn ? (
-        <PixelPanel className="p-4 text-center flex flex-col gap-1">
-          <p className="sv-body text-fg-muted">Waiting for your opponent to choose.</p>
-          {secondsLeft !== null && (
-            <p className="sv-figure text-fg-faint">{secondsLeft}s</p>
-          )}
+      {offline ? (
+        <PixelPanel tone="coral" className="flex flex-col gap-2.5 p-4">
+          <div className="flex items-center gap-2.5 text-coral-text">
+            <Glyph name="alert" size={24} />
+            <span className="sv-label">Offline</span>
+          </div>
+          <p className="sv-subheading">
+            Connection lost. Your move will be saved if you reconnect within 60 seconds.
+          </p>
+          <div className="flex items-center gap-3">
+            <Meter
+              value={graceLeft}
+              max={BATTLE.reconnectGraceSeconds}
+              tone="coral"
+              label="Reconnect grace"
+              className="flex-1"
+            />
+            <span className="sv-figure text-fg-muted">
+              {Math.floor(graceLeft / 60)}:{String(graceLeft % 60).padStart(2, '0')}
+            </span>
+          </div>
+          <p className="sv-label text-fg-muted">
+            {graceLeft > 0
+              ? 'Until you reconnect, your next move defaults to Defend.'
+              : 'Reconnect to keep playing. Your next move may already have defaulted to Defend.'}
+          </p>
+          <Button variant="primary" onClick={reconnect} loading={reconnecting}>
+            Reconnect
+          </Button>
+        </PixelPanel>
+      ) : viewer.hasMovedThisTurn ? (
+        <PixelPanel tone="mint" className="flex flex-col gap-2.5 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="sv-label text-fg-muted">Your move is locked in</span>
+            {viewer.currentMove && (
+              <Chip variant="outline" color="var(--coral-text)">
+                {capitalise(viewer.currentMove.move)}
+              </Chip>
+            )}
+          </div>
+          <p className="sv-subheading">Waiting for your opponent to choose.</p>
+          <div className="flex items-center gap-3">
+            <Meter
+              value={secondsLeft ?? 0}
+              max={BATTLE.turnTimerSeconds}
+              label="Turn time left"
+              className="flex-1"
+            />
+            <span className="sv-figure text-fg-muted">
+              0:{String(secondsLeft ?? 0).padStart(2, '0')} left
+            </span>
+          </div>
         </PixelPanel>
       ) : (
         <div className="flex flex-col gap-2">
           <h2 className="sv-subheading">Choose your move</h2>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3.5">
             <MoveButton
               label="Attack"
               glyph="attack"
@@ -295,47 +407,23 @@ export default function BattleScreen() {
               disabled={submitting}
             />
             <MoveButton
-              label="Special Move"
-              glyph="special"
-              variant="secondary"
-              note={viewer.specialAvailable ? undefined : 'cooldown 1'}
-              onClick={() => submitMove('special')}
-              disabled={submitting || !viewer.specialAvailable}
-            />
-            <MoveButton
               label="Use item"
               glyph="useItem"
               variant="secondary"
-              onClick={() => setShowItems((s) => !s)}
+              onClick={() => setSheetOpen(true)}
               disabled={submitting || viewer.ownedInactiveItems.length === 0}
             />
+            <MoveButton
+              label="Special Move"
+              glyph="special"
+              variant="secondary"
+              note={viewer.specialAvailable ? undefined : '(cooldown: 1 turn)'}
+              onClick={() => submitMove('special')}
+              disabled={submitting || !viewer.specialAvailable}
+            />
           </div>
-          {showItems && viewer.ownedInactiveItems.length > 0 && (
-            <PixelPanel tone="off" className="p-3 flex flex-col gap-1">
-              <p className="sv-section-label text-fg-faint">
-                Activate one item (costs your turn, lasts the battle)
-              </p>
-              {viewer.ownedInactiveItems.map((k) => {
-                const it = ITEMS.find((i) => i.key === k)!
-                return (
-                  <Button
-                    key={k}
-                    variant="secondary"
-                    size="sm"
-                    fullWidth
-                    className="justify-start"
-                    onClick={() => submitMove('item', k)}
-                    disabled={submitting}
-                  >
-                    {it.name}{' '}
-                    <span className="sv-label text-fg-faint">— {it.blurb}</span>
-                  </Button>
-                )
-              })}
-            </PixelPanel>
-          )}
           {secondsLeft !== null && (
-            <p className="sv-state text-fg-faint text-center">
+            <p className="sv-label text-center text-fg-faint">
               Auto-Defend in {secondsLeft}s
             </p>
           )}
@@ -343,100 +431,29 @@ export default function BattleScreen() {
       )}
 
       {error && <Banner tone="error">{error}</Banner>}
+
+      <ItemSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        available={viewer.ownedInactiveItems}
+        used={viewer.activeItems}
+        locked={lockedItems}
+        onUse={(key) => submitMove('item', key)}
+        busy={submitting}
+      />
     </ScreenShell>
   )
 }
 
-// ─── Atoms ─────────────────────────────────────────────────────────────────
+function capitalise(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
 
-function BackLink({ label = 'Back to battle' }: { label?: string }) {
+function BackLink({ label = 'Back to Battle' }: { label?: string }) {
   return (
     <ButtonLink href="/battle" variant="ghost" className="self-start">
       {label}
     </ButtonLink>
-  )
-}
-
-function HpBars({
-  me,
-  opp,
-  maxHp,
-  oppName,
-  meName,
-}: {
-  me: number
-  opp: number
-  maxHp: number
-  oppName: string
-  meName: string
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Hp label={meName} value={me} max={maxHp} self />
-      <Hp label={oppName} value={opp} max={maxHp} />
-    </div>
-  )
-}
-
-function Hp({
-  label,
-  value,
-  max,
-  self,
-}: {
-  label: string
-  value: number
-  max: number
-  self?: boolean
-}) {
-  const pct = Math.max(0, Math.min(100, (value / max) * 100))
-  const color = pct > 50 ? 'var(--mint)' : pct > 20 ? 'var(--butter)' : 'var(--coral)'
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex justify-between">
-        <span className={`sv-state ${self ? 'text-foreground' : 'text-fg-muted'}`}>
-          {label}
-        </span>
-        <span className="sv-figure text-fg-muted">
-          {value} / {max}
-        </span>
-      </div>
-      <div className="vpx-soft h-4 bg-surface-low overflow-hidden">
-        <div
-          className="h-full transition-[width] duration-500"
-          style={{ width: `${pct}%`, background: color }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function TurnLog({
-  turn,
-  meSide,
-}: {
-  turn: { turnNumber: number; a: MoveInfo; b: MoveInfo }
-  meSide: 'a' | 'b'
-}) {
-  const mine = meSide === 'a' ? turn.a : turn.b
-  const theirs = meSide === 'a' ? turn.b : turn.a
-  if (!mine && !theirs) return null
-  return (
-    <div className="vpx-soft bg-surface p-3 flex flex-col gap-0.5">
-      <span className="sv-state text-fg-faint">Turn {turn.turnNumber} result</span>
-      {mine && (
-        <span className="sv-label text-fg-muted">
-          You used {mine.move}
-          {mine.damage ? ` and dealt ${mine.damage}` : '.'}
-        </span>
-      )}
-      {theirs && (
-        <span className="sv-label text-fg-muted">
-          Opponent used {theirs.move}
-          {theirs.damage ? ` and dealt ${theirs.damage}` : '.'}
-        </span>
-      )}
-    </div>
   )
 }
 
@@ -449,7 +466,6 @@ function MoveButton({
   variant,
 }: {
   label: string
-  /** Small corner note, e.g. the Special Move cooldown. Keeps the disabled state from reflowing the label. */
   note?: string
   glyph: 'attack' | 'defend' | 'special' | 'useItem'
   onClick: () => void
@@ -466,9 +482,7 @@ function MoveButton({
     >
       <Glyph name={glyph} size={24} />
       <span>{label}</span>
-      {note && (
-        <span className="sv-state absolute top-1.5 right-2 opacity-70">{note}</span>
-      )}
+      {note && <span className="sv-label opacity-70">{note}</span>}
     </Button>
   )
 }

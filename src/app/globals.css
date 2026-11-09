@@ -376,23 +376,6 @@ body {
   }
 }
 
-/* ── Foundation 2: battle arena ───────────────────────────────────────── */
-@layer components {
-  .sv-arena {
-    position: relative;
-    height: 380px;
-    overflow: hidden;
-  }
-  @media (min-width: 390px) {
-    .sv-arena {
-      height: 410px;
-    }
-  }
-  .sv-arena--result {
-    height: 250px;
-  }
-}
-
 /* ── Foundation 2: screen shell ───────────────────────────────────────── */
 @layer components {
   .sv-shell {

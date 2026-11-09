@@ -74,13 +74,28 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     opponentLastMove = oppLast ? oppLast.move_type : null
   }
 
-  // Names for display (addresses never shown to other players).
+  // Names, levels and brackets for the arena plates (addresses are never
+  // shown to other players; the AI has no player row).
   const { data: names } = await db
     .from('players')
-    .select('address, display_name')
+    .select('address, display_name, level, bracket')
     .in('address', [battle.player_a, battle.player_b ?? battle.player_a])
+  const infoOf = (a: string | null) =>
+    a === AI_ADDRESS ? null : names?.find((n) => n.address === a) ?? null
   const nameOf = (a: string | null) =>
-    a === AI_ADDRESS ? 'Savborne AI' : names?.find((n) => n.address === a)?.display_name ?? '—'
+    a === AI_ADDRESS ? 'Savborne AI' : infoOf(a)?.display_name ?? '—'
+
+  const viewerInfo = infoOf(address)
+  const opponentInfo = infoOf(opponentAddress)
+  const viewerCurrentMove = moves.find(
+    (m) => m.player_address === address && m.turn_number === turn,
+  )
+  const currentMove = viewerCurrentMove
+    ? {
+        move: viewerCurrentMove.move_type as BattleMove,
+        itemKey: (viewerCurrentMove.item_key as ItemKey | null) ?? null,
+      }
+    : null
 
   // Last-resolved turn summary.
   const resolvedTurns = [...new Set(moves.filter((m) => m.resolved_damage > 0).map((m) => m.turn_number))]
@@ -115,6 +130,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       createdAt: battle.created_at,
       opponentAddress,
       opponentName: nameOf(opponentAddress),
+      opponentLevel: opponentInfo?.level ?? null,
+      opponentBracket: (opponentInfo?.bracket as string | null) ?? null,
       maxTurns: 5,
       startingHp: 100,
     },
@@ -122,10 +139,14 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       side,
       address,
       displayName: nameOf(address),
+      level: viewerInfo?.level ?? 1,
+      bracket: (viewerInfo?.bracket as string | null) ?? null,
       hasMovedThisTurn,
       specialAvailable: canSpecial,
       activeItems,
       ownedInactiveItems,
+      ownedItems: Array.from(owned),
+      currentMove,
       opponentLastMove,
     },
     lastTurn,

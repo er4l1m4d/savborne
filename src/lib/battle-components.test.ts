@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs'
 
 const component = (name: string) =>
   readFileSync(new URL(`../components/battle/${name}`, import.meta.url), 'utf8')
-const CSS = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8')
 
 test('ModeCard is a real button when available and an off panel otherwise', () => {
   const src = component('ModeCard.tsx')
@@ -31,13 +30,12 @@ test('Arena owns both plates, meters and status labels', () => {
   assert.match(src, /PixelPanel/)
   assert.match(src, /Meter/)
   assert.match(src, /sv-section-label/)
-  assert.match(src, /sv-arena/)
-  assert.match(src, /sv-arena--result/)
+  assert.match(src, /h-\[380px\]/)
+  assert.match(src, /min-\[390px\]:h-\[410px\]/)
+  assert.match(src, /h-\[250px\]/)
   assert.match(src, /YOUR MOVE/)
   assert.match(src, /OFFLINE/)
   assert.match(src, /ACTED/)
-  assert.match(CSS, /\.sv-arena\s*\{[^}]*height:\s*380px/)
-  assert.match(CSS, /\.sv-arena--result\s*\{[^}]*height:\s*250px/)
 })
 
 test('ItemSheet uses the bottom sheet and the three item states', () => {
