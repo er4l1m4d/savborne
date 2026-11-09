@@ -25,7 +25,7 @@ export function PrivacyNotice() {
       </p>
       <p className="sv-label text-fg-soft">
         <strong>Where it is stored.</strong> Supabase (US-East) and Vercel. You can request
-        deletion by emailing the contact in the app footer.
+        deletion by emailing the contact in Settings ΓåÆ Help.
       </p>
       <p className="sv-label text-fg-soft">
         <strong>The risk you are accepting.</strong> If you lose your 24 words and this

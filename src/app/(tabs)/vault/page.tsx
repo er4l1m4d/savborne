@@ -214,7 +214,7 @@ export default function VaultPage() {
           )}
           {!hasLocalKey && (
             <p className="sv-label">
-              This device has no vault key. Restore it from your 24 words in Profile → Backup.
+              This device has no vault key. Restore it from your 24 words in Settings → Backup.
             </p>
           )}
         </PixelPanel>

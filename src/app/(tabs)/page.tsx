@@ -346,7 +346,7 @@ function describeError(err: unknown): string {
       case 'NETWORK_ERROR':
         return 'The Nimiq network is busy. Try checking in again in a moment.'
       case 'PERMISSION_DENIED':
-        return 'Wallet access declined. Reconnect your savings account from the Profile tab.'
+        return 'Wallet access declined. Reconnect your wallet in Nimiq Pay and try again.'
       default:
         return err.message || 'Could not read your balance.'
     }

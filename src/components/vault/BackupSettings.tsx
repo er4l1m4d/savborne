@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Savborne — vault backup settings (Profile → Backup)
+ * Savborne — vault backup settings (Settings → Backup)
  *
  * Three actions, all of which touch the vault key and nothing else:
  *
