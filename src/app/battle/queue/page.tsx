@@ -152,11 +152,11 @@ export default function RankedQueuePage() {
     setBusy('ai')
     setError(null)
     try {
+      await dropQueue()
       const res = await fetch('/api/battles/ai', { method: 'POST', headers: authHeaders() })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `Failed (${res.status})`)
       matchedRef.current = true
-      await dropQueue()
       router.push(`/battle/${json.battleId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not start a battle')
@@ -169,11 +169,11 @@ export default function RankedQueuePage() {
     setBusy('friend')
     setError(null)
     try {
+      await dropQueue()
       const res = await fetch('/api/battles/friend', { method: 'POST', headers: authHeaders() })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `Failed (${res.status})`)
       matchedRef.current = true
-      await dropQueue()
       router.push(`/battle/friend/${json.battleId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create a challenge')

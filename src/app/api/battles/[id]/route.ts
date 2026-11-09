@@ -63,6 +63,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const ownedInactiveItems = ITEMS.filter(
     (i) => !i.isBadge && owned.has(i.key) && !activeItems.includes(i.key),
   ).map((i) => i.key)
+  const ownedItems = ITEMS.filter((i) => !i.isBadge && owned.has(i.key)).map((i) => i.key)
 
   // Copper Compass: reveal the opponent's previous move only if the viewer
   // owns it (spec Section 7).
@@ -145,7 +146,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       specialAvailable: canSpecial,
       activeItems,
       ownedInactiveItems,
-      ownedItems: Array.from(owned),
+      ownedItems,
       currentMove,
       opponentLastMove,
     },
