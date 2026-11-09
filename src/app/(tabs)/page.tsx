@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { WalletError } from '@/lib/nimiq'
 import { authHeaders } from '@/lib/session'
@@ -40,6 +40,7 @@ import { Row } from '@/components/ui/Row'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Banner } from '@/components/ui/Banner'
+import { takeBalanceRetry } from '@/lib/balance-retry'
 
 type MissionStatus = {
   key: string
@@ -76,7 +77,7 @@ export default function HomePage() {
     if (needsReconnect || session === null) router.replace('/setup')
   }, [loading, needsReconnect, session, router])
 
-  async function onCheckIn() {
+  const onCheckIn = useCallback(async () => {
     if (!session) return
     setChecking(true)
     setCheckError(null)
@@ -88,6 +89,18 @@ export default function HomePage() {
       })
       if (!res.ok) {
         const text = await res.text().catch(() => '')
+        if (res.status === 503) {
+          let code: string | undefined
+          try {
+            code = (JSON.parse(text) as { error?: string }).error
+          } catch {
+            // Not JSON; keep the generic inline error.
+          }
+          if (code === 'rpc_unreachable') {
+            router.push('/balance-error')
+            return
+          }
+        }
         throw new Error(`Check-in failed (${res.status}): ${text}`)
       }
       const json = (await res.json()) as AwardSummary & { ok: true }
@@ -151,7 +164,16 @@ export default function HomePage() {
     } finally {
       setChecking(false)
     }
-  }
+  }, [session, player, refresh, router])
+
+  useEffect(() => {
+    if (loading || !session || !player) return
+    const timer = setTimeout(() => {
+      if (!takeBalanceRetry()) return
+      void onCheckIn()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [loading, session, player, onCheckIn])
 
   async function fetchDailyMissions() {
     try {
