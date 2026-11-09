@@ -25,8 +25,6 @@ export default function BalanceErrorPage() {
 
   return (
     <ScreenShell variant="pushed" bodyClassName="pt-0">
-      <span className="sv-number-m text-balance">Couldn&apos;t read balance</span>
-
       <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
         <PixelPanel
           tone="coral"

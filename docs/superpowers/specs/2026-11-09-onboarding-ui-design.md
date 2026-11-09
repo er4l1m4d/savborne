@@ -271,9 +271,8 @@ One component, four phases, no new routes. Public `/card/*` stays exempt.
 
 ### 6.2 Balance error - `/balance-error`
 
-`ScreenShell variant="pushed"`, no header, top title "Couldn't read balance" in
-`.sv-number-m`, then a centered 132px coral `PixelPanel` with a 72px coral
-`alert` glyph and the copy:
+`ScreenShell variant="pushed"`, no header. A centered 132px coral
+`PixelPanel` with a 72px coral `alert` glyph and the h1/copy:
 
 > Couldn't read your balance.
 > This check-in wasn't recorded, and your balance wasn't counted as zero. Your

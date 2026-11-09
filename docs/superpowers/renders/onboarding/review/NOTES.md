@@ -94,8 +94,8 @@ Corrections:
   again leaves a one-shot `sessionStorage` flag; Home consumes it and runs one
   check-in. A blocked storage API leaves Home normal.
 - The gate remains one component with states, not routes. `/card/*` stays
-  public. The Open and Update screens have no top Silkscreen header; the
-  centred headline is the screen heading.
+  public. The Open, Update and Balance error screens have no top Silkscreen
+  header; the centred headline is the screen heading.
 - The Settings privacy sheet now uses the same copy source and shows the notice
   version; its previous mojibake arrow is gone.
 - The real-device Nimiq Pay pass at 360-430 is still yours. `.env.local` is not

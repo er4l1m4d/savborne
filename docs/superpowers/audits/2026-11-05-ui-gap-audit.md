@@ -775,7 +775,7 @@ privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
   and wraps.
 - Name: the title takes two lines; the 250px character panel, field, counter and
   error fit. The error state keeps the CTA on screen at 360.
-- Balance error: the 24px top title wraps and is balanced; both actions fit.
+- Balance error: the centred headline wraps to two lines; both actions fit.
 - Gate: the outside and update screens centre the panel, headline, body and
   actions with no top header; both update actions fit at 360.
 
@@ -794,8 +794,8 @@ privacy consent, and adds the Nimiq Pay gate screens and `/balance-error`.
 - **Balance Error only for `rpc_unreachable`.** Other check-in failures keep the
   inline banner, where the copy is accurate.
 - **The gate stays one component with states.** A gate route would be gated
-  itself or need an exemption. The Open and Update screens have no top
-  Silkscreen header; the centred headline is the only heading.
+  itself or need an exemption. The Open, Update and Balance error screens have
+  no top Silkscreen header; the centred headline is the only heading.
 - **Update opens https://nimiq.com.** No app-store deep link exists in the repo.
 - **The privacy page scrolls.** The handoff pins the consent footer; at 360 the
   cards and a pinned footer would obscure text, so the footer sits at the end.

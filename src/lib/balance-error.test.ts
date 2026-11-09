@@ -8,7 +8,8 @@ const PAGE = source('../app/balance-error/page.tsx')
 const HOME = source('../app/(tabs)/page.tsx')
 
 test('the balance error screen promises the balance was not zero', () => {
-  assert.match(PAGE, /Couldn&apos;t read balance/)
+  assert.match(PAGE, /Couldn&apos;t read your balance/)
+  assert.doesNotMatch(PAGE, /sv-number-m/)
   assert.match(PAGE, /wasn&apos;t recorded/)
   assert.match(PAGE, /wasn&apos;t counted as\s+zero/)
   assert.match(PAGE, /streak and XP are safe/)

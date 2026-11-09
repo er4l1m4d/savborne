@@ -631,9 +631,9 @@ guard and calls the existing check-in. A `false` leaves Home normal.
 
 `ScreenShell variant="pushed"` with no header:
 
-- Top title "Couldn't read balance" in `.sv-number-m`.
 - Centered 132px coral `PixelPanel` with `Glyph name="alert"` at 72px,
-  `sv-shake` once, and the handoff headline/body.
+  `sv-shake` once, and the handoff h1/body. The centred headline is the only
+  heading.
 - Coral `Button` "Try again" -> `writeBalanceRetry()` then `replace('/')`.
 - Secondary `ButtonLink href="/"` "Go back to Home".
 
