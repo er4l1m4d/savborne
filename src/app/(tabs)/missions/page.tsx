@@ -10,7 +10,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
 import { Glyph } from '@/components/Glyphs'
@@ -115,33 +115,43 @@ export default function MissionsPage() {
 
       {!loading && !error && missions && counters && (
         tab === 'repeating' ? (
-          <>
-            {daily.length > 0 && (
-              <Group
-                title="Daily"
-                reset="Resets 00:00 UTC"
-                missions={daily}
-                cap={counters.dailyXpCap}
-              />
-            )}
-            {weekly.length > 0 && (
-              <Group
-                title="Weekly"
-                reset="Resets Monday 00:00 UTC"
-                missions={weekly}
-                cap={counters.weeklyXpCap}
-              />
-            )}
-            {daily.length === 0 && weekly.length === 0 && <EmptyPanel tone="repeating" />}
-          </>
+          daily.length === 0 && weekly.length === 0 ? (
+            <EmptyPanel tone="repeating" />
+          ) : (
+            <GroupList>
+              {daily.length > 0 && (
+                <Group
+                  title="Daily"
+                  reset="Resets 00:00 UTC"
+                  missions={daily}
+                  cap={counters.dailyXpCap}
+                />
+              )}
+              {weekly.length > 0 && (
+                <Group
+                  title="Weekly"
+                  reset="Resets Monday 00:00 UTC"
+                  missions={weekly}
+                  cap={counters.weeklyXpCap}
+                />
+              )}
+            </GroupList>
+          )
         ) : oneTime.length > 0 ? (
-          <Group title="One-time" reset="Never expires" missions={oneTime} />
+          <GroupList>
+            <Group title="One-time" reset="Never expires" missions={oneTime} />
+          </GroupList>
         ) : (
           <EmptyPanel tone="onetime" />
         )
       )}
     </ScreenShell>
   )
+}
+
+/** 36px between groups; the shell keeps 14px from the tabs to the first group. */
+function GroupList({ children }: { children: ReactNode }) {
+  return <div className="flex flex-col gap-9">{children}</div>
 }
 
 function Group({

@@ -71,6 +71,12 @@ test('the row type fits the handoff and clears the divider', () => {
   assert.match(PAGE, /flex flex-col gap-0\.5 py-2/)
 })
 
+test('groups keep the shell rhythm and use a wider group gap', () => {
+  assert.match(PAGE, /function GroupList/)
+  assert.match(PAGE, /flex flex-col gap-9/)
+  assert.match(PAGE, /bodyClassName="gap-3\.5"/)
+})
+
 test('the page keeps the states and drops the cap cards', () => {
   assert.match(PAGE, /Couldn't load missions\./)
   assert.match(PAGE, /Try again/)

@@ -118,6 +118,9 @@ One-time                              Never expires
 ### 4.1 Group header
 
 - `<section aria-label={title}>`, `flex flex-col gap-2`.
+- Groups sit in a `GroupList` (`flex flex-col gap-9`): 36px between groups.
+  The shell body keeps 14px from the tabs to the first group, and the group
+  itself keeps 8px from its header to its panel.
 - Header row: `flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1`.
 - Title: `<h2 className="sv-subheading">` (20px, default text colour).
 - Caption: `.sv-caption font-bold text-fg-muted` with tabular numerals where a
