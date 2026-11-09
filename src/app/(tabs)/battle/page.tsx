@@ -25,6 +25,7 @@ import { ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { Meter } from '@/components/ui/Meter'
 import { ModeCard } from '@/components/battle/ModeCard'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 export default function BattleMenuPage() {
   const router = useRouter()
@@ -93,7 +94,7 @@ export default function BattleMenuPage() {
   if (loading) {
     return (
       <ScreenShell variant="tab" title="Battle">
-        <p className="sv-body text-fg-muted">Loading battles...</p>
+        <LoadingState />
       </ScreenShell>
     )
   }

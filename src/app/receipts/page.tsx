@@ -20,6 +20,7 @@ import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 export default function ReceiptsPage() {
   const [items, setItems] = useState<TimelineItem[]>([])
@@ -77,7 +78,7 @@ export default function ReceiptsPage() {
         once the chain has confirmed it.
       </p>
 
-      {loading && <p className="sv-body text-fg-muted">Loading…</p>}
+      {loading && <LoadingState />}
 
       {error && (
         <Banner tone="error">

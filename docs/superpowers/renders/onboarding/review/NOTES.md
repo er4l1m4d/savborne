@@ -21,6 +21,9 @@ to, naming the width and the element where possible.
 - [ ] Name error
 - [ ] Settings - Character
 - [ ] How Savborne works - Settings
+- [ ] Loading state
+- [ ] Items - paired card heights
+- [ ] First check-in - paired tile heights
 - [ ] Balance error
 - [ ] Gate - Preparing
 - [ ] Gate - Open inside Nimiq Pay

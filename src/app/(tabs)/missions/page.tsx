@@ -17,6 +17,7 @@ import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Row } from '@/components/ui/Row'
 import { Chip } from '@/components/ui/Chip'
 import { Banner } from '@/components/ui/Banner'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type Mission = {
   key: string
@@ -73,7 +74,7 @@ export default function MissionsPage() {
   if (loading) {
     return (
       <ScreenShell variant="tab" title="Missions">
-        <p className="sv-body text-fg-muted">Loading missions…</p>
+        <LoadingState />
       </ScreenShell>
     )
   }

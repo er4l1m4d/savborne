@@ -41,6 +41,7 @@ import { Button, ButtonLink } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Banner } from '@/components/ui/Banner'
 import { takeBalanceRetry } from '@/lib/balance-retry'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type MissionStatus = {
   key: string
@@ -201,7 +202,7 @@ export default function HomePage() {
   if (loading || !player) {
     return (
       <ScreenShell variant="tab" title="Savborne">
-        <p className="sv-body text-fg-muted">Loading your character…</p>
+        <LoadingState />
       </ScreenShell>
     )
   }

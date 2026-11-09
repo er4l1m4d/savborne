@@ -22,6 +22,7 @@ import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { Chip } from '@/components/ui/Chip'
 import { VersusCards, UnknownFighter } from '@/components/battle/VersusCards'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type Status = 'joining' | 'searching' | 'ended' | 'error'
 
@@ -185,7 +186,7 @@ export default function RankedQueuePage() {
   if (loading) {
     return (
       <ScreenShell variant="pushed" title="Ranked">
-        <p className="sv-body text-fg-muted">Loading ranked...</p>
+        <LoadingState />
       </ScreenShell>
     )
   }

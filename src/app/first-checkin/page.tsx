@@ -18,6 +18,7 @@ import { ItemArt } from '@/components/ItemArt'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { ButtonLink } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 export default function FirstCheckInPage() {
   const router = useRouter()
@@ -43,7 +44,7 @@ export default function FirstCheckInPage() {
   return (
     <ScreenShell variant="pushed">
       {!state ? (
-        <p className="sv-body text-fg-muted">Loading…</p>
+        <LoadingState />
       ) : (
         <>
           <div className="flex flex-col items-center gap-3.5 text-center">

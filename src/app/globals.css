@@ -193,6 +193,11 @@ body {
   .pxw[data-tone='coral'] > .px { background: var(--coral-tint); }
   .pxw[data-tone='cream'] > .px { background: var(--fg); color: var(--shell); }
   .pxw[data-tone='off']   > .px { background: var(--surface-low); }
+
+  /* Paired cards fill their grid row so a short card does not end above the
+     card beside it. Content stays top-aligned. */
+  .grid > .pxw { height: 100%; }
+  .grid > .pxw > .px { height: 100%; }
 }
 
 /* `.vpx` is deprecated for panel containers. Keep it for square controls
@@ -249,6 +254,12 @@ body {
 .sv-dots span { width: 4px; height: 4px; background: currentColor; animation: sv-dot var(--t-dots) infinite; }
 .sv-dots span:nth-child(2) { animation-delay: 0.15s; }
 .sv-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+.sv-loader { display: inline-flex; gap: 6px; }
+.sv-loader span { width: 8px; height: 8px; background: var(--mint); animation: sv-dot var(--t-dots) infinite; }
+.sv-loader span:nth-child(2) { animation-delay: 0.15s; }
+.sv-loader span:nth-child(3) { animation-delay: 0.3s; }
+
 .sv-shake { animation: sv-shake var(--t-shake) var(--ease); }
 .sv-pop { animation: sv-pop var(--t-pop) var(--ease); }
 
@@ -261,7 +272,7 @@ body {
     --t-dots: 0.01ms;
     --t-shake: 0.01ms;
   }
-  .sv-sheet, .sv-shake, .sv-pop, .sv-dots span { animation: none; }
+  .sv-sheet, .sv-shake, .sv-pop, .sv-dots span, .sv-loader span { animation: none; }
   .sv-press:active { transform: none; }
   .sv-meter__fill { transition: none; }
 }

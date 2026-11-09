@@ -32,6 +32,7 @@ import { ResultPanel } from '@/components/ui/ResultPanel'
 import { ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { Arena } from '@/components/battle/Arena'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type ResultState = {
   battle: {
@@ -122,7 +123,7 @@ export default function BattleResultPage() {
   if (!state) {
     return (
       <ScreenShell variant="pushed">
-        <p className="sv-body text-fg-muted">Loading result...</p>
+        <LoadingState />
       </ScreenShell>
     )
   }

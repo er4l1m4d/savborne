@@ -1061,3 +1061,77 @@ includes Home and Profile spot checks for the global fix. Raw audit is
 1. Apply `supabase/FINAL-SCHEMA.sql` before deploying.
 2. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step.
 3. Do not merge until the user signs off.
+
+
+---
+
+## 18. Loading state and paired-card heights - 2026-11-09
+
+**Verdict:** every data load uses one branded Savborne loader, and paired cards
+in a grid row now share the same height.
+
+### What landed
+
+- **Loading state:** `src/components/ui/LoadingState.tsx` renders the handoff
+  brand mark, three 8px mint dots and "Loading Savborne...". It waits 150ms
+  before appearing so a fast load does not flash it, is a polite status region,
+  and the dots stop under reduced motion. It replaces the plain loading text on
+  Home, Profile, Missions, Ranks, Vault, Battle menu, Items, Receipts, ranked
+  queue, arena, result, friend challenge, Bracket Climb, First check-in,
+  Withdrawal, Settings and Delete account. The Nimiq Pay Preparing state keeps
+  its own no-spinner treatment.
+- **Paired cards:** `.grid > .pxw { height: 100% }` and
+  `.grid > .pxw > .px { height: 100% }` make a shorter `PixelPanel` fill the
+  row set by the taller one. Content stays top-aligned. This fixes the privacy
+  collect/don't pair and applies to the vault can/cannot cards, item grid,
+  first check-in tiles and any future pair. Single full-width panels are
+  unchanged.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 370 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 50 warnings, 0 errors |
+| `npm run build` | exit 0 |
+| Audit | 63 rows (21 onboarding states x 360/390/430): 0 problems; min font 12, no target below 44px, clean focus |
+| Spot checks | Home, Profile, Items and First check-in at 360/390/430; item rows and the XP/balance tiles share heights |
+
+### 360 behaviour
+
+- Loading: the brand and dots centre in the body under the existing header;
+  the label and dots fit at 360.
+- Privacy: the collect card and the don't card now end on the same line; the
+  disclosure, consent line and Continue still fit with the disclosure closed.
+- Items: each row's two cards share a bottom edge; the taller description sets
+  the row.
+- First check-in: the +20 XP and 2.00 NIM tiles share a height.
+
+### Rulings
+
+- **Brand + dots, not the character.** The chosen avatar is not known during the
+  first load, so a character loader could flash Hero before a Heroine profile
+  arrives. The dots are always correct.
+- **150ms delay.** A fast page continues straight to content; the loader only
+  appears when the wait is perceptible.
+- **Gate Preparing stays separate.** It is the wallet check, not a page data
+  load, and the handoff explicitly avoids a spinner there.
+- **Every paired card row, not only privacy.** The rule is a grid-child rule,
+  so it also covers items, first check-in, vault cards and future pairs without
+  per-card props.
+- **Top-aligned content.** The extra height is breathing room under the text,
+  not vertically centred content.
+
+### Renders
+
+63 onboarding PNGs in `docs/superpowers/renders/onboarding/after/` (21 states at
+360/390/430) plus Home, Profile, Items and First check-in spot checks. The
+review page is `docs/superpowers/renders/onboarding/review/index.html`; raw
+audit is `docs/superpowers/renders/onboarding/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. Apply `supabase/FINAL-SCHEMA.sql` before deploying.
+2. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step.
+3. Do not merge until the user signs off.

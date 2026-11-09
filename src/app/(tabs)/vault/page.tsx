@@ -18,6 +18,7 @@ import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 export default function VaultPage() {
   const {
@@ -127,7 +128,7 @@ export default function VaultPage() {
   if (loading) {
     return (
       <ScreenShell variant="tab" title="Vault" backHref="/">
-        <p className="sv-body text-fg-muted">Loading your vault…</p>
+        <LoadingState />
       </ScreenShell>
     )
   }

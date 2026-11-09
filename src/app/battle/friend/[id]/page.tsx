@@ -22,6 +22,7 @@ import { Banner } from '@/components/ui/Banner'
 import { Chip } from '@/components/ui/Chip'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { VersusCards, UnknownFighter } from '@/components/battle/VersusCards'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type FriendState = {
   battle: {
@@ -137,7 +138,7 @@ export default function FriendChallengePage() {
       {error && <Banner tone="error">{error}</Banner>}
 
       {!state ? (
-        <p className="sv-body text-fg-muted">Loading challenge...</p>
+        <LoadingState />
       ) : state.battle.status === 'abandoned' ? (
         <>
           <h1 className="sv-heading">Challenge expired</h1>

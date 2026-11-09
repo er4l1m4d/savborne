@@ -31,6 +31,7 @@ import { Row } from '@/components/ui/Row'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { BottomSheet } from '@/components/ui/BottomSheet'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 const CONTACT_EMAIL = 'damilareogooluwade@outlook.com'
 
@@ -178,7 +179,7 @@ export default function SettingsPage() {
   return (
     <ScreenShell variant="pushed" title="Settings" backHref="/profile">
       {loading ? (
-        <p className="sv-body text-fg-muted">Loading settings…</p>
+        <LoadingState />
       ) : error ? (
         <>
           <Banner tone="error">{error}</Banner>

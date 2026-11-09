@@ -22,6 +22,7 @@ import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Chip } from '@/components/ui/Chip'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type ProfileData = {
   player: {
@@ -78,7 +79,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <ScreenShell variant="tab">
-        <p className="sv-body text-fg-muted">Loading your profile…</p>
+        <LoadingState />
       </ScreenShell>
     )
   }

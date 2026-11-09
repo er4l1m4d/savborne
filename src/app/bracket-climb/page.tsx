@@ -18,6 +18,7 @@ import { ItemArt } from '@/components/ItemArt'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { ButtonLink } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type State = BracketHandoff
 
@@ -48,7 +49,7 @@ export default function BracketClimbPage() {
   return (
     <ScreenShell variant="pushed">
       {!state || !bracket ? (
-        <p className="sv-body text-fg-muted">Loading your bracket…</p>
+        <LoadingState />
       ) : (
         <>
           <div className="flex flex-col items-center gap-3.5 text-center">

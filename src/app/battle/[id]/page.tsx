@@ -34,6 +34,7 @@ import { Meter } from '@/components/ui/Meter'
 import { Arena } from '@/components/battle/Arena'
 import { ItemSheet } from '@/components/battle/ItemSheet'
 import { VersusCards } from '@/components/battle/VersusCards'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type MoveInfo = { move: string; itemKey: string | null; damage: number } | null
 
@@ -198,7 +199,7 @@ export default function BattleScreen() {
         ) : offline ? (
           <Banner tone="error">Connection lost. Retrying...</Banner>
         ) : (
-          <p className="sv-body text-fg-muted">Loading battle...</p>
+          <LoadingState />
         )}
         {offline && !error && (
           <Button variant="primary" onClick={reconnect} loading={reconnecting}>

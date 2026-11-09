@@ -18,6 +18,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Tabs } from '@/components/ui/Tabs'
 import { Banner } from '@/components/ui/Banner'
 import { Button } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type RankRow = {
   rank: number
@@ -89,7 +90,7 @@ export default function LeaderboardPage() {
         ]}
       />
 
-      {loading && <p className="sv-body text-fg-muted py-6 text-center">Loading…</p>}
+      {loading && <LoadingState />}
       {error && <Banner tone="error">{error}</Banner>}
 
       {!loading && !error && rows && (

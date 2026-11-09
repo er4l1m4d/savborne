@@ -20,6 +20,7 @@ import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Chip } from '@/components/ui/Chip'
 import { Banner } from '@/components/ui/Banner'
 import { Button } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 type ItemsData = {
   player: { bracket: Bracket | null }
@@ -77,7 +78,7 @@ export default function ItemsPage() {
       }
     >
       {loading ? (
-        <p className="sv-body text-fg-muted">Loading items…</p>
+        <LoadingState />
       ) : error || !data ? (
         <>
           <Banner tone="error">{error ?? 'Could not load items.'}</Banner>

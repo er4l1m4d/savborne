@@ -25,10 +25,11 @@
 <h1>Onboarding UI - current review</h1>
 <p class="lede">
   The focused onboarding flow at 360, 390 and 430: five steps, shorter copy,
-  closed disclosures, the Hero/Heroine picker and the Settings reference.
-  Home and Profile are included as a spot check for the global panel-edge fix.
-  Corrections go in <code>NOTES.md</code>, under the screen they belong to and
-  naming the width where possible.
+  closed disclosures, the Hero/Heroine picker, the branded loading state and the
+  Settings reference. Home, Profile, Items and First check-in are included as
+  spot checks for the global panel and paired-card fixes. Corrections go in
+  <code>NOTES.md</code>, under the screen they belong to and naming the width
+  where possible.
 </p>
 <section class="screen">
   <h2>Before - the old /setup wizard</h2>
@@ -77,7 +78,7 @@
 </section>
 <section class="screen">
   <h2>9. Privacy notice</h2>
-  <p class="route">/privacy - Step 4 of 5; short version, two cards and the closed disclosure.</p>
+  <p class="route">/privacy - Step 4 of 5; the paired cards now share a height.</p>
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/privacy@360.png" alt="Privacy notice at 360px"></figure><figure><figcaption>390</figcaption><img src="current/privacy@390.png" alt="Privacy notice at 390px"></figure><figure><figcaption>430</figcaption><img src="current/privacy@430.png" alt="Privacy notice at 430px"></figure></div>
 </section>
 <section class="screen">
@@ -111,39 +112,54 @@
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/settings-character@360.png" alt="Settings - Character at 360px"></figure><figure><figcaption>390</figcaption><img src="current/settings-character@390.png" alt="Settings - Character at 390px"></figure><figure><figcaption>430</figcaption><img src="current/settings-character@430.png" alt="Settings - Character at 430px"></figure></div>
 </section>
 <section class="screen">
-  <h2>16. How Savborne works</h2>
+  <h2>16. Loading state</h2>
+  <p class="route">/settings?slow=1 - The brand mark and three pixel dots after 150ms; the header stays.</p>
+  <div class="strip"><figure><figcaption>360</figcaption><img src="current/loading@360.png" alt="Loading state at 360px"></figure><figure><figcaption>390</figcaption><img src="current/loading@390.png" alt="Loading state at 390px"></figure><figure><figcaption>430</figcaption><img src="current/loading@430.png" alt="Loading state at 430px"></figure></div>
+</section>
+<section class="screen">
+  <h2>17. How Savborne works</h2>
   <p class="route">/settings/how-it-works - The long-form reference linked from Settings > Help.</p>
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/how-it-works@360.png" alt="How Savborne works at 360px"></figure><figure><figcaption>390</figcaption><img src="current/how-it-works@390.png" alt="How Savborne works at 390px"></figure><figure><figcaption>430</figcaption><img src="current/how-it-works@430.png" alt="How Savborne works at 430px"></figure></div>
 </section>
 <section class="screen">
-  <h2>17. Balance error</h2>
+  <h2>18. Balance error</h2>
   <p class="route">/balance-error - Only for 503 rpc_unreachable; Try again leaves a one-shot flag for Home.</p>
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/balance-error@360.png" alt="Balance error at 360px"></figure><figure><figcaption>390</figcaption><img src="current/balance-error@390.png" alt="Balance error at 390px"></figure><figure><figcaption>430</figcaption><img src="current/balance-error@430.png" alt="Balance error at 430px"></figure></div>
 </section>
 <section class="screen">
-  <h2>18. Gate - Preparing</h2>
+  <h2>19. Gate - Preparing</h2>
   <p class="route">/welcome?gate=preparing - Brand mark and one line; no spinner, no action.</p>
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/gate-preparing@360.png" alt="Gate - Preparing at 360px"></figure><figure><figcaption>390</figcaption><img src="current/gate-preparing@390.png" alt="Gate - Preparing at 390px"></figure><figure><figcaption>430</figcaption><img src="current/gate-preparing@430.png" alt="Gate - Preparing at 430px"></figure></div>
 </section>
 <section class="screen">
-  <h2>19. Gate - Open inside Nimiq Pay</h2>
+  <h2>20. Gate - Open inside Nimiq Pay</h2>
   <p class="route">/welcome?gate=outside - Phone panel and explanation; no CTA.</p>
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/gate-outside@360.png" alt="Gate - Open inside Nimiq Pay at 360px"></figure><figure><figcaption>390</figcaption><img src="current/gate-outside@390.png" alt="Gate - Open inside Nimiq Pay at 390px"></figure><figure><figcaption>430</figcaption><img src="current/gate-outside@430.png" alt="Gate - Open inside Nimiq Pay at 430px"></figure></div>
 </section>
 <section class="screen">
-  <h2>20. Gate - Update Nimiq Pay</h2>
+  <h2>21. Gate - Update Nimiq Pay</h2>
   <p class="route">/welcome?gate=update - Update arrow, site link and the retry that re-runs the check.</p>
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/gate-update@360.png" alt="Gate - Update Nimiq Pay at 360px"></figure><figure><figcaption>390</figcaption><img src="current/gate-update@390.png" alt="Gate - Update Nimiq Pay at 390px"></figure><figure><figcaption>430</figcaption><img src="current/gate-update@430.png" alt="Gate - Update Nimiq Pay at 430px"></figure></div>
 </section>
 <section class="screen">
-  <h2>21. Home - side outline spot check</h2>
+  <h2>22. Home - side outline spot check</h2>
   <p class="route">/ - The global shell fix on a tab screen; the left and right outlines are restored.</p>
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/home@360.png" alt="Home - side outline spot check at 360px"></figure><figure><figcaption>390</figcaption><img src="current/home@390.png" alt="Home - side outline spot check at 390px"></figure><figure><figcaption>430</figcaption><img src="current/home@430.png" alt="Home - side outline spot check at 430px"></figure></div>
 </section>
 <section class="screen">
-  <h2>22. Profile - side outline spot check</h2>
+  <h2>23. Profile - side outline spot check</h2>
   <p class="route">/profile - Profile uses the same PixelPanel shell; the edges are restored.</p>
   <div class="strip"><figure><figcaption>360</figcaption><img src="current/profile@360.png" alt="Profile - side outline spot check at 360px"></figure><figure><figcaption>390</figcaption><img src="current/profile@390.png" alt="Profile - side outline spot check at 390px"></figure><figure><figcaption>430</figcaption><img src="current/profile@430.png" alt="Profile - side outline spot check at 430px"></figure></div>
+</section>
+<section class="screen">
+  <h2>24. Items - paired card heights</h2>
+  <p class="route">/items - Each row of two item cards now shares the same height.</p>
+  <div class="strip"><figure><figcaption>360</figcaption><img src="current/items@360.png" alt="Items - paired card heights at 360px"></figure><figure><figcaption>390</figcaption><img src="current/items@390.png" alt="Items - paired card heights at 390px"></figure><figure><figcaption>430</figcaption><img src="current/items@430.png" alt="Items - paired card heights at 430px"></figure></div>
+</section>
+<section class="screen">
+  <h2>25. First check-in - paired tiles</h2>
+  <p class="route">/first-checkin - The XP and balance tiles now share the same height.</p>
+  <div class="strip"><figure><figcaption>360</figcaption><img src="current/first-checkin@360.png" alt="First check-in - paired tiles at 360px"></figure><figure><figcaption>390</figcaption><img src="current/first-checkin@390.png" alt="First check-in - paired tiles at 390px"></figure><figure><figcaption>430</figcaption><img src="current/first-checkin@430.png" alt="First check-in - paired tiles at 430px"></figure></div>
 </section>
 <p class="note">
   Renders are 2x device-scale PNGs from the throwaway CDP harness. The

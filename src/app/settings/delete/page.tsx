@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { readSession } from '@/lib/session'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { DeleteAccountFlow } from '@/components/settings/DeleteAccountFlow'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 export default function DeleteAccountPage() {
   const router = useRouter()
@@ -33,7 +34,7 @@ export default function DeleteAccountPage() {
       {playerAddress ? (
         <DeleteAccountFlow playerAddress={playerAddress} />
       ) : (
-        <p className="sv-body text-fg-muted">Loading…</p>
+        <LoadingState />
       )}
     </ScreenShell>
   )
