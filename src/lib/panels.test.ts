@@ -37,6 +37,7 @@ test('the sv type scale meets the floor except sv-state', () => {
     '.sv-body': 16,
     '.sv-label': 13,
     '.sv-figure': 13,
+    '.sv-caption': 12,
     '.sv-number-xl': 36,
     '.sv-number-m': 24,
     '.sv-section-label': 12,
@@ -45,6 +46,7 @@ test('the sv type scale meets the floor except sv-state', () => {
   for (const [selector, size] of Object.entries(sizes)) {
     assert.match(block(selector), new RegExp(`font-size:\\s*${size}px`), selector)
   }
+  assert.match(block('.sv-caption'), /text-transform:\s*none/)
   assert.match(block('.sv-break'), /overflow-wrap:\s*anywhere/)
 })
 
