@@ -15,6 +15,8 @@ type ScreenShellProps = {
   variant?: 'tab' | 'pushed'
   title?: string
   backHref?: string
+  /** Accessible name for the back icon. Defaults to "Back". */
+  backLabel?: string
   actions?: ReactNode
   bodyClassName?: string
   children: ReactNode
@@ -24,6 +26,7 @@ export function ScreenShell({
   variant = 'tab',
   title,
   backHref,
+  backLabel,
   actions,
   bodyClassName,
   children,
@@ -36,7 +39,7 @@ export function ScreenShell({
         <header className="sv-shell__header">
           <div className="flex min-w-0 items-center gap-2">
             {backHref && (
-              <ButtonLink href={backHref} variant="icon" aria-label="Back" className="shrink-0">
+              <ButtonLink href={backHref} variant="icon" aria-label={backLabel ?? 'Back'} className="shrink-0">
                 <Glyph name="back" size={24} />
               </ButtonLink>
             )}

@@ -105,3 +105,37 @@ test('ResultPanel renders a display headline, tiles and actions', () => {
   assert.match(src, /sv-number-m/)
   assert.match(src, /actions/)
 })
+
+test('Meter is a bevelled fill with an optional progressbar role', () => {
+  const src = ui('Meter.tsx')
+  assert.match(src, /value:\s*number/)
+  assert.match(src, /max:\s*number/)
+  assert.match(src, /type MeterTone = 'mint' \| 'coral' \| 'butter'/)
+  assert.match(src, /tone = 'mint'/)
+  assert.match(src, /role=\{label \? 'progressbar' : undefined\}/)
+  assert.match(src, /aria-valuenow/)
+  assert.match(src, /sv-meter/)
+  assert.match(src, /sv-meter__fill/)
+  assert.match(CSS, /\.sv-meter\s*\{[^}]*border:\s*2px solid var\(--bevel\)/)
+  assert.match(CSS, /\.sv-meter__fill\s*\{[^}]*height:\s*100%/)
+})
+
+test('Button exposes the mode and item sizes', () => {
+  const src = ui('Button.tsx')
+  assert.match(src, /'mode'\s*\|\s*'item'/)
+  assert.match(CSS, /\.sv-btn--mode\s*\{[^}]*min-height:\s*96px/)
+  assert.match(CSS, /\.sv-btn--mode\s*\{[^}]*text-align:\s*left/)
+  assert.match(CSS, /\.sv-btn--item\s*\{[^}]*min-height:\s*64px/)
+})
+
+test('BottomSheet can render a header action beside its title', () => {
+  const src = ui('BottomSheet.tsx')
+  assert.match(src, /headerAction\?:\s*ReactNode/)
+  assert.match(src, /\{headerAction\}/)
+})
+
+test('ScreenShell accepts a custom back label', () => {
+  const src = ui('ScreenShell.tsx')
+  assert.match(src, /backLabel\?:\s*string/)
+  assert.match(src, /aria-label=\{backLabel \?\? 'Back'\}/)
+})

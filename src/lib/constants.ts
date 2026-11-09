@@ -138,6 +138,8 @@ export const RANKED = {
   ],
   /** Poll interval the client uses to check for a match. */
   pollIntervalMs: 10_000,
+  /** After this long in the queue, the screen offers AI / friend / leave. */
+  queueTimeoutSeconds: 185,
   /** Stale threshold — if no poll within this window, entry is dropped. */
   staleAfterSeconds: 30,
 } as const

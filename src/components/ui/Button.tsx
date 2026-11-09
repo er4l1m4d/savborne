@@ -16,7 +16,7 @@ import type {
 } from 'react'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'ghost' | 'icon'
-export type ButtonSize = 'lg' | 'md' | 'sm' | 'move'
+export type ButtonSize = 'lg' | 'md' | 'sm' | 'move' | 'mode' | 'item'
 
 type StyleProps = {
   variant?: ButtonVariant

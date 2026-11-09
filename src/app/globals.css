@@ -255,6 +255,7 @@ body {
   }
   .sv-sheet, .sv-shake, .sv-pop, .sv-dots span { animation: none; }
   .sv-press:active { transform: none; }
+  .sv-meter__fill { transition: none; }
 }
 
 /* ── Foundation 2: buttons and links ──────────────────────────────────── */
@@ -326,6 +327,25 @@ body {
     padding: 0 16px;
     font-size: 18px;
   }
+  .sv-btn--mode {
+    height: auto;
+    min-height: 96px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 18px 16px;
+    text-align: left;
+  }
+  .sv-btn--item {
+    height: auto;
+    min-height: 64px;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 8px 14px;
+    font-size: 15px;
+    text-align: left;
+  }
   .sv-btn:disabled {
     background: var(--surface-low);
     color: var(--fg-faint);
@@ -340,6 +360,19 @@ body {
     color: var(--mint);
     text-decoration: underline;
     text-underline-offset: 4px;
+  }
+}
+
+/* ── Foundation 2: meters ─────────────────────────────────────────────── */
+@layer components {
+  .sv-meter {
+    border: 2px solid var(--bevel);
+    background: var(--shell);
+    overflow: hidden;
+  }
+  .sv-meter__fill {
+    height: 100%;
+    transition: width var(--t-fill) var(--ease);
   }
 }
 

@@ -17,10 +17,12 @@ type BottomSheetProps = {
   open: boolean
   onClose: () => void
   title?: string
+  /** Rendered beside the title, e.g. a 44px close button. */
+  headerAction?: ReactNode
   children: ReactNode
 }
 
-export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, title, headerAction, children }: BottomSheetProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   // Keep the latest close callback without re-running the focus/scroll effect
@@ -88,10 +90,15 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
       >
-        {title && (
-          <h2 id={titleId} className="sv-subheading">
-            {title}
-          </h2>
+        {(title || headerAction) && (
+          <div className="flex items-center justify-between gap-3">
+            {title && (
+              <h2 id={titleId} className="sv-subheading">
+                {title}
+              </h2>
+            )}
+            {headerAction}
+          </div>
         )}
         {children}
       </div>
