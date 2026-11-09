@@ -20,7 +20,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { listAccounts, hostNetwork, WalletError } from '@/lib/nimiq'
-import { writeSession } from '@/lib/session'
+import { writeSession, PLAYER_HEADER } from '@/lib/session'
+import { reconnectDecision, sessionFromProfile, type ReconnectProfile } from '@/lib/reconnect'
 import type { Network } from '@/lib/nimiq'
 import { encryptPhrase } from '@/lib/vault/crypto'
 import { deriveVaultAddress, generatePhrase } from '@/lib/vault/phrase'
@@ -73,6 +74,42 @@ export default function SetupPage() {
       cancelled = true
     }
   }, [step, accounts.length])
+
+  /**
+   * Step 2 → reconnect an existing profile instead of creating a second vault.
+   *
+   * Disconnect clears the local session and key, so a returning player lands
+   * here. The probe is read-only; only a 200 writes a session, and only a 404
+   * falls through to vault creation.
+   */
+  async function chooseAccount(identityAddress: string) {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/players/me', {
+        headers: { [PLAYER_HEADER]: identityAddress },
+      })
+      const decision = reconnectDecision(res.status)
+
+      if (decision === 'reconnect') {
+        const body = (await res.json()) as { player: ReconnectProfile }
+        writeSession(sessionFromProfile(body.player))
+        router.replace('/')
+        return
+      }
+
+      if (decision === 'create') {
+        await createVault(identityAddress)
+        return
+      }
+
+      throw new Error(`Could not check this wallet (${res.status}).`)
+    } catch (err) {
+      setError(describe(err))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   /** Step 2 → generate the phrase and derive the vault address on device. */
   async function createVault(identityAddress: string) {
@@ -179,7 +216,7 @@ export default function SetupPage() {
           accounts={accounts}
           loading={loading}
           error={error}
-          onPick={createVault}
+          onPick={chooseAccount}
           onBack={() => setStep(1)}
         />
       )}
@@ -290,6 +327,10 @@ function StepCreateVault({
             {a}
           </Button>
         ))}
+
+      <p className="sv-label text-fg-faint">
+        Already have a profile with this wallet? We reconnect it instead of creating a second vault.
+      </p>
 
       {error && <Banner tone="error">{error}</Banner>}
       <BackButton onClick={onBack} />
