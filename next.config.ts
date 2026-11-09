@@ -1,12 +1,16 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
+const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
+  ?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const nextConfig: NextConfig = {
-  // The InstaBox tunnel serves the dev server under a public hostname. Next 16
-  // blocks cross-origin dev assets (including the client chunks needed for
-  // hydration) unless the host is listed here, which leaves the Nimiq Pay
-  // WebView stuck on the server-rendered "Preparing Savborne" state.
-  allowedDevOrigins: ["*.instabox.tech"],
+  // The public tunnel for local development is machine-specific, so the host
+  // list comes from ALLOWED_DEV_ORIGINS (e.g. "*.instabox.tech") rather than
+  // being committed as product configuration.
+  ...(allowedDevOrigins && allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   // `@nimiq/core` is a WASM/worker package that Turbopack cannot bundle for a
   // server route (its node build imports `comlink` workers and `.mjs` wasm
   // loaders). Keep it external and let Node require it at runtime. This is a
