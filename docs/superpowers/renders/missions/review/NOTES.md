@@ -60,7 +60,7 @@ Corrections:
   description. The body column carries 8px vertical padding, so a two-line
   description row grows to about 71px and its last line clears the divider by
   8px. Done and one-line rows stay 58px.
-- Groups are separated by 24px (Daily panel to Weekly header). The tabs keep
+- Groups are separated by 36px (Daily panel to Weekly header). The tabs keep
   14px to the first group, and a header keeps 8px to its own panel.
 - Done rows are exactly 58px with no description. Open rows grow when the
   description wraps (`Balance held or grew at every check-in this week` is two

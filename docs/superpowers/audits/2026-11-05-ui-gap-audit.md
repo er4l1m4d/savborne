@@ -1157,8 +1157,8 @@ period XP counter. The cap cards are gone.
   with `Resets Monday 00:00 UTC · 25 of 100 XP`, `One-time` with
   `Never expires`. Titles are 20px default text; captions are the new 12px
   `.sv-caption` role.
-- **Group rhythm:** the groups sit in a 24px-gap list, so the Daily panel and
-  the Weekly header have 24px between them. The tabs keep 14px to the first
+- **Group rhythm:** the groups sit in a 36px-gap list, so the Daily panel and
+  the Weekly header have 36px between them. The tabs keep 14px to the first
   group and a header keeps 8px to its own panel.
 - **Rows:** one grouped `PixelPanel` per group; 24px box (mint fill + ground
   check when done, mint outline when open), a 15px/1.35 title, a 12px/500/1.35
@@ -1194,8 +1194,8 @@ period XP counter. The cap cards are gone.
 
 - Both tabs and both group captions fit on one line: the Weekly caption is
   231px inside a 324px body, so the handoff copy stays intact.
-- The 24px group gap moves the Weekly header down 10px; both groups still fit
-  above the nav at 360.
+- The 36px group gap moves the Weekly header down 22px from the handoff
+  rhythm; both groups still fit above the nav at 360.
 - `Steady Saver`'s description wraps to two lines at 360 and 390; the row grows
   to about 71px with 8px of clearance under the last line. Nothing is clipped
   or truncated.
@@ -1212,11 +1212,11 @@ period XP counter. The cap cards are gone.
   and a visually hidden `(completed)`, not by colour alone.
 - **Descriptions on open rows only.** Done rows are scannable at 58px, matching
   the handoff; the explanation is only needed before the mission is earned.
-- **24px between groups.** The first render read the Daily panel and the Weekly
-  header as one block because the 14px shell gap and the panel's 4px hard shadow
-  left about 10px of air. The groups now sit in a 24px-gap list; the tabs keep
-  the 14px shell rhythm and a header keeps 8px to its own panel, so each title
-  stays bound to its rows.
+- **36px between groups.** The 14px shell gap and the panel's 4px hard shadow
+  left about 10px of air, and a first pass at 24px still read as one block. The
+  groups now sit in a 36px-gap list (about 40px visible after the shadow); the
+  tabs keep the 14px shell rhythm and a header keeps 8px to its own panel, so
+  each title stays bound to its rows.
 - **Row type pass.** The first renders showed two-line descriptions ending on
   the divider. The title dropped from 16px to the handoff's 15px and the body
   gained 8px vertical padding. The description is already at the 12px floor, so
