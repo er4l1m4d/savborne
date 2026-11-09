@@ -70,3 +70,10 @@ test('every motion class has a reduced-motion path', () => {
   assert.match(media, /\.sv-press:active/)
   assert.match(media, /--t-dots/)
 })
+
+test('the shell body leaves inline room for the panel side outlines', () => {
+  const body = block('.sv-shell__body')
+  assert.match(body, /padding-inline:\s*4px/)
+  assert.match(body, /margin-inline:\s*-4px/)
+  assert.match(body, /overflow-y:\s*auto/)
+})

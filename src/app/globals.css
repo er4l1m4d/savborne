@@ -418,6 +418,11 @@ body {
     overflow-y: auto;
     padding-top: 16px;
     padding-bottom: 16px;
+    /* .pxw draws its 2px outline outside the panel box. Give the scroll
+       container 4px of inline room so the left and right outlines are not
+       clipped, and pull the box back so the content keeps its gutter. */
+    padding-inline: 4px;
+    margin-inline: -4px;
     scroll-padding-top: 16px;
     scroll-padding-bottom: 16px;
   }

@@ -995,3 +995,69 @@ audit is `docs/superpowers/renders/onboarding/audit/final-audit.jsonl`.
    8-argument `create_player_with_vault` (privacy notice version and avatar).
 2. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step.
 3. Do not merge until the user signs off.
+
+
+---
+
+## 17. Panel side-outline fix - 2026-11-09
+
+**Verdict:** every `PixelPanel` now shows its full left and right outline. The
+panel width, position, top and bottom edges are unchanged.
+
+### Diagnosis
+
+`.pxw` draws the handoff outline with a `drop-shadow` filter, which is ink
+outside the panel's box. `.sv-shell__body` scrolls with `overflow-y: auto`, so
+its horizontal axis is clipped at the scrollport edge. The body had vertical
+padding but no inline padding, so the 2px left and right outline was cut off on
+every screen whose panels reached the body's content edge. A cropped render
+confirmed the top edge and stepped corners were present while the vertical
+edges were missing.
+
+### Fix
+
+`src/app/globals.css`, `.sv-shell__body`:
+
+```css
+padding-inline: 4px;
+margin-inline: -4px;
+```
+
+The 4px padding gives the scrollport room for the 2px outline; the negative
+margin pulls the box back so the content keeps its 22px gutter and exact width.
+This is a shell fix, not a per-page or per-panel change. Top and bottom padding
+are untouched.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 366 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 50 warnings, 0 errors |
+| `npm run build` | exit 0 |
+| Audit | 60 rows (20 onboarding states x 360/390/430): 0 problems; `overflowX: 0`, no wide elements, targets >= 44px, min font 12 |
+| Edge crops | Privacy, Home and Profile at 360 show the full left and right outlines and stepped corners |
+| Home/Profile | Spot-checked at 360/390/430 with the existing page fixtures |
+
+### Rulings
+
+- **Global shell fix.** Every page uses `ScreenShell`, so one rule restores the
+  edges everywhere without touching individual panels.
+- **Content width preserved.** The negative margin is exactly the padding, so
+  the panel does not move or narrow; only the clipping changes.
+- **Panel geometry untouched.** The handoff outline, stepped corners and 4px
+  hard shadow are unchanged.
+- **Top and bottom unchanged.** They already had 16/32px of body padding.
+
+### Renders
+
+The 60 onboarding PNGs were re-captured at 360/390/430; the review page also
+includes Home and Profile spot checks for the global fix. Raw audit is
+`docs/superpowers/renders/onboarding/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. Apply `supabase/FINAL-SCHEMA.sql` before deploying.
+2. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step.
+3. Do not merge until the user signs off.

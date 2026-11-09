@@ -25,6 +25,8 @@ to, naming the width and the element where possible.
 - [ ] Gate - Preparing
 - [ ] Gate - Open inside Nimiq Pay
 - [ ] Gate - Update Nimiq Pay
+- [ ] Home - side outlines
+- [ ] Profile - side outlines
 
 ## Welcome - `/welcome`
 
