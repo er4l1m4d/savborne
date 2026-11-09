@@ -1,9 +1,9 @@
 /**
  * Savborne — Profile screen
  *
- * Shows identity, bracket, level, XP, rating, and win/loss/tie record; a
- * grid of all eight items (locked and unlocked); a horizontal strip of the
- * six badges with awarded state. Pulls from `GET /api/profile`.
+ * Shows the character card, bracket, level, XP, rating and win/loss/tie record;
+ * the six badges; and a shortcut to the Items screen. Pulls from
+ * `GET /api/profile`.
  */
 
 'use client'
@@ -11,13 +11,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
-import { BRACKETS, type Bracket } from '@/lib/constants'
+import { BRACKETS, RANKED, xpToNextLevel, type Bracket } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeKey } from '@/lib/game/badges'
 import { BadgeArt, Glyph } from '@/components/Glyphs'
+import { CharacterArt } from '@/components/CharacterArt'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
-import { Row } from '@/components/ui/Row'
 import { Chip } from '@/components/ui/Chip'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
@@ -89,9 +89,16 @@ export default function ProfilePage() {
     )
   }
 
-  const ownedSet = new Set(data.ownedItems)
   const activeSet = new Set(data.activeBadges)
+  const ownedSet = new Set<ItemKey>(data.ownedItems)
+  if (activeSet.has('golden_crown')) ownedSet.add('golden_crown')
+
   const b = data.player.bracket
+  const bracketLabel = b ? BRACKETS[b].label : 'No bracket'
+  const xpToNext = xpToNextLevel(data.player.level)
+  const xpPct = Math.min(100, Math.round((data.player.xp / xpToNext) * 100))
+  const rankedUnlocked =
+    data.player.level >= RANKED.minLevel && data.player.checkInCount >= RANKED.minCheckIns
 
   return (
     <ScreenShell
@@ -103,17 +110,36 @@ export default function ProfilePage() {
         </ButtonLink>
       }
     >
-      <section className="flex flex-col gap-1">
-        <h2 className="sv-heading sv-break">{data.player.displayName}</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="sv-label text-fg-muted">Level {data.player.level}</span>
-          {b && (
-            <Chip variant="outline" color={BRACKETS[b].color}>
-              {BRACKETS[b].label}
+      <PixelPanel className="p-4 flex items-center gap-4">
+        <div
+          className="w-28 h-[148px] shrink-0 flex items-center justify-center"
+          style={{ background: 'var(--sprite-well)' }}
+        >
+          <CharacterArt bracket={b} />
+        </div>
+        <div className="min-w-0 flex flex-1 flex-col gap-1.5">
+          <h2 className="sv-heading sv-break">{data.player.displayName}</h2>
+          <p className="sv-label text-fg-muted">
+            Level {data.player.level} · {bracketLabel} bracket
+          </p>
+          {rankedUnlocked && (
+            <Chip variant="outline" color="var(--mint)">
+              Ranked unlocked
             </Chip>
           )}
+          <div className="flex flex-col gap-1 pt-1">
+            <div className="flex justify-between gap-2 sv-label text-fg-muted">
+              <span>XP</span>
+              <span>
+                {data.player.xp} / {xpToNext}
+              </span>
+            </div>
+            <div className="h-2 bg-surface-low overflow-hidden">
+              <div className="h-full bg-mint" style={{ width: `${xpPct}%` }} />
+            </div>
+          </div>
         </div>
-      </section>
+      </PixelPanel>
 
       <StatGrid data={data} />
 
@@ -123,17 +149,18 @@ export default function ProfilePage() {
           {BADGES.map((badge) => {
             const active = activeSet.has(badge.key)
             return (
-              <div
-                key={badge.key}
-                className={`vpx-soft p-2 flex flex-col items-center gap-1 text-center ${
-                  active ? 'bg-surface-hi' : 'bg-surface'
-                }`}
-                title={badge.description}
-              >
-                {/* The locked drawing is already a muted two-tone, so no extra dimming here —
-                    an opacity-40 on top of it double-dims a state the art already carries. */}
-                <BadgeArt badge={badge.key} state={active ? 'earned' : 'locked'} size={32} />
-                <span className="sv-label leading-tight">{badge.name}</span>
+              <div key={badge.key} title={badge.description}>
+                <PixelPanel
+                  tone={active ? 'default' : 'off'}
+                  className="h-[100px] flex flex-col items-center justify-center gap-2 text-center"
+                >
+                  {/* The locked drawing is already a muted two-tone, so no extra dimming here —
+                      an opacity-40 on top of it double-dims a state the art already carries. */}
+                  <BadgeArt badge={badge.key} state={active ? 'earned' : 'locked'} size={32} />
+                  <span className={`sv-label leading-tight ${active ? '' : 'text-fg-muted'}`}>
+                    {badge.name}
+                  </span>
+                </PixelPanel>
               </div>
             )
           })}
@@ -141,47 +168,13 @@ export default function ProfilePage() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="sv-section-label text-mint">Inventory</h2>
-        <PixelPanel className="px-4 py-0">
-          {ITEMS.map((item, index) => {
-            const unlocked = ownedSet.has(item.key)
-            return (
-              <Row
-                key={item.key}
-                divider={index < ITEMS.length - 1}
-                className={unlocked ? undefined : 'bg-surface-low opacity-60'}
-                leading={
-                  <span
-                    className="shrink-0 inline-block w-2 h-2"
-                    style={{
-                      background: unlocked
-                        ? BRACKETS[item.bracket].color
-                        : 'var(--bevel-soft)',
-                    }}
-                    aria-hidden
-                  />
-                }
-              >
-                <div className="flex flex-col gap-1 py-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className={`sv-label ${unlocked ? 'text-foreground' : 'text-fg-muted'}`}>
-                      {item.name}
-                    </span>
-                    <Chip variant="outline" color={BRACKETS[item.bracket].color}>
-                      {BRACKETS[item.bracket].label}
-                    </Chip>
-                  </div>
-                  <p className="sv-label text-fg-muted">
-                    {unlocked ? item.blurb : `Locked: reach ${item.bracket} to unlock.`}
-                  </p>
-                  {unlocked && !item.isBadge && (
-                    <p className="sv-label text-mint">Active in battles.</p>
-                  )}
-                </div>
-              </Row>
-            )
-          })}
-        </PixelPanel>
+        <h2 className="sv-section-label text-mint">Items</h2>
+        <ButtonLink href="/items" variant="secondary" className="justify-between">
+          <span>
+            {ownedSet.size} of {ITEMS.length} unlocked
+          </span>
+          <span className="sv-label text-fg-muted">View</span>
+        </ButtonLink>
       </section>
 
       <ShareCardSection cardToken={data.cardToken} />
@@ -261,9 +254,9 @@ function StatGrid({ data }: { data: ProfileData }) {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="vpx-soft bg-surface p-3 flex flex-col gap-1">
+    <PixelPanel className="p-3 flex flex-col gap-1">
       <span className="sv-number-m">{value}</span>
       <span className="sv-label text-fg-muted">{label}</span>
-    </div>
+    </PixelPanel>
   )
 }

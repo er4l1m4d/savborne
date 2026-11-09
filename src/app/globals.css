@@ -378,6 +378,11 @@ body {
     scroll-padding-top: 16px;
     scroll-padding-bottom: 16px;
   }
+  .sv-shell__body:focus,
+  .sv-shell__body:focus-visible {
+    outline: 2px solid var(--mint);
+    outline-offset: -2px;
+  }
   .sv-shell--pushed .sv-shell__body {
     padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
     scroll-padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));

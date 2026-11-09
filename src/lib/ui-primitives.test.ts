@@ -41,6 +41,7 @@ test('ScreenShell owns the header, the scroll body and the back icon', () => {
   assert.match(CSS, /\.sv-shell--pushed\s*\{[^}]*100dvh/)
   assert.match(CSS, /\.sv-shell__title\s*\{[^}]*min-width:\s*0/)
   assert.match(CSS, /\.sv-shell__title\s*\{[^}]*overflow-wrap:\s*anywhere/)
+  assert.match(CSS, /\.sv-shell__body:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--mint\)/)
   assert.match(CSS, /\.sv-shell__body\s*\{[^}]*scroll-padding-top/)
   assert.match(CSS, /\.sv-shell__body\s*\{[^}]*scroll-padding-bottom/)
 })
