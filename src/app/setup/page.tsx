@@ -28,6 +28,7 @@ import { writeVault } from '@/lib/vault/storage'
 import { PhraseCeremony } from '@/components/vault/PhraseCeremony'
 import { BackupQuiz } from '@/components/vault/BackupQuiz'
 import { PassphraseField } from '@/components/vault/PassphraseField'
+import { PrivacyNotice } from '@/components/PrivacyNotice'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button } from '@/components/ui/Button'
@@ -308,28 +309,7 @@ function StepPrivacy({
   return (
     <Section title="Privacy notice">
       <PixelPanel tone="off" className="p-4 flex flex-col gap-2">
-        <p className="sv-label text-fg-soft">
-          <strong>What we collect.</strong> Your wallet address, your vault address, one
-          balance snapshot each time you check in, and game data (XP, missions, items,
-          badges, battle results). Your display name is stored for the leaderboard.
-        </p>
-        <p className="sv-label text-fg-soft">
-          <strong>What we do NOT collect.</strong> Your 24 words, your vault passphrase, or
-          any data that would let us move or lock your funds. The key exists only on this
-          device, encrypted.
-        </p>
-        <p className="sv-label text-fg-soft">
-          <strong>What is public.</strong> Your display name, bracket, level, and leaderboard
-          score. Your balance is never shown to other players.
-        </p>
-        <p className="sv-label text-fg-soft">
-          <strong>Where it is stored.</strong> Supabase (US-East) and Vercel. You can request
-          deletion by emailing the contact in the app footer.
-        </p>
-        <p className="sv-label text-fg-soft">
-          <strong>The risk you are accepting.</strong> If you lose your 24 words and this
-          device, the NIM in your vault is unrecoverable. Savborne cannot restore it.
-        </p>
+        <PrivacyNotice />
       </PixelPanel>
 
       <p className="sv-label text-fg-muted">
