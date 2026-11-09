@@ -12,6 +12,7 @@ import {
   rankedProgress,
   ratingRangeForWait,
   resultCopy,
+  resultSpriteSizes,
 } from './battle-ui'
 
 test('battlesLeft uses the daily limit and never goes negative', () => {
@@ -94,4 +95,10 @@ test('resultCopy returns the handoff title and tone', () => {
   assert.deepEqual(resultCopy('win'), { title: 'You win!', tone: 'mint' })
   assert.deepEqual(resultCopy('loss'), { title: 'You lost.', tone: 'coral' })
   assert.deepEqual(resultCopy('tie'), { title: "It's a tie.", tone: 'cream' })
+})
+
+test('result sprites make the winner larger and a tie equal', () => {
+  assert.deepEqual(resultSpriteSizes('win'), { me: 112, opponent: 80 })
+  assert.deepEqual(resultSpriteSizes('loss'), { me: 80, opponent: 112 })
+  assert.deepEqual(resultSpriteSizes('tie'), { me: 96, opponent: 96 })
 })

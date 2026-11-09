@@ -660,7 +660,7 @@ The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code
 
 | Check | Result |
 |---|---|
-| `npm test` | 295 pass, 0 fail |
+| `npm test` | 296 pass, 0 fail |
 | `npx tsc --noEmit` | clean |
 | `npm run lint` | exit 0, 50 warnings, 0 errors |
 | `npm run build` | exit 0 |
@@ -685,6 +685,7 @@ The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code
 - Result shows the current rating, not a delta; unranked/AI show the record.
 - Daily Limit has a Missions link even though the figure does not draw one.
 - AI uses the existing rival art; the handoff's robot glyph is not in `assets/glyphs.json`.
+- Result sprites now follow the winner: 112px winner, 80px loser, 96px each on a tie. The handoff drew them near-equal; this is a deliberate readability change, result screen only.
 - Connection lost is an in-page state; polling continues.
 - The check-in gate migration is manual and still needs the live acceptance run.
 

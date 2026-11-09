@@ -16,6 +16,7 @@ import {
   battleOutcome,
   battleXpForOutcome,
   resultCopy,
+  resultSpriteSizes,
   type BattleResult,
 } from '@/lib/battle-ui'
 import { rivalForBattle } from '@/lib/game/rivals'
@@ -128,6 +129,7 @@ export default function BattleResultPage() {
   const outcome = battleOutcome(battle.winner, viewer.address)
   const copy = resultCopy(outcome)
   const xp = battleXpForOutcome(outcome)
+  const spriteSizes = resultSpriteSizes(outcome)
   const myHp = viewer.side === 'a' ? battle.hpA : battle.hpB
   const oppHp = viewer.side === 'a' ? battle.hpB : battle.hpA
   const modeLabel =
@@ -139,9 +141,12 @@ export default function BattleResultPage() {
 
   const opponentArt =
     battle.mode === 'ai' ? (
-      <RivalArt rival={rivalForBattle(id)} size={80} />
+      <RivalArt rival={rivalForBattle(id)} size={spriteSizes.opponent} />
     ) : (
-      <CharacterArt bracket={(battle.opponentBracket as Bracket | null) ?? null} size={80} />
+      <CharacterArt
+        bracket={(battle.opponentBracket as Bracket | null) ?? null}
+        size={spriteSizes.opponent}
+      />
     )
 
   const firstBlade =
@@ -199,7 +204,7 @@ export default function BattleResultPage() {
                 art: (
                   <CharacterArt
                     bracket={(viewer.bracket as Bracket | null) ?? null}
-                    size={112}
+                    size={spriteSizes.me}
                   />
                 ),
                 status: 'none',

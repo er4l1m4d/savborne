@@ -102,6 +102,9 @@ Corrections:
 - The result shows the current rating from `/api/profile`, not a delta. The
   pre-battle rating is not persisted. Unranked and AI results show the W-L-T
   record instead.
+- Result sprites follow the winner: 112px winner, 80px loser and 96px each on
+  a tie. The handoff drew them near-equal; this is a deliberate readability
+  change and applies to the result screen only.
 - The Daily Limit panel adds a `Go to Missions` link; the handoff caption asks
   for one but the figure does not draw it.
 - The AI card uses the existing rival art because the handoff's robot glyph is

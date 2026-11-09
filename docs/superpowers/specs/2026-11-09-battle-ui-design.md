@@ -336,8 +336,9 @@ Above `ResultPanel`, a centered `.sv-label text-fg-muted` subline:
 `{Ranked|Unranked|Friend · Unranked} · vs {opponentName}`.
 
 `ResultPanel`:
-- 250px arena with viewer left and opponent right; the loser at 0.55 opacity,
-  the winner at full opacity, both full on a tie;
+- 250px arena with viewer left and opponent right. Winner 112px (7x), loser
+  80px (5x), tie both 96px (6x). The loser is at 0.55 opacity, the winner at
+  full opacity; both full on a tie;
 - two tiles:
   - tile 1: `+{xp} XP`, label `Battle win` / `Battle loss` / `Battle tie`;
   - tile 2: ranked `{rating}`, label `Ranked rating`; unranked/AI
@@ -724,6 +725,10 @@ not add errors.
 10. **Check-in gate migration is manual.** The sandbox has no `.env.local`, so
     applying the migration and running the live acceptance checks is the
     user's deployment step before ranked is public.
+11. **Result sprite sizes follow the winner.** The handoff draws the result
+    sprites at nearly the same size (108/84). The app uses winner 112, loser
+    80 and tie 96 so the result reads at a glance. This applies to the result
+    screen only; the in-battle arena stays symmetric.
 
 ---
 

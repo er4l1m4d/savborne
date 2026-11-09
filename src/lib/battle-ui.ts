@@ -99,6 +99,22 @@ export function battleXpForOutcome(outcome: BattleResult): number {
   return XP_VALUES.battleTie
 }
 
+/**
+ * Result-arena sprite sizes. The winner is 7x the 16px art, the loser 5x, and
+ * a tie gives both the 6x middle size. Whole multiples keep the pixels crisp.
+ */
+export const RESULT_SPRITE_SIZES = { winner: 112, loser: 80, tie: 96 } as const
+
+export function resultSpriteSizes(outcome: BattleResult): { me: number; opponent: number } {
+  if (outcome === 'win') {
+    return { me: RESULT_SPRITE_SIZES.winner, opponent: RESULT_SPRITE_SIZES.loser }
+  }
+  if (outcome === 'loss') {
+    return { me: RESULT_SPRITE_SIZES.loser, opponent: RESULT_SPRITE_SIZES.winner }
+  }
+  return { me: RESULT_SPRITE_SIZES.tie, opponent: RESULT_SPRITE_SIZES.tie }
+}
+
 export function resultCopy(outcome: BattleResult): {
   title: string
   tone: 'mint' | 'coral' | 'cream'
