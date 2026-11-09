@@ -686,6 +686,7 @@ The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code
 - Daily Limit has a Missions link even though the figure does not draw one.
 - AI uses the existing rival art; the handoff's robot glyph is not in `assets/glyphs.json`.
 - Result sprites now follow the winner: 112px winner, 80px loser, 96px each on a tie. The pair is centred with a fixed 16px gap and a shared bottom edge, so it cannot touch at 360. The handoff drew them near-equal; this is a deliberate readability change, result screen only.
+- The result title is centred, balanced and 36px Silkscreen. `ResultPanel` defaults to left/44px; only the Battle result opts in, so future result screens are unaffected.
 - Connection lost is an in-page state; polling continues.
 - The check-in gate migration is manual and still needs the live acceptance run.
 

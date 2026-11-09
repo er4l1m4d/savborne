@@ -106,6 +106,8 @@ Corrections:
   a tie. The pair is centred with a fixed 16px gap and a shared bottom edge.
   The handoff drew them near-equal; this is a deliberate readability change
   and applies to the result screen only.
+- The result title is centred, balanced and 36px Silkscreen. The shared
+  `ResultPanel` still defaults to left/44px; only the Battle result opts in.
 - The Daily Limit panel adds a `Go to Missions` link; the handoff caption asks
   for one but the figure does not draw it.
 - The AI card uses the existing rival art because the handoff's robot glyph is

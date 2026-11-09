@@ -194,6 +194,8 @@ export default function BattleResultPage() {
         <ResultPanel
           title={copy.title}
           tone={copy.tone}
+          titleAlign="center"
+          titleSize="compact"
           header={
             <Arena
               me={{

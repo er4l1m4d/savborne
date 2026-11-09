@@ -14,6 +14,8 @@ test('the result screen owns the headline, arena, tiles and actions', () => {
   assert.match(RESULT, /battleOutcome/)
   assert.match(RESULT, /battleXpForOutcome/)
   assert.match(RESULT, /resultSpriteSizes/)
+  assert.match(RESULT, /titleAlign="center"/)
+  assert.match(RESULT, /titleSize="compact"/)
   assert.match(RESULT, /spriteSizes\.me/)
   assert.match(RESULT, /spriteSizes\.opponent/)
   assert.match(RESULT, /Battle win|Battle loss|Battle tie/)

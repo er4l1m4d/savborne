@@ -336,6 +336,9 @@ Above `ResultPanel`, a centered `.sv-label text-fg-muted` subline:
 `{Ranked|Unranked|Friend · Unranked} · vs {opponentName}`.
 
 `ResultPanel`:
+- title: `You win!`, `You lost.`, `It's a tie.`, centred and balanced at 36px
+  Silkscreen. The shared component defaults to left/44px; only the result
+  screen opts in;
 - 250px arena with viewer left and opponent right. Winner 112px (7x), loser
   80px (5x), tie both 96px (6x). The pair is centred with a fixed 16px gap and
   a shared bottom edge. The loser is at 0.55 opacity, the winner at full

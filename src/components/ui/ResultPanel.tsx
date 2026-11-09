@@ -12,6 +12,10 @@ export type ResultTile = { label: string; value: string }
 type ResultPanelProps = {
   title: string
   tone: 'mint' | 'coral' | 'cream'
+  /** Headline alignment. Defaults to left for non-Battle consumers. */
+  titleAlign?: 'left' | 'center'
+  /** Headline size. `compact` is 36px Silkscreen; `display` is 44px. */
+  titleSize?: 'display' | 'compact'
   /** Rendered between the headline and the tiles, e.g. the result arena. */
   header?: ReactNode
   tiles: ResultTile[]
@@ -25,10 +29,37 @@ const TONE: Record<ResultPanelProps['tone'], string> = {
   cream: 'var(--fg)',
 }
 
-export function ResultPanel({ title, tone, header, tiles, unlocks, actions }: ResultPanelProps) {
+export function ResultPanel({
+  title,
+  tone,
+  titleAlign = 'left',
+  titleSize = 'display',
+  header,
+  tiles,
+  unlocks,
+  actions,
+}: ResultPanelProps) {
+  const titleClass = [
+    titleSize === 'compact' ? '' : 'sv-display',
+    titleAlign === 'center' ? 'text-center text-balance' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const titleStyle = {
+    color: TONE[tone],
+    ...(titleSize === 'compact'
+      ? {
+          fontFamily: 'var(--font-silkscreen)',
+          fontWeight: 400,
+          fontSize: 36,
+          lineHeight: 1.05,
+        }
+      : {}),
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="sv-display" style={{ color: TONE[tone] }}>
+      <h1 className={titleClass} style={titleStyle}>
         {title}
       </h1>
 
