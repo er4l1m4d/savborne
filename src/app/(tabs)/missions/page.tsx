@@ -1,23 +1,27 @@
 /**
  * Savborne — Missions screen
  *
- * Lists all 10 missions grouped by cadence (Daily / Weekly / One-time) with
- * a completed / open pill and XP value. Pulls from `GET /api/missions`.
- * Below the mission list, the daily/weekly XP cap meters show how much of
- * the 25 XP / 100 XP budget has been spent.
+ * The handoff's Progress screen: Repeating (Daily, Weekly) and One-time tabs,
+ * one grouped panel per cadence and 58px rows with a 24px status box, the
+ * mission, an optional description and the XP reward. Each group header owns
+ * the reset line and the period XP counter, so there are no separate cap cards.
+ * Pulls from `GET /api/missions`; the API contract is unchanged.
  */
 
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
+import { Glyph } from '@/components/Glyphs'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Row } from '@/components/ui/Row'
-import { Chip } from '@/components/ui/Chip'
+import { Tabs } from '@/components/ui/Tabs'
 import { Banner } from '@/components/ui/Banner'
+import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { earnedXp, xpCounter } from '@/lib/missions-ui'
 
 type Mission = {
   key: string
@@ -38,30 +42,36 @@ type Counters = {
   weeklyXpCap: number
 }
 
+const LOAD_ERROR = "Couldn't load missions."
+
 export default function MissionsPage() {
   const router = useRouter()
   const [missions, setMissions] = useState<Mission[] | null>(null)
   const [counters, setCounters] = useState<Counters | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'repeating' | 'onetime'>('repeating')
+  const [reload, setReload] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      setLoading(true)
+      setError(null)
       try {
         const res = await fetch('/api/missions', { headers: authHeaders() })
         if (res.status === 401) {
           router.replace('/setup')
           return
         }
-        if (!res.ok) throw new Error(`${res.status}`)
+        if (!res.ok) throw new Error(LOAD_ERROR)
         const json = (await res.json()) as { missions: Mission[]; counters: Counters }
         if (!cancelled) {
           setMissions(json.missions)
           setCounters(json.counters)
         }
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load missions')
+      } catch {
+        if (!cancelled) setError(LOAD_ERROR)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -69,93 +79,96 @@ export default function MissionsPage() {
     return () => {
       cancelled = true
     }
-  }, [router])
+  }, [router, reload])
 
-  if (loading) {
-    return (
-      <ScreenShell variant="tab" title="Missions">
-        <LoadingState />
-      </ScreenShell>
-    )
-  }
-
-  if (error) {
-    return (
-      <ScreenShell variant="tab" title="Missions">
-        <Banner tone="error">{error}</Banner>
-      </ScreenShell>
-    )
-  }
-
-  if (!missions || !counters) return null
-
-  const daily = missions.filter((m) => m.type === 'daily')
-  const weekly = missions.filter((m) => m.type === 'weekly')
-  const oneTime = missions.filter((m) => m.type === 'onetime')
+  const daily = missions?.filter((m) => m.type === 'daily') ?? []
+  const weekly = missions?.filter((m) => m.type === 'weekly') ?? []
+  const oneTime = missions?.filter((m) => m.type === 'onetime') ?? []
 
   return (
     <ScreenShell variant="tab" title="Missions" bodyClassName="gap-3.5">
-      <CapMeters counters={counters} />
+      <Tabs
+        ariaLabel="Mission type"
+        value={tab}
+        onChange={(value) => setTab(value as 'repeating' | 'onetime')}
+        items={[
+          { value: 'repeating', label: 'Repeating' },
+          { value: 'onetime', label: 'One-time' },
+        ]}
+      />
 
-      <Section title="Daily" caption="Resets 00:00 UTC">
-        {daily.map((m, i) => (
-          <MissionRow key={m.key} m={m} divider={i < daily.length - 1} />
-        ))}
-      </Section>
-      <Section title="Weekly" caption="Resets Monday 00:00 UTC">
-        {weekly.map((m, i) => (
-          <MissionRow key={m.key} m={m} divider={i < weekly.length - 1} />
-        ))}
-      </Section>
-      <Section title="One-time" caption="Never expires">
-        {oneTime.map((m, i) => (
-          <MissionRow key={m.key} m={m} divider={i < oneTime.length - 1} />
-        ))}
-      </Section>
+      {loading && <LoadingState />}
+
+      {!loading && error && (
+        <>
+          <Banner tone="error">{error}</Banner>
+          <Button
+            variant="secondary"
+            fullWidth={false}
+            className="self-start"
+            onClick={() => setReload((n) => n + 1)}
+          >
+            Try again
+          </Button>
+        </>
+      )}
+
+      {!loading && !error && missions && counters && (
+        tab === 'repeating' ? (
+          <>
+            {daily.length > 0 && (
+              <Group
+                title="Daily"
+                reset="Resets 00:00 UTC"
+                missions={daily}
+                cap={counters.dailyXpCap}
+              />
+            )}
+            {weekly.length > 0 && (
+              <Group
+                title="Weekly"
+                reset="Resets Monday 00:00 UTC"
+                missions={weekly}
+                cap={counters.weeklyXpCap}
+              />
+            )}
+            {daily.length === 0 && weekly.length === 0 && <EmptyPanel tone="repeating" />}
+          </>
+        ) : oneTime.length > 0 ? (
+          <Group title="One-time" reset="Never expires" missions={oneTime} />
+        ) : (
+          <EmptyPanel tone="onetime" />
+        )
+      )}
     </ScreenShell>
   )
 }
 
-function CapMeters({ counters }: { counters: Counters }) {
-  return (
-    <section className="grid grid-cols-2 gap-3">
-      <Cap label="Daily XP" value={counters.dailyXpEarned} max={counters.dailyXpCap} />
-      <Cap label="Weekly XP" value={counters.weeklyXpEarned} max={counters.weeklyXpCap} />
-    </section>
-  )
-}
-
-function Cap({ label, value, max }: { label: string; value: number; max: number }) {
-  const pct = Math.min(100, Math.round((value / max) * 100))
-  return (
-    <div className="vpx-soft bg-surface p-3 flex flex-col gap-1">
-      <span className="sv-section-label text-fg-faint">{label}</span>
-      <span className="sv-figure">
-        {value} <span className="text-fg-faint">/ {max}</span>
-      </span>
-      <div className="h-1.5 bg-surface-low overflow-hidden">
-        <div className="h-full bg-butter" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  )
-}
-
-function Section({
+function Group({
   title,
-  caption,
-  children,
+  reset,
+  missions,
+  cap,
 }: {
   title: string
-  caption: string
-  children: ReactNode
+  reset: string
+  missions: Mission[]
+  cap?: number
 }) {
+  const caption =
+    cap === undefined ? reset : `${reset} · ${xpCounter(earnedXp(missions, cap), cap)}`
+
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="sv-subheading text-mint">{title}</h2>
-        <span className="sv-label text-fg-faint">{caption}</span>
+    <section className="flex flex-col gap-2" aria-label={title}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+        <h2 className="sv-subheading">{title}</h2>
+        <span className="sv-caption font-bold text-fg-muted tabular-nums">{caption}</span>
       </div>
-      <PixelPanel className="px-4 py-0">{children}</PixelPanel>
+      <PixelPanel className="px-4 py-0">
+        {missions.map((m, i) => (
+          <MissionRow key={m.key} m={m} divider={i < missions.length - 1} />
+        ))}
+      </PixelPanel>
     </section>
   )
 }
@@ -164,32 +177,42 @@ function MissionRow({ m, divider }: { m: Mission; divider: boolean }) {
   return (
     <Row
       divider={divider}
+      leading={
+        <span
+          aria-hidden
+          className={`w-6 h-6 shrink-0 flex items-center justify-center border-2 ${
+            m.completed ? 'bg-mint border-mint text-background' : 'border-mint'
+          }`}
+        >
+          {m.completed && <Glyph name="check" size={16} />}
+        </span>
+      }
       trailing={
-        <span className={`sv-figure ${m.completed ? 'text-mint' : 'text-butter-text'}`}>
-          +{m.xpReward}
+        <span className={`sv-figure ${m.completed ? 'text-fg-muted' : 'text-mint'}`}>
+          +{m.xpReward} XP
         </span>
       }
     >
-      <div className="flex flex-col gap-1 py-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={`sv-label ${m.completed ? 'text-mint' : 'text-foreground'}`}>
-            {m.name}
-          </span>
-          {m.completed && <Chip variant="fill">Done</Chip>}
-        </div>
-        <p className="sv-label text-fg-muted">{m.description}</p>
-        {m.nextResetAt && !m.completed && (
-          <p className="sv-label text-fg-faint">Resets {formatTime(m.nextResetAt)}</p>
-        )}
+      <div className="flex flex-col gap-0.5">
+        <span className={`sv-body font-semibold sv-break ${m.completed ? 'text-fg-muted' : ''}`}>
+          {m.name}
+          {m.completed && <span className="sr-only"> (completed)</span>}
+        </span>
+        {!m.completed && <span className="sv-caption text-fg-muted">{m.description}</span>}
       </div>
     </Row>
   )
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  const now = new Date()
-  const sameDay = d.toISOString().slice(0, 10) === now.toISOString().slice(0, 10)
-  if (sameDay) return `today ${d.toISOString().slice(11, 16)} UTC`
-  return `${d.toISOString().slice(5, 10)} ${d.toISOString().slice(11, 16)} UTC`
+function EmptyPanel({ tone }: { tone: 'repeating' | 'onetime' }) {
+  return (
+    <PixelPanel className="p-6 text-center flex flex-col gap-2">
+      <p className="sv-body text-fg-muted">No missions right now.</p>
+      <p className="sv-label text-fg-faint">
+        {tone === 'repeating'
+          ? 'Check back after the next reset.'
+          : 'One-time missions appear as you play.'}
+      </p>
+    </PixelPanel>
+  )
 }

@@ -1,6 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { earnedXp, xpCounter } from './missions-ui'
+
+const PAGE = readFileSync(
+  new URL('../app/(tabs)/missions/page.tsx', import.meta.url),
+  'utf8',
+)
 
 const row = (xpReward: number, completed: boolean) => ({ xpReward, completed })
 
@@ -24,4 +30,46 @@ test('an empty slate earns nothing and a zero cap does not clamp', () => {
 test('the counter copy matches the handoff', () => {
   assert.equal(xpCounter(10, 25), '10 of 25 XP')
   assert.equal(xpCounter(0, 100), '0 of 100 XP')
+})
+
+test('the page uses tabs and the shared primitives only', () => {
+  for (const part of [
+    '<Tabs',
+    '<PixelPanel',
+    '<Row',
+    '<Banner',
+    '<Button',
+    '<LoadingState />',
+  ]) {
+    assert.ok(PAGE.includes(part), part)
+  }
+  assert.doesNotMatch(PAGE, /vpx|CapMeters|function Cap\(/)
+})
+
+test('the page ports the handoff groups and copy', () => {
+  assert.match(PAGE, /Repeating/)
+  assert.match(PAGE, /One-time/)
+  assert.match(PAGE, /Never expires/)
+  assert.match(PAGE, /Resets 00:00 UTC/)
+  assert.match(PAGE, /Resets Monday 00:00 UTC/)
+  assert.match(PAGE, /xpCounter\(/)
+  assert.match(PAGE, /earnedXp\(/)
+})
+
+test('the row shows a 24px status box, mint XP and open-row descriptions', () => {
+  assert.match(PAGE, /w-6 h-6/)
+  assert.match(PAGE, /<Glyph name="check"/)
+  assert.match(PAGE, /sv-figure/)
+  assert.match(PAGE, /m\.completed \? 'text-fg-muted' : 'text-mint'/)
+  assert.match(PAGE, /\{!m\.completed &&/)
+  assert.match(PAGE, /\(completed\)/)
+})
+
+test('the page keeps the states and drops the cap cards', () => {
+  assert.match(PAGE, /Couldn't load missions\./)
+  assert.match(PAGE, /Try again/)
+  assert.match(PAGE, /No missions right now\./)
+  assert.match(PAGE, /Check back after the next reset\./)
+  assert.match(PAGE, /One-time missions appear as you play\./)
+  assert.doesNotMatch(PAGE, /<Chip/)
 })
