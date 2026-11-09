@@ -6,6 +6,8 @@ import { sessionFromProfile, reconnectDecision, disconnectPlan } from './reconne
 const source = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8')
 
 const SETUP = source('../app/setup/page.tsx')
+const DELETE_ROUTE = source('../app/settings/delete/page.tsx')
+const FLOW = source('../components/settings/DeleteAccountFlow.tsx')
 
 test('Setup renders the shared privacy notice', () => {
   assert.match(SETUP, /from '@\/components\/PrivacyNotice'/)
@@ -52,4 +54,13 @@ test('Setup checks for an existing profile before creating a vault', () => {
   assert.ok(create > choose, 'createVault must come after chooseAccount')
   assert.match(SETUP, /onPick=\{chooseAccount\}/)
   assert.match(SETUP, /We reconnect it instead of creating a second vault/)
+})
+
+test('the delete route keeps the proof gate and the signed request', () => {
+  assert.match(DELETE_ROUTE, /<DeleteAccountFlow/)
+  assert.match(FLOW, /deletionGate/)
+  assert.match(FLOW, /signMessage/)
+  assert.match(FLOW, /deleteAuthHeaders/)
+  assert.match(FLOW, /<BottomSheet/)
+  assert.doesNotMatch(FLOW, /phase === 'closed'/)
 })
