@@ -186,6 +186,23 @@
   </div>
 </section>
 
+<p class="note">
+  Result sizing: winner 112px, loser 80px, tie 96px each. The pair is centred
+  with a fixed 16px gap and a shared bottom edge. The hide/show rule is the
+  result screen only; the in-battle arena is unchanged.
+</p>
+
+<section class="screen">
+  <h2>Result — AI loss</h2>
+  <p class="route">/battle/[id]/result — rival as winner, same baseline and gap</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/battle-result-ai-loss@360.png" alt="AI loss at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/battle-result-ai-loss@390.png" alt="AI loss at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/battle-result-ai-loss@430.png" alt="AI loss at 430px"></figure>
+  </div>
+  <p class="note">The rival uses the same 112px winner / 80px loser sizing and shares the visible-foot baseline.</p>
+</section>
+
 <section class="screen">
   <h2>Audit</h2>
   <table>
@@ -194,7 +211,7 @@
     <tr><td>Targets under 44×44</td><td>none</td></tr>
     <tr><td>Minimum font</td><td>12px</td></tr>
     <tr><td>Focus</td><td>2px mint outline on every control; sheet traps focus</td></tr>
-    <tr><td>Renders</td><td>42 PNGs (14 states × 3 widths)</td></tr>
+    <tr><td>Renders</td><td>45 PNGs (15 states × 3 widths)</td></tr>
   </table>
   <p class="note">Raw audit: <code>../audit/final-audit.jsonl</code>.</p>
 </section>

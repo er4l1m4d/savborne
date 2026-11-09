@@ -36,6 +36,10 @@ test('Arena owns both plates, meters and status labels', () => {
   assert.match(src, /YOUR MOVE/)
   assert.match(src, /OFFLINE/)
   assert.match(src, /ACTED/)
+  assert.match(src, /items-end/)
+  assert.match(src, /justify-center/)
+  assert.match(src, /gap-4/)
+  assert.match(src, /pb-\[32px\]/)
 })
 
 test('ItemSheet uses the bottom sheet and the three item states', () => {

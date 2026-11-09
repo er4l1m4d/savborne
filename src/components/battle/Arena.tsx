@@ -92,12 +92,8 @@ function Plate({
 
 export function Arena({ me, opponent, variant = 'battle', dimmed, tone = 'default' }: ArenaProps) {
   const result = variant === 'result'
-  const selfArt = result
-    ? 'absolute bottom-[36px] left-[66px]'
-    : 'absolute bottom-[40px] left-[30px]'
-  const opponentArt = result
-    ? 'absolute bottom-[32px] right-[60px]'
-    : 'absolute right-[30px] top-[20px]'
+  const selfArt = 'absolute bottom-[40px] left-[30px]'
+  const opponentArt = 'absolute right-[30px] top-[20px]'
 
   return (
     <PixelPanel
@@ -113,16 +109,33 @@ export function Arena({ me, opponent, variant = 'battle', dimmed, tone = 'defaul
             <Plate side={me} position="right-3 bottom-3" self />
           </>
         )}
-        <div
-          className={opponentArt}
-          style={{ opacity: opponent.opacity ?? 1, transform: 'scaleX(-1)' }}
-          aria-hidden
-        >
-          {opponent.art}
-        </div>
-        <div className={selfArt} style={{ opacity: me.opacity ?? 1 }} aria-hidden>
-          {me.art}
-        </div>
+        {result ? (
+          <div className="absolute inset-x-0 bottom-0 flex items-end justify-center gap-4 px-4 pb-[32px]">
+            <div className="block leading-none" style={{ opacity: me.opacity ?? 1 }} aria-hidden>
+              {me.art}
+            </div>
+            <div
+              className="block leading-none"
+              style={{ opacity: opponent.opacity ?? 1, transform: 'scaleX(-1)' }}
+              aria-hidden
+            >
+              {opponent.art}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div
+              className={opponentArt}
+              style={{ opacity: opponent.opacity ?? 1, transform: 'scaleX(-1)' }}
+              aria-hidden
+            >
+              {opponent.art}
+            </div>
+            <div className={selfArt} style={{ opacity: me.opacity ?? 1 }} aria-hidden>
+              {me.art}
+            </div>
+          </>
+        )}
       </div>
     </PixelPanel>
   )

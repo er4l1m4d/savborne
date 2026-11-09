@@ -665,7 +665,7 @@ The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code
 | `npm run lint` | exit 0, 50 warnings, 0 errors |
 | `npm run build` | exit 0 |
 | Type floor | no `text-[10px]`/`text-[11px]` in new code |
-| Audit | 42 renders (14 states x 360/390/430): `overflowX: 0`, no wide elements, no target <44x44, min font 12, clean focus and mint outline |
+| Audit | 45 renders (15 states x 360/390/430): `overflowX: 0`, no wide elements, no target <44x44, min font 12, clean focus and mint outline |
 | Item sheet | focus trapped, Escape closes, focus returns to the trigger |
 
 ### 360 behaviour
@@ -685,13 +685,13 @@ The real-device pass in Nimiq Pay needs `.env.local` in the sandbox; the UI code
 - Result shows the current rating, not a delta; unranked/AI show the record.
 - Daily Limit has a Missions link even though the figure does not draw one.
 - AI uses the existing rival art; the handoff's robot glyph is not in `assets/glyphs.json`.
-- Result sprites now follow the winner: 112px winner, 80px loser, 96px each on a tie. The handoff drew them near-equal; this is a deliberate readability change, result screen only.
+- Result sprites now follow the winner: 112px winner, 80px loser, 96px each on a tie. The pair is centred with a fixed 16px gap and a shared bottom edge, so it cannot touch at 360. The handoff drew them near-equal; this is a deliberate readability change, result screen only.
 - Connection lost is an in-page state; polling continues.
 - The check-in gate migration is manual and still needs the live acceptance run.
 
 ### Renders
 
-42 PNGs in `docs/superpowers/renders/battle/after/` plus the Foundation 2 before pair in `docs/superpowers/renders/battle/before/`. The review page is `docs/superpowers/renders/battle/review/index.html`; raw audit is `docs/superpowers/renders/battle/audit/final-audit.jsonl`.
+45 PNGs in `docs/superpowers/renders/battle/after/` plus the Foundation 2 before pair in `docs/superpowers/renders/battle/before/`. The review page is `docs/superpowers/renders/battle/review/index.html`; raw audit is `docs/superpowers/renders/battle/audit/final-audit.jsonl`.
 
 ### Remaining
 

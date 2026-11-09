@@ -115,6 +115,7 @@ export function resultSpriteSizes(outcome: BattleResult): { me: number; opponent
   return { me: RESULT_SPRITE_SIZES.tie, opponent: RESULT_SPRITE_SIZES.tie }
 }
 
+
 export function resultCopy(outcome: BattleResult): {
   title: string
   tone: 'mint' | 'coral' | 'cream'
