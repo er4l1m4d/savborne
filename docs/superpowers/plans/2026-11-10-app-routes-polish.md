@@ -375,7 +375,7 @@ test('Receipts snapshots are off-tone panels with no hash', () => {
 })
 
 test('Receipts load error is friendly, recoverable and redirects 401', () => {
-  assert.match(RECEIPTS, /const LOAD_ERROR = "Couldn't load receipts\\."/)
+  assert.match(RECEIPTS, /const LOAD_ERROR = "Couldn't load receipts\."/)
   assert.match(RECEIPTS, /res\.status === 401/)
   assert.match(RECEIPTS, /router\.replace\('\/setup'\)/)
   assert.match(RECEIPTS, /<Button[^>]*variant="secondary"[^>]*size="sm"[^>]*fullWidth=\{false\}/)

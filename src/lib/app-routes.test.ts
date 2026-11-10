@@ -36,3 +36,27 @@ test('Vault has one h1: the shell owns it', () => {
 test('Vault balance skeleton is static under reduced motion', () => {
   assert.match(VAULT, /animate-pulse motion-reduce:animate-none/)
 })
+
+const RECEIPTS = page('../app/receipts/page.tsx')
+
+test('Receipts has no legacy panels and keeps the transfer anatomy', () => {
+  assert.doesNotMatch(RECEIPTS, /\.vpx|vpx-soft|\bvpx\b/)
+  for (const text of ['Check again', 'Try again', 'explorerUrl', "'included'"]) {
+    assert.match(RECEIPTS, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  }
+})
+
+test('Receipts snapshots are off-tone panels with no hash', () => {
+  assert.match(RECEIPTS, /<PixelPanel[^>]*tone="off"/)
+  const snapshot = RECEIPTS.slice(RECEIPTS.indexOf('function SnapshotRow'))
+  assert.doesNotMatch(snapshot, /txHash|explorerUrl/)
+})
+
+test('Receipts load error is friendly, recoverable and redirects 401', () => {
+  assert.match(RECEIPTS, /const LOAD_ERROR = "Couldn't load receipts\."/)
+  assert.match(RECEIPTS, /res\.status === 401/)
+  assert.match(RECEIPTS, /router\.replace\('\/setup'\)/)
+  assert.match(RECEIPTS, /<Button[^>]*variant="secondary"[^>]*size="sm"[^>]*fullWidth=\{false\}/)
+  assert.match(RECEIPTS, /Try again/)
+  assert.doesNotMatch(RECEIPTS, /\(\$\{res\.status\}\)/)
+})

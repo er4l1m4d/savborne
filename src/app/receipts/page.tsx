@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
 import { LUNA_PER_NIM } from '@/lib/constants'
 import type { SnapshotItem, TimelineItem, TransferItem } from '@/lib/vault/receipts'
@@ -22,7 +23,10 @@ import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { LoadingState } from '@/components/ui/LoadingState'
 
+const LOAD_ERROR = "Couldn't load receipts."
+
 export default function ReceiptsPage() {
+  const router = useRouter()
   const [items, setItems] = useState<TimelineItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +38,11 @@ export default function ReceiptsPage() {
     setError(null)
     try {
       const res = await fetch('/api/receipts', { headers: authHeaders() })
-      if (!res.ok) throw new Error(`Could not load receipts (${res.status})`)
+      if (res.status === 401) {
+        router.replace('/setup')
+        return
+      }
+      if (!res.ok) throw new Error(LOAD_ERROR)
       const body = (await res.json()) as { items: TimelineItem[] }
       setItems(body.items)
     } catch (err) {
@@ -42,7 +50,7 @@ export default function ReceiptsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [router])
 
   useEffect(() => {
     load()
@@ -82,9 +90,15 @@ export default function ReceiptsPage() {
 
       {error && (
         <Banner tone="error">
-          <p className="sv-label">{error}</p>
-          <Button variant="primary" size="sm" fullWidth={false} onClick={load}>
-            Retry
+          <p className="sv-label">{LOAD_ERROR}</p>
+          <Button
+            variant="secondary"
+            size="sm"
+            fullWidth={false}
+            className="self-start"
+            onClick={load}
+          >
+            Try again
           </Button>
         </Banner>
       )}
@@ -198,12 +212,17 @@ function TransferRow({
 /** A snapshot is a balance reading: no hash exists, so none is rendered. */
 function SnapshotRow({ item }: { item: SnapshotItem }) {
   return (
-    <li className="vpx-soft bg-surface-low px-4 py-3 flex items-baseline justify-between gap-3">
-      <span className="sv-label text-fg-muted">Balance check-in</span>
-      <span className="sv-figure text-fg-soft">
-        {(item.balanceLuna / LUNA_PER_NIM).toFixed(2)} NIM
-      </span>
-      <span className="sv-label text-fg-faint">{formatWhen(item.at)}</span>
+    <li>
+      <PixelPanel
+        tone="off"
+        className="px-4 py-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"
+      >
+        <span className="sv-label text-fg-muted">Balance check-in</span>
+        <span className="sv-figure text-fg-soft">
+          {(item.balanceLuna / LUNA_PER_NIM).toFixed(2)} NIM
+        </span>
+        <span className="sv-caption text-fg-faint">{formatWhen(item.at)}</span>
+      </PixelPanel>
     </li>
   )
 }
