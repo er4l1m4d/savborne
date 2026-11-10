@@ -62,7 +62,7 @@ export default async function CardPage({ params }: { params: Promise<{ token: st
           </div>
         )}
 
-        <div className="vpx-soft bg-surface p-3 flex flex-col gap-1">
+        <PixelPanel tone="off" className="p-3 flex flex-col gap-1">
           <span className="sv-section-label text-fg-faint">
             {card.backupVerified ? 'Verified saver ⟡' : 'Vault in progress'}
           </span>
@@ -72,7 +72,7 @@ export default async function CardPage({ params }: { params: Promise<{ token: st
           <span className="sv-label text-fg-faint">
             Funds held in this player&apos;s own vault. Savborne never holds them.
           </span>
-        </div>
+        </PixelPanel>
 
         <p className="sv-label text-fg-faint">
           Balances are never public. This card proves a vault exists, not how much is in it.

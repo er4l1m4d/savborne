@@ -60,3 +60,25 @@ test('Receipts load error is friendly, recoverable and redirects 401', () => {
   assert.match(RECEIPTS, /Try again/)
   assert.doesNotMatch(RECEIPTS, /\(\$\{res\.status\}\)/)
 })
+
+const CARD = page('../app/card/[token]/page.tsx')
+const CARDS = page('../lib/vault/cards.ts')
+
+test('Card has no legacy panels and no ScreenShell', () => {
+  assert.doesNotMatch(CARD, /\.vpx|vpx-soft|\bvpx\b/)
+  assert.doesNotMatch(CARD, /ScreenShell/)
+})
+
+test('Card keeps the public contract and the nested off-tone box', () => {
+  assert.match(CARD, /<PixelPanel tone="off"/)
+  assert.equal((CARD.match(/tone="off"/g) ?? []).length, 2)
+  assert.match(CARD, /notFound\(\)/)
+  assert.doesNotMatch(CARD, /balanceLuna|balance_luna|walletAddress|playerAddress|player_wallet/)
+  assert.match(CARD, /Balances are never public/)
+})
+
+test('getFlexCard still selects explicit columns only', () => {
+  assert.match(CARDS, /select\('address, player_address, backup_verified_at'\)/)
+  assert.match(CARDS, /select\('address, display_name, level, streak_current, bracket, shields'\)/)
+  assert.doesNotMatch(CARDS, /\.select\('\*'\)/)
+})
