@@ -70,6 +70,8 @@ function emptyQueries(resource: string | null) {
   return (
     resource === 'daily_xp' ||
     resource === 'check_ins' ||
+    resource === 'player_missions' ||
+    resource === 'missions' ||
     resource === 'daily_battles' ||
     resource === 'vaults'
   )

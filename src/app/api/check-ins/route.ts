@@ -43,6 +43,7 @@ import { itemsToUnlock, type ItemKey } from '@/lib/game/items'
 import { computeBadgeActions, type BadgeKey } from '@/lib/game/badges'
 import type { Network } from '@/lib/nimiq'
 import { getAccount, RpcError } from '@/lib/vault/rpc'
+import { weeklyMissionXp } from '@/lib/game/weekly-missions'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -231,7 +232,7 @@ export async function POST(req: Request) {
     xp: player.xp,
     level: player.level,
     dailyXpEarnedToday: await dailyXpToday(),
-    weeklyXpEarnedThisWeek: await weeklyXpThisWeek(),
+    weeklyXpEarnedThisWeek: await weeklyMissionXp(db, address, now),
   }
   let running: PlayerXpState = { ...dailyHeadroomState }
   let totalApplied = 0
@@ -419,19 +420,6 @@ export async function POST(req: Request) {
       .eq('utc_date', today)
       .maybeSingle()
     return data?.xp_earned ?? 0
-  }
-
-  async function weeklyXpThisWeek(): Promise<number> {
-    const { data } = await db
-      .from('player_missions')
-      .select('mission_key')
-      .eq('player_address', address)
-      .gte('completed_at', weekStart.toISOString())
-    // Rough: assume each weekly mission averages 33 XP; the mission definitions
-    // table has exact values but a single-row-per-mission count is close enough
-    // for the cap. For stricter accounting, use a dedicated weekly_xp ledger.
-    const weeklyCount = (data ?? []).filter((r) => isWeeklyMissionKey(r.mission_key)).length
-    return weeklyCount * 33
   }
 }
 

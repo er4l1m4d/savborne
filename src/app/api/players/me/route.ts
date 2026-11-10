@@ -16,7 +16,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
 import { isAvatar } from '@/lib/avatar'
 import { xpToNextLevel } from '@/lib/constants'
-import { utcDayOf, utcWeekStart } from '@/lib/game/time'
+import { utcDayOf } from '@/lib/game/time'
+import { weeklyMissionXp } from '@/lib/game/weekly-missions'
 import { readDeleteProof } from '@/lib/delete-request'
 import { verifyDeleteSignature } from '@/lib/delete-verify'
 
@@ -30,19 +31,14 @@ export async function GET(req: Request) {
   }
 
   const db = supabaseAdmin()
-  const today = utcDayOf(new Date())
-  const weekStart = utcWeekStart(new Date())
+  const now = new Date()
+  const today = utcDayOf(now)
 
-  const [{ data: player, error: playerErr }, { data: daily }, { data: weeklyRows }, { data: battleRow }, { data: vault }] =
+  const [{ data: player, error: playerErr }, { data: daily }, weeklyXp, { data: battleRow }, { data: vault }] =
     await Promise.all([
       db.from('players').select('*').eq('address', address).maybeSingle(),
       db.from('daily_xp').select('xp_earned').eq('player_address', address).eq('utc_date', today).maybeSingle(),
-      db
-        .from('check_ins')
-        .select('recorded_at')
-        .eq('player_address', address)
-        .gte('recorded_at', weekStart.toISOString())
-        .order('recorded_at', { ascending: true }),
+      weeklyMissionXp(db, address, now),
       db.from('daily_battles').select('count').eq('player_address', address).eq('utc_date', today).maybeSingle(),
       db.from('vaults').select('address').eq('player_address', address).maybeSingle(),
     ])
@@ -54,9 +50,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 })
   }
 
-  // Sum this week's check-in XP from the daily_xp ledger (approximation of
-  // weekly counter; a stricter model uses a dedicated weekly_xp table).
-  const weeklyXpEarned = weeklyRows?.length ?? 0
+  // Exact weekly mission XP, shared with the missions endpoint and settlement.
+  const weeklyXpEarned = weeklyXp
 
   return NextResponse.json({
     player: {

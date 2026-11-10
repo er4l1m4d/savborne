@@ -30,6 +30,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
 import { DAILY_MISSION_XP_CAP, WEEKLY_MISSION_XP_CAP } from '@/lib/constants'
 import { utcDayOf, utcWeekStart } from '@/lib/game/time'
+import { weeklyMissionXp } from '@/lib/game/weekly-missions'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -41,10 +42,11 @@ export async function GET(req: Request) {
   }
 
   const db = supabaseAdmin()
-  const today = utcDayOf(new Date())
-  const weekStart = utcWeekStart(new Date())
+  const now = new Date()
+  const today = utcDayOf(now)
+  const weekStart = utcWeekStart(now)
 
-  const [{ data: defs }, { data: credits }, { data: daily }, { data: weeklyRows }] =
+  const [{ data: defs }, { data: credits }, { data: daily }, weeklyXp] =
     await Promise.all([
       db.from('missions').select('*').order('id'),
       db
@@ -57,11 +59,7 @@ export async function GET(req: Request) {
         .eq('player_address', address)
         .eq('utc_date', today)
         .maybeSingle(),
-      db
-        .from('check_ins')
-        .select('id')
-        .eq('player_address', address)
-        .gte('recorded_at', weekStart.toISOString()),
+      weeklyMissionXp(db, address, now),
     ])
 
   const allCredited = new Map<string, string>() // key -> completed_at
@@ -76,7 +74,6 @@ export async function GET(req: Request) {
       .map((r) => r.mission_key),
   )
 
-  const now = new Date()
   const missions = (defs ?? []).map((m) => {
     let completed = false
     let completedAt: string | null = null
@@ -122,7 +119,7 @@ export async function GET(req: Request) {
     counters: {
       dailyXpEarned: daily?.xp_earned ?? 0,
       dailyXpCap: DAILY_MISSION_XP_CAP,
-      weeklyXpEarned: weeklyRows?.length ?? 0, // count-based approximation
+      weeklyXpEarned: weeklyXp,
       weeklyXpCap: WEEKLY_MISSION_XP_CAP,
     },
   })

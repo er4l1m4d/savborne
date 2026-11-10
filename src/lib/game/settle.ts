@@ -20,6 +20,7 @@ import { computeAward, type PlayerXpState, type XpSource } from './awards'
 import type { CompletedMission } from './missions'
 import { computeBadgeActions, type BadgeKey, type BadgeSnapshot } from './badges'
 import { utcDayOf } from './time'
+import { weeklyMissionXp } from './weekly-missions'
 
 export type MissionAwardSummary = {
   key: string
@@ -83,21 +84,11 @@ export async function settleMissions(
     .eq('player_address', address)
     .eq('utc_date', today)
     .maybeSingle()
-  const { data: weeklyMissionRows } = await db
-    .from('player_missions')
-    .select('mission_key')
-    .eq('player_address', address)
-    .gte('completed_at', weekStart.toISOString())
-  const weeklyMissionCount = (weeklyMissionRows ?? []).filter((r) =>
-    WEEKLY_KEYS.has(r.mission_key),
-  ).length
-
   const state: PlayerXpState = {
     xp: player.xp,
     level: player.level,
     dailyXpEarnedToday: dailyRow?.xp_earned ?? 0,
-    // Count-based approximation of weekly mission XP (see ERRORS.md plan note).
-    weeklyXpEarnedThisWeek: weeklyMissionCount * 33,
+    weeklyXpEarnedThisWeek: await weeklyMissionXp(db, address, now),
   }
 
   let running = { ...state }
