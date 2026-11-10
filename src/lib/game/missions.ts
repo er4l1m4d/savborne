@@ -14,7 +14,7 @@
  * `evaluateForBattle()` inside its transaction.
  */
 
-import { XP_VALUES, type Bracket } from '../constants'
+import { WEEKLY_STRATEGIST_WINS, XP_VALUES, type Bracket } from '../constants'
 
 export type MissionKey =
   | 'first_steps'
@@ -111,7 +111,7 @@ export type BattleSnapshot = {
   usedDefend: boolean
   /** Whether the caller used Special Move at least once this battle. */
   usedSpecial: boolean
-  /** How many distinct battles started in this UTC week (before this one). */
+  /** Human wins in this UTC week before this battle. */
   weeklyWinsBefore: number
   /** Whether this was the caller's first battle of the current UTC day. */
   firstBattleToday: boolean
@@ -131,7 +131,11 @@ export function evaluateForBattle(snap: BattleSnapshot): CompletedMission[] {
 
   // Weekly Strategist: 2 wins this week. The caller filters by "not already
   // credited this week" before applying this award.
-  if (snap.isHumanOpponent && snap.outcome === 'win' && snap.weeklyWinsBefore + 1 >= 2) {
+  if (
+    snap.isHumanOpponent &&
+    snap.outcome === 'win' &&
+    snap.weeklyWinsBefore + 1 >= WEEKLY_STRATEGIST_WINS
+  ) {
     earned.push({
       key: 'weekly_strategist',
       xp: XP_VALUES.weeklyStrategist,

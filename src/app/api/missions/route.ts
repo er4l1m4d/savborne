@@ -14,12 +14,15 @@
  *         completed: boolean,
  *         completedAt: string | null,
  *         nextResetAt: string | null,   // for daily/weekly; null for one-time
+ *         progress?: { current: number; target: number },
+ *                        // weekly_strategist only: human wins this UTC week,
+ *                        // clamped to the target
  *       }
  *     ],
  *     counters: {
  *       dailyXpEarned: number,
  *       dailyXpCap: number,
- *       weeklyXpEarned: number,
+ *       weeklyXpEarned: number,   // exact sum of this week's weekly rewards
  *       weeklyXpCap: number,
  *     }
  *   }
@@ -28,9 +31,9 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
-import { DAILY_MISSION_XP_CAP, WEEKLY_MISSION_XP_CAP } from '@/lib/constants'
+import { DAILY_MISSION_XP_CAP, WEEKLY_MISSION_XP_CAP, WEEKLY_STRATEGIST_WINS } from '@/lib/constants'
 import { utcDayOf, utcWeekStart } from '@/lib/game/time'
-import { weeklyMissionXp } from '@/lib/game/weekly-missions'
+import { weeklyHumanWins, weeklyMissionXp } from '@/lib/game/weekly-missions'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -46,7 +49,7 @@ export async function GET(req: Request) {
   const today = utcDayOf(now)
   const weekStart = utcWeekStart(now)
 
-  const [{ data: defs }, { data: credits }, { data: daily }, weeklyXp] =
+  const [{ data: defs }, { data: credits }, { data: daily }, weeklyXp, weeklyWins] =
     await Promise.all([
       db.from('missions').select('*').order('id'),
       db
@@ -60,6 +63,7 @@ export async function GET(req: Request) {
         .eq('utc_date', today)
         .maybeSingle(),
       weeklyMissionXp(db, address, now),
+      weeklyHumanWins(db, address, now),
     ])
 
   const allCredited = new Map<string, string>() // key -> completed_at
@@ -111,6 +115,14 @@ export async function GET(req: Request) {
       completed,
       completedAt,
       nextResetAt,
+      ...(m.key === 'weekly_strategist'
+        ? {
+            progress: {
+              current: Math.min(weeklyWins, WEEKLY_STRATEGIST_WINS),
+              target: WEEKLY_STRATEGIST_WINS,
+            },
+          }
+        : {}),
     }
   })
 

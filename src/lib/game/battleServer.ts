@@ -33,7 +33,8 @@ import {
 import type { ItemKey } from './items'
 import { evaluateForBattle, type CompletedMission } from './missions'
 import { settleMissions, awardRawXp, settleBadges } from './settle'
-import { utcDayOf, utcWeekStart } from './time'
+import { utcDayOf } from './time'
+import { weeklyHumanWins } from './weekly-missions'
 
 export const AI_ADDRESS = 'ai-savborne'
 
@@ -530,14 +531,7 @@ async function settleBattle(
       .eq('battle_id', battle.id)
       .eq('player_address', address)
     const moveSet = new Set((ownMoves ?? []).map((m) => m.move_type))
-    const weekStart = utcWeekStart(now)
-    const { count: weeklyWinsBefore } = await db
-      .from('battles')
-      .select('id', { count: 'exact', head: true })
-      .eq('winner', address)
-      .in('mode', ['ranked', 'unranked', 'ai'])
-      .gte('completed_at', weekStart.toISOString())
-      .lt('completed_at', now.toISOString())
+    const weeklyWinsBefore = await weeklyHumanWins(db, address, now)
     const { data: todayRow } = await db
       .from('daily_battles')
       .select('count')
@@ -549,7 +543,7 @@ async function settleBattle(
       outcome,
       usedDefend: moveSet.has('defend'),
       usedSpecial: moveSet.has('special'),
-      weeklyWinsBefore: Math.max(0, (weeklyWinsBefore ?? 1) - 1),
+      weeklyWinsBefore,
       firstBattleToday: (todayRow?.count ?? 1) <= 1,
     }
     const missions: CompletedMission[] = evaluateForBattle(snap)

@@ -105,6 +105,8 @@ export const XP_VALUES = {
 export const DAILY_MISSION_XP_CAP = 25
 /** Cap on XP earnable from weekly missions per UTC week. */
 export const WEEKLY_MISSION_XP_CAP = 100
+/** Weekly Strategist: human battle wins required in one UTC week. */
+export const WEEKLY_STRATEGIST_WINS = 2
 
 // ─── Battles (spec Section 9, plan proposal) ─────────────────────────────────
 export const BATTLE = {
