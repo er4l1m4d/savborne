@@ -1409,3 +1409,81 @@ sign-off list and deliberate choices. Raw audit is
    leaderboard payload needs item/badge data; this batch shows the positional
    crown only.
 3. Do not merge or push until the user signs off.
+
+---
+
+## 21. Ranks UI revision - 2026-11-10
+
+**Branch:** `ranks-ui-redesign` (same branch, after section 20).
+**Verdict:** three review corrections are in. The Everyone/Friends control is a
+right-aligned segmented bar visibly smaller than the tabs; the grey divider
+above the You row is gone; and the pinned rank highlights its container, not
+the row.
+
+### What changed
+
+- **Filter bar:** `FilterChip` is replaced by `FilterBar`. One 2px beveled
+  track, 32px tall, right aligned on its own row under the tabs, with a 2px
+  internal divider. The visible segments are 28px with 12px/700 labels; each
+  segment is a 44px button with `margin-block: -8px`, so the touch target is
+  kept while the control reads smaller than the 44px tabs. The selected segment
+  stays cream with ground text. `.sv-filter` is gone.
+- **You row divider:** the row directly above the caller passes
+  `divider={false}` when the next row is `isMe`, and `.sv-row--you` changes
+  from `margin-block: 4px` to `margin-block: 0 4px`. The mint top border now
+  sits where the grey divider was; the 4px bottom gap remains.
+- **Pinned rank:** the `Your rank` panel uses `PixelPanel tone="mint"`. The row
+  inside passes `highlight={false}`: no tint, no mint rank, no `You` tag. The
+  caption and the 56px row geometry stay. The in-list You row is unchanged
+  apart from the divider correction.
+- **Tests:** the FilterBar test replaces the FilterChip test; the page contract
+  now pins the right-aligned `min-h-11` row, the divider suppression, the mint
+  pinned panel and `highlight={false}`.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 396 pass, 0 fail |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 49 warnings, 0 errors |
+| `npm run build` | exit 0; `/leaderboard` compiles |
+| Type floor | min rendered font 12 |
+| Audit | 24 rows (8 states x 360/390/430): `overflowX: 0`, no wide element, no interactive target below 44px, every tab stop in view/uncovered with the mint outline |
+| Filter targets | Everyone 83x44, Friends 73x44; 32px track, 28px segments |
+| Row geometry | 56px list rows, 60px You row, no divider above it, 0 top gap, 4px bottom gap |
+
+### Rulings
+
+- **One bar, not two chips.** The handoff's pair read as two separate boxes
+  once it moved out of the handoff's own spacing. A single track with an
+  internal divider is one control and reads as a filter, not a second tab row.
+- **32px visual, 44px target.** The visible bar is deliberately smaller than
+  the tabs without shrinking the tap target. The 44px button overflows the
+  32px track vertically; the overflow is invisible and sits inside the 14px
+  gap, so it never overlaps another target. The audit measures the button, not
+  the track.
+- **The top divider goes, the bottom gap stays.** The grey line directly above
+  the caller competed with the mint top border. Closing the top gap makes the
+  mint border the separator; the 4px bottom gap keeps the mint frame from
+  pressing on the next row.
+- **Pinned highlights the container.** A second mint-framed row inside a mint
+  panel was two highlights for one fact. The panel outline says "this is your
+  rank"; the row stays a normal row, and the caption names it.
+- **The pinned fixture no longer repeats the caller.** The list now ends at
+  rank 6 with Ngozi and the pinned Kemi sits at 57, so the render does not show
+  the same player at two ranks.
+
+### Renders
+
+The 24 after PNGs in `docs/superpowers/renders/ranks/after/` were re-captured
+at 360/390/430; the 3 before PNGs are unchanged. The review page is
+`docs/superpowers/renders/ranks/review/index.html`; `NOTES.md` carries the
+revision choices. Raw audit is
+`docs/superpowers/renders/ranks/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step; the
+   sandbox has no `.env.local`.
+2. Do not merge or push until the user signs off.

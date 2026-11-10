@@ -29,15 +29,16 @@
 <body>
 <h1>Ranks UI — current review</h1>
 <p class="lede">
-  The Ranks batch at 360, 390 and 430: Ranked with your row, your rank pinned
-  outside the top 50, Unranked, the Friends filter, Friends empty, Everyone
-  empty, error and loading. Renders are 2× device-scale PNGs from the headless
-  CDP harness with fixture data. Write corrections in <code>NOTES.md</code>.
+  The Ranks batch at 360, 390 and 430, after the 2026-11-10 revision: Ranked
+  with your row, your rank pinned outside the top 50, Unranked, the Friends
+  filter, Friends empty, Everyone empty, error and loading. Renders are 2x
+  device-scale PNGs from the headless CDP harness with fixture data. Write
+  corrections in <code>NOTES.md</code>.
 </p>
 
 <section class="screen">
   <h2>Ranked</h2>
-  <p class="route">/leaderboard — Everyone, caller at rank 6; crown on 1, verified marker on 1 and 8, 56px rows, 60px mint-bordered You row, board footer + legend</p>
+  <p class="route">/leaderboard - Everyone segment selected in the right-aligned 32px bar; caller at rank 6; no divider above the mint You row; crown on 1, verified marker on 1 and 8; board footer + legend</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/ranks-ranked@360.png" alt="Ranked leaderboard at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/ranks-ranked@390.png" alt="Ranked leaderboard at 390px"></figure>
@@ -52,7 +53,7 @@
 
 <section class="screen">
   <h2>Your rank pinned</h2>
-  <p class="route">/leaderboard — caller at rank 57, outside the top 50; a separate “Your rank” panel below the list. The footer sits below the fold and scrolls.</p>
+  <p class="route">/leaderboard - caller at rank 57, outside the top 50; a mint-outlined “Your rank” panel with a plain row and the caption above. The footer sits below the list.</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/ranks-your-rank-pinned@360.png" alt="Pinned your rank at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/ranks-your-rank-pinned@390.png" alt="Pinned your rank at 390px"></figure>
@@ -72,7 +73,7 @@
 
 <section class="screen">
   <h2>Friends</h2>
-  <p class="route">/leaderboard — Friends chip selected (cream fill), three rows including the caller. Friends are players you have fought in a human battle.</p>
+  <p class="route">/leaderboard - Friends segment selected in the right-aligned bar (cream), three rows including the caller. Friends are players you have fought in a human battle.</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/ranks-friends@360.png" alt="Friends filter at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/ranks-friends@390.png" alt="Friends filter at 390px"></figure>
@@ -102,7 +103,7 @@
 
 <section class="screen">
   <h2>Error</h2>
-  <p class="route">/leaderboard — “Couldn't load ranks.” banner and a secondary Try again button; tabs and chips stay visible</p>
+  <p class="route">/leaderboard — “Couldn't load ranks.” banner and a secondary Try again button; tabs and the filter bar stay visible</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/ranks-error@360.png" alt="Ranks error at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/ranks-error@390.png" alt="Ranks error at 390px"></figure>
@@ -112,7 +113,7 @@
 
 <section class="screen">
   <h2>Loading</h2>
-  <p class="route">/leaderboard — tabs and filter chips stay; the three-dot LoadingState waits below them</p>
+  <p class="route">/leaderboard — tabs and the filter bar stay; the three-dot LoadingState waits below them</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/ranks-loading@360.png" alt="Ranks loading at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/ranks-loading@390.png" alt="Ranks loading at 390px"></figure>
@@ -126,10 +127,11 @@
     <tr><th>Check</th><th>Result</th></tr>
     <tr><td>Horizontal overflow</td><td>0 on all 24 renders (8 states × 3 widths)</td></tr>
     <tr><td>Wide elements</td><td>none</td></tr>
-    <tr><td>Targets under 44×44</td><td>none (2 tabs, 2 filter chips, Try again and 5 nav links; rows are not interactive)</td></tr>
-    <tr><td>Minimum font</td><td>12px (bracket column, footer, You tag)</td></tr>
+    <tr><td>Targets under 44×44</td><td>none (2 tabs, 2 filter segments at 44px, Try again and 5 nav links; rows are not interactive)</td></tr>
+    <tr><td>Minimum font</td><td>12px (bracket column, footer, You tag, filter segments)</td></tr>
     <tr><td>Focus</td><td>9 stops (10 with Try again), all in view, uncovered, 2px mint outline</td></tr>
-    <tr><td>Row geometry</td><td>56px list rows, 60px You row, 4px block margin, 14px inline bleed</td></tr>
+    <tr><td>Filter bar</td><td>one 32px track, 28px segments inside 44px buttons; right aligned; 83×44 / 73×44 targets</td></tr>
+    <tr><td>Row geometry</td><td>56px list rows, 60px You row, no divider above it, 0 top gap, 4px bottom gap, 14px inline bleed</td></tr>
     <tr><td>Columns</td><td>26px rank; name 126/156/196px at 360/390/430; 52px bracket; 48px ranked / 56px unranked figure</td></tr>
     <tr><td>Renders</td><td>24 PNGs after, 3 before</td></tr>
   </table>
