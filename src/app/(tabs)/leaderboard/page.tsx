@@ -1,14 +1,18 @@
 /**
- * Savborne — Leaderboards
+ * Savborne — Ranks
  *
- * Ranked (Elo) and Unranked (combined savings score) boards with a friends
- * filter, per spec 10.4. Display names only; the caller's row is highlighted.
- * Pulls /api/leaderboards on tab change.
+ * The handoff's leaderboard: Ranked / Unranked tabs, Everyone / Friends filter
+ * chips, one grouped panel of 56px rows and the caller's 60px mint-bordered row.
+ * The caller is pinned below the list when outside the top 50, using the API's
+ * additive `you` row. Ranking rules and the friends definition are unchanged;
+ * `/api/leaderboards` still returns the top 50 and only display names leave the
+ * server.
  */
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { authHeaders } from '@/lib/session'
 import { BRACKETS, type Bracket } from '@/lib/constants'
 import { ScreenShell } from '@/components/ui/ScreenShell'
@@ -16,9 +20,19 @@ import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Row } from '@/components/ui/Row'
 import { Chip } from '@/components/ui/Chip'
 import { Tabs } from '@/components/ui/Tabs'
+import { FilterChip } from '@/components/ui/FilterChip'
 import { Banner } from '@/components/ui/Banner'
 import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { RankCrown } from '@/components/RankCrown'
+import {
+  boardFooter,
+  footerLegend,
+  isFriendsEmpty,
+  rankTone,
+  shouldPinYou,
+  type Board,
+} from '@/lib/ranks-ui'
 
 type RankRow = {
   rank: number
@@ -34,146 +48,232 @@ type RankRow = {
   verifiedSaver: boolean
 }
 
+type BoardResponse = {
+  rows: RankRow[]
+  total: number
+  you?: RankRow | null
+}
+
+const LOAD_ERROR = "Couldn't load ranks."
+
 export default function LeaderboardPage() {
-  const [board, setBoard] = useState<'ranked' | 'unranked'>('ranked')
+  const router = useRouter()
+  const [board, setBoard] = useState<Board>('ranked')
   const [friends, setFriends] = useState(false)
   const [rows, setRows] = useState<RankRow[] | null>(null)
   const [total, setTotal] = useState(0)
+  const [you, setYou] = useState<RankRow | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`/api/leaderboards?board=${board}&friends=${friends ? 1 : 0}`, {
-        headers: authHeaders(),
-      })
-      if (!res.ok) throw new Error(`${res.status}`)
-      const json = (await res.json()) as { rows: RankRow[]; total: number }
-      setRows(json.rows)
-      setTotal(json.total)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load leaderboard')
-    } finally {
-      setLoading(false)
-    }
-  }, [board, friends])
+  const [reload, setReload] = useState(0)
 
   useEffect(() => {
-    load()
-  }, [load])
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch(
+          `/api/leaderboards?board=${board}&friends=${friends ? 1 : 0}`,
+          { headers: authHeaders() },
+        )
+        if (res.status === 401) {
+          router.replace('/setup')
+          return
+        }
+        if (!res.ok) throw new Error(LOAD_ERROR)
+        const json = (await res.json()) as BoardResponse
+        if (!cancelled) {
+          setRows(json.rows)
+          setTotal(json.total)
+          setYou(json.you ?? null)
+        }
+      } catch {
+        if (!cancelled) setError(LOAD_ERROR)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [board, friends, reload, router])
+
+  const empty = rows !== null && rows.length === 0
+  const friendsEmpty = rows !== null && friends && isFriendsEmpty(rows)
+  const pinned = rows !== null && shouldPinYou(rows, you)
+  const showFooter = rows !== null && !empty && !friendsEmpty
+  const anyVerified =
+    rows?.some((row) => row.verifiedSaver) === true ||
+    (pinned && you?.verifiedSaver === true)
 
   return (
-    <ScreenShell
-      variant="tab"
-      title="Ranks"
-      actions={
-        <Button
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          aria-pressed={friends}
-          onClick={() => setFriends((f) => !f)}
-        >
-          Friends {friends ? 'on' : 'off'}
-        </Button>
-      }
-    >
+    <ScreenShell variant="tab" title="Ranks" bodyClassName="gap-3.5">
       <Tabs
         ariaLabel="Leaderboard"
         value={board}
-        onChange={(v) => setBoard(v as 'ranked' | 'unranked')}
+        onChange={(value) => setBoard(value as Board)}
         items={[
           { value: 'ranked', label: 'Ranked' },
           { value: 'unranked', label: 'Unranked' },
         ]}
       />
 
-      {loading && <LoadingState />}
-      {error && <Banner tone="error">{error}</Banner>}
+      <div className="flex gap-2" role="group" aria-label="Board filter">
+        <FilterChip pressed={!friends} onClick={() => setFriends(false)}>
+          Everyone
+        </FilterChip>
+        <FilterChip pressed={friends} onClick={() => setFriends(true)}>
+          Friends
+        </FilterChip>
+      </div>
 
-      {!loading && !error && rows && (
+      {loading && <LoadingState />}
+
+      {!loading && error && (
         <>
-          {rows.length === 0 ? (
-            <PixelPanel className="p-6 text-center flex flex-col gap-2">
-              <p className="sv-body text-fg-muted">Nobody on this board yet.</p>
-              <p className="sv-label text-fg-faint">
-                {board === 'ranked'
-                  ? 'Ranked play opens at Level 3 with 5 check-ins.'
-                  : 'Check in and battle — scores build from real play.'}
-              </p>
-            </PixelPanel>
-          ) : (
-            <PixelPanel className="px-4 py-0">
-              {rows.map((r, i) => (
-                <Row
-                  key={`${r.rank}-${r.displayName}`}
-                  minHeight={56}
-                  divider={i < rows.length - 1}
-                  className={r.isMe ? 'bg-surface-hi' : undefined}
-                  leading={
-                    <span
-                      className={`sv-figure w-8 text-center shrink-0 ${
-                        r.rank === 1
-                          ? 'text-gold'
-                          : r.rank === 2
-                            ? 'text-silver'
-                            : r.rank === 3
-                              ? 'text-bronze'
-                              : 'text-fg-faint'
-                      }`}
-                    >
-                      {r.rank}
-                    </span>
-                  }
-                  trailing={
-                    <span className="sv-figure text-butter-text shrink-0">{r.score}</span>
-                  }
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="sv-label">
-                        {r.displayName}
-                        {r.isMe && <span className="sv-label text-fg-faint"> (you)</span>}
-                      </span>
-                      {r.verifiedSaver && (
-                        <span
-                          title="Verified saver — funds held in their own vault"
-                          aria-label="Verified saver — funds held in their own vault"
-                          className="text-mint shrink-0 text-sm leading-none"
-                        >
-                          ⟡
-                        </span>
-                      )}
-                      {r.bracket && (
-                        <Chip
-                          variant="outline"
-                          color={BRACKETS[r.bracket as Bracket]?.color}
-                        >
-                          {BRACKETS[r.bracket as Bracket]?.label}
-                        </Chip>
-                      )}
-                    </div>
-                    <p className="sv-label text-fg-faint">
-                      Lvl {r.level} · {r.wins}W
-                      {board === 'unranked' && r.amountScore !== null
-                        ? ` · growth ${r.amountScore} · streak ${r.consistencyScore}`
-                        : ` · streak ${r.streak}d`}
-                    </p>
-                  </div>
-                </Row>
-              ))}
-            </PixelPanel>
-          )}
-          <p className="sv-label text-fg-faint text-center">
-            {total} player{total === 1 ? '' : 's'} · balances and addresses are never shown
-          </p>
-          <p className="sv-label text-fg-faint text-center">
-            ⟡ marks a verified saver — funds in their own vault
-          </p>
+          <Banner tone="error">{error}</Banner>
+          <Button
+            variant="secondary"
+            fullWidth={false}
+            className="self-start"
+            onClick={() => setReload((n) => n + 1)}
+          >
+            Try again
+          </Button>
         </>
       )}
+
+      {!loading && !error && rows && (
+        friendsEmpty ? (
+          <FriendsEmptyPanel />
+        ) : empty ? (
+          <EmptyPanel board={board} />
+        ) : (
+          <>
+            <PixelPanel className="px-3.5 py-0.5">
+              {rows.map((row, i) => (
+                <RankRowView
+                  key={`${row.rank}-${row.displayName}`}
+                  row={row}
+                  board={board}
+                  divider={i < rows.length - 1}
+                />
+              ))}
+            </PixelPanel>
+
+            {pinned && you && (
+              <section className="flex flex-col gap-2" aria-label="Your rank">
+                <h2 className="sv-caption font-bold text-fg-muted">Your rank</h2>
+                <PixelPanel className="px-3.5 py-0.5">
+                  <RankRowView row={you} board={board} divider={false} />
+                </PixelPanel>
+              </section>
+            )}
+
+            {showFooter && (
+              <div className="flex flex-col gap-1">
+                <p className="sv-caption text-fg-muted">{boardFooter(board)}</p>
+                <p className="sv-caption text-fg-muted">
+                  {footerLegend(total, anyVerified)}
+                </p>
+              </div>
+            )}
+          </>
+        )
+      )}
     </ScreenShell>
+  )
+}
+
+function RankRowView({
+  row,
+  board,
+  divider,
+}: {
+  row: RankRow
+  board: Board
+  divider: boolean
+}) {
+  const bracket = row.bracket ? BRACKETS[row.bracket as Bracket]?.label : undefined
+  const rankClass = row.isMe
+    ? 'text-mint'
+    : rankTone(row.rank) === 'strong'
+      ? 'text-fg'
+      : 'text-fg-muted'
+
+  return (
+    <Row
+      variant={row.isMe ? 'you' : 'default'}
+      minHeight={56}
+      divider={divider}
+      className="gap-3"
+      leading={
+        <span
+          className={`num w-[26px] shrink-0 text-center text-[14px] font-bold ${rankClass}`}
+        >
+          <span className="sr-only">Rank </span>
+          {row.rank}
+        </span>
+      }
+      trailing={
+        <span className="flex shrink-0 items-center gap-3">
+          <span className="sv-caption w-[52px] shrink-0 whitespace-nowrap font-bold text-fg-muted">
+            {bracket ?? '—'}
+            {!bracket && <span className="sr-only">No bracket yet</span>}
+          </span>
+          <span
+            className={`num shrink-0 text-right text-[14px] font-bold ${
+              board === 'ranked' ? 'w-12' : 'w-14'
+            }`}
+          >
+            <span className="sr-only">Score </span>
+            {row.score}
+          </span>
+        </span>
+      }
+    >
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="min-w-0 sv-break text-[15px] leading-[1.2] font-bold">
+          {row.displayName}
+        </span>
+        {row.rank === 1 && <RankCrown />}
+        {row.verifiedSaver && (
+          <span
+            role="img"
+            aria-label="Verified saver - funds held in their own vault"
+            title="Verified saver - funds held in their own vault"
+            className="shrink-0 text-[14px] leading-none text-mint"
+          >
+            ⟡
+          </span>
+        )}
+        {row.isMe && <Chip variant="fill">You</Chip>}
+      </span>
+    </Row>
+  )
+}
+
+function EmptyPanel({ board }: { board: Board }) {
+  return (
+    <PixelPanel className="p-6 text-center flex flex-col gap-2">
+      <p className="sv-body text-fg-muted">Nobody on this board yet.</p>
+      <p className="sv-caption text-fg-faint">
+        {board === 'ranked'
+          ? 'Ranked play opens at Level 3 with 5 check-ins.'
+          : 'Check in and battle — scores build from real play.'}
+      </p>
+    </PixelPanel>
+  )
+}
+
+function FriendsEmptyPanel() {
+  return (
+    <PixelPanel className="p-6 text-center flex flex-col gap-2">
+      <p className="sv-body text-fg-muted">No friends on this board yet.</p>
+      <p className="sv-caption text-fg-faint">
+        Friends are players you&apos;ve fought in a human battle.
+      </p>
+    </PixelPanel>
   )
 }

@@ -81,3 +81,64 @@ test('the leaderboard response adds you without changing rows or total', () => {
   assert.match(ROUTE, /amountScore: board === 'unranked' \? r\.losses : null/)
   assert.match(ROUTE, /consistencyScore: board === 'unranked' \? r\.ties : null/)
 })
+
+const PAGE = readFileSync(
+  new URL('../app/(tabs)/leaderboard/page.tsx', import.meta.url),
+  'utf8',
+)
+
+test('the page uses the shared primitives only', () => {
+  for (const part of [
+    '<Tabs',
+    '<FilterChip',
+    '<PixelPanel',
+    '<Row',
+    '<Banner',
+    '<Button',
+    '<LoadingState />',
+    '<Chip variant="fill">',
+  ]) {
+    assert.match(PAGE, new RegExp(part.replace(/[<>/=]/g, '\\$&')), part)
+  }
+  assert.doesNotMatch(PAGE, /vpx|Friends on|Friends off/)
+})
+
+test('the page ports the tabs, filter and row anatomy', () => {
+  assert.match(PAGE, /ariaLabel="Leaderboard"/)
+  assert.match(PAGE, /Everyone/)
+  assert.match(PAGE, /Friends/)
+  assert.match(PAGE, /w-\[26px\]/)
+  assert.match(PAGE, /w-\[52px\]/)
+  assert.match(PAGE, /text-\[15px\]/)
+  assert.match(PAGE, /board === 'ranked' \? 'w-12' : 'w-14'/)
+  assert.match(PAGE, /sv-caption font-bold text-fg-muted/)
+  assert.match(PAGE, /variant=\{row\.isMe \? 'you' : 'default'\}/)
+  assert.match(PAGE, /px-3\.5 py-0\.5/)
+  assert.doesNotMatch(PAGE, /Lvl |\(you\)/)
+  assert.doesNotMatch(PAGE, /\{row\.streak\}|\{row\.wins\}/)
+})
+
+test('the page draws the crown and the verified marker', () => {
+  assert.match(PAGE, /rank === 1 && <RankCrown/)
+  assert.match(PAGE, /verifiedSaver/)
+  assert.match(PAGE, /Verified saver/)
+})
+
+test('the page pins your rank outside the top 50', () => {
+  assert.match(PAGE, /shouldPinYou\(/)
+  assert.match(PAGE, /Your rank/)
+  assert.match(PAGE, /<RankRowView row=\{you\}/)
+})
+
+test('the page keeps the board, friends and state contracts', () => {
+  assert.match(PAGE, /boardFooter\(/)
+  assert.match(PAGE, /isFriendsEmpty\(/)
+  assert.match(PAGE, /footerLegend\(/)
+  assert.match(PAGE, /No friends on this board yet\./)
+  assert.match(PAGE, /Nobody on this board yet\./)
+  assert.match(PAGE, /Couldn't load ranks\./)
+  assert.match(PAGE, /Try again/)
+  assert.match(PAGE, /res\.status === 401/)
+  assert.match(PAGE, /router\.replace\('\/setup'\)/)
+  assert.doesNotMatch(PAGE, /err\.message|error\.message/)
+})
