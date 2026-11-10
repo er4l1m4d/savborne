@@ -10,7 +10,24 @@
  * player without a vault gets `409 vault_required` rather than a fallback to a
  * client-reported number, which is the hole this build exists to close.
  *
- * Header: X-Player-Address: <address>
+ * Headers:
+ *   X-Player-Address: <address>
+ *   X-Savborne-Check-In-Public-Key: <64 hex>
+ *   X-Savborne-Check-In-Signature: <128 hex>
+ *   X-Savborne-Check-In-Signed-At: <unix ms>
+ *
+ * Trust: the address header is identity, not authority. Every check-in must
+ * carry a wallet signature over `checkInMessage` (the `Savborne check-in`
+ * namespace, the normalised address, the `check-in` action and the signed-at
+ * time), verified against the key that derives the header address. The proof
+ * is shape-checked before any I/O and verified after the rate limit but before
+ * any table or chain read. The delete proof uses different headers and a
+ * different namespace, so neither can authorise the other. The message does
+ * not bind the vault or balance; the server reads those itself.
+ *
+ * Cron policy: any future server-triggered check-in or claim path must
+ * authenticate with a separate `CRON_SECRET` and must never accept a player
+ * header as authority. Do not reuse these proof headers for a server job.
  *
  * Integrity release gate (supabase/FINAL-SCHEMA.sql):
  *   1. A database fixed-window rate limit runs before any table or chain read.
@@ -23,12 +40,14 @@
  *      one UTC day can never unlock ranked.
  *
  * Steps:
- *   1. Rate limit, then load the player, vault and recent history.
- *   2. Return early when today's reading already exists.
- *   3. Read the balance from the chain.
- *   4. Evaluate missions, awards, streak, badge actions and unlocks.
- *   5. Commit everything through `commit_check_in`.
- *   6. Return the aggregate result to the client for animation.
+ *   1. Check the player header and the proof shape.
+ *   2. Rate limit, then verify the signature.
+ *   3. Load the player, vault and recent history.
+ *   4. Return early when today's reading already exists.
+ *   5. Read the balance from the chain.
+ *   6. Evaluate missions, awards, streak, badge actions and unlocks.
+ *   7. Commit everything through `commit_check_in`.
+ *   8. Return the aggregate result to the client for animation.
  */
 
 import { NextResponse } from 'next/server'
@@ -44,6 +63,8 @@ import { computeBadgeActions, type BadgeKey } from '@/lib/game/badges'
 import type { Network } from '@/lib/nimiq'
 import { getAccount, RpcError } from '@/lib/vault/rpc'
 import { weeklyMissionXp } from '@/lib/game/weekly-missions'
+import { readCheckInProof } from '@/lib/checkin-request'
+import { verifyCheckInSignature } from '@/lib/checkin-verify'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -59,12 +80,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
   }
 
+  // A proof is required for every POST and is shape-checked before any I/O.
+  // Missing, stale and malformed proofs cost no database or chain read.
+  const proof = readCheckInProof(req.headers, Date.now())
+  if (!proof.ok) {
+    return NextResponse.json(
+      { error: proof.reason },
+      { status: proof.reason === 'malformed' ? 400 : 401 },
+    )
+  }
+
   const db = supabaseAdmin()
   const now = new Date()
   const today = utcDayOf(now)
   const weekStart = utcWeekStart(now)
 
-  // 1. Rate limit before any table or chain read. A denied request is cheap.
+  // 1. Rate limit before any table or chain read. A denied request is cheap,
+  //    and it also bounds signature verification to the same window.
   const { data: rate, error: rateErr } = await db.rpc('consume_rate_limit', {
     p_key: `check-in:${address}`,
     p_limit: RATE_LIMIT.limit,
@@ -81,7 +113,23 @@ export async function POST(req: Request) {
     )
   }
 
-  // 2. Load the player and their vault. The body is deliberately unread: there
+  // 2. Verify the signature. The key must derive the header address, so a
+  //    proof signed by another wallet is `wrong_signer`, not consent. This is
+  //    still before any table read: a bad signature never touches the player.
+  let verified
+  try {
+    verified = await verifyCheckInSignature({ address, proof: proof.proof })
+  } catch {
+    return NextResponse.json({ error: 'Could not verify the signature.' }, { status: 500 })
+  }
+  if (!verified.ok) {
+    return NextResponse.json(
+      { error: verified.reason },
+      { status: verified.reason === 'malformed' ? 400 : 401 },
+    )
+  }
+
+  // 3. Load the player and their vault. The body is deliberately unread: there
   //    is nothing a client can send that changes the balance.
   const { data: player, error: playerErr } = await db
     .from('players')
@@ -116,7 +164,7 @@ export async function POST(req: Request) {
     return NextResponse.json(alreadyCheckedInResponse(player))
   }
 
-  // 3. Read the balance from the chain. No fallback: an RPC outage is a
+  // 4. Read the balance from the chain. No fallback: an RPC outage is a
   //    check-in outage, surfaced honestly rather than hidden behind a cache.
   let account: Awaited<ReturnType<typeof getAccount>>
   try {
@@ -141,7 +189,7 @@ export async function POST(req: Request) {
     .eq('player_address', address)
   const hasLedgerScroll = (ownedItemRows ?? []).some((r) => r.item_key === 'ledger_scroll')
 
-  // 4. Build the mission snapshot.
+  // 5. Build the mission snapshot.
   const alreadyWeek = alreadyCheckedInThisWeek(prior.map((r) => new Date(r.recorded_at)), now)
   const priorMostRecent = prior.length > 0 ? Number(prior[0].balance_luna) : null
   const thisWeekRows = prior.filter((r) => new Date(r.recorded_at) >= weekStart)
@@ -227,7 +275,7 @@ export async function POST(req: Request) {
     m.isOnetime ? !allCreditedKeys.has(m.key) : !creditedThisWeek.has(m.key),
   )
 
-  // 5. Award XP sequentially through the caps.
+  // 6. Award XP sequentially through the caps.
   const dailyHeadroomState: PlayerXpState = {
     xp: player.xp,
     level: player.level,
@@ -259,7 +307,7 @@ export async function POST(req: Request) {
     awards.push({ mission: m, applied: r.applied, capped: r.capped })
   }
 
-  // 6. Recompute streak.
+  // 7. Recompute streak.
   const allCheckInDates = [now, ...prior.map((r) => new Date(r.recorded_at))]
   const streak = computeStreak({
     checkInsAt: allCheckInDates,
@@ -271,11 +319,11 @@ export async function POST(req: Request) {
   const newXp = running.xp
   const newLevel = levelFromXp(newXp)
 
-  // 7. Item unlocks on bracket reach. Once unlocked, items never re-lock.
+  // 8. Item unlocks on bracket reach. Once unlocked, items never re-lock.
   const ownedKeys = new Set<ItemKey>((ownedItemRows ?? []).map((r) => r.item_key as ItemKey))
   const unlockList = itemsToUnlock(ownedKeys, newBracket)
 
-  // 8. Badge awards and revocations.
+  // 9. Badge awards and revocations.
   const { data: activeBadgeRows } = await db
     .from('player_badges')
     .select('badge_key')
@@ -306,7 +354,7 @@ export async function POST(req: Request) {
   if (crownAwarded) itemKeys.add('golden_crown')
   const unlockedItems = [...itemKeys]
 
-  // 9. One transaction for the reading and every reward.
+  // 10. One transaction for the reading and every reward.
   const playerPatch: Record<string, unknown> = {
     current_balance_luna: Math.floor(balanceLuna),
     last_check_in_at: now.toISOString(),
