@@ -1,7 +1,7 @@
 # Check-in and standing integrity - backlog
 
 **Date:** 2026-11-09
-**Status:** release gate landed in code on `battle-ui-redesign`; migration pending deployment
+**Status:** release gate landed in code; trust step 2 closed in code; migration pending deployment
 **Origin:** Home UI review discussion about automatic check-ins and players hiding withdrawals.
 **Release gate:** do not expose ranked battles publicly until item 1 below is fixed.
 
@@ -34,6 +34,38 @@ Route tests and the SQL contract test pass. The live five-POST, concurrency
 and rate-limit checks still require a Supabase project and `.env.local`; apply
 the migration before ranked is public.
 
+### 2026-11-11 — trust (fix order step 2)
+
+Gap 14 is closed in code:
+
+- `POST /api/check-ins` now requires `X-Savborne-Check-In-Public-Key`,
+  `X-Savborne-Check-In-Signature` and `X-Savborne-Check-In-Signed-At` on every
+  POST. There is no unsigned path.
+- The message binds the `Savborne check-in` namespace, the normalised player
+  address, the `check-in` action string and the signed-at time, inside Nimiq's
+  signed-message envelope. It does not bind the vault address or balance; the
+  server reads those itself. A 120s window bounds replay.
+- The server verifies the signature and requires the signing key to derive the
+  header address. A proof signed by another key is `wrong_signer`.
+- The delete flow uses different headers and a different message namespace, so
+  neither proof can authorise the other. Tests cover both directions.
+- Order: proof shape/freshness (no I/O) → rate limit → signature verify (no DB)
+  → player/vault/chain reads. Rejections are 401 for missing, stale,
+  `bad_signature` and `wrong_signer`, and 400 for malformed.
+- Home signs before POSTing through the same headers and message; rejections
+  appear in the existing inline error Banner. No new screen or state.
+- The success response shape is unchanged and its 19 fields are pinned by
+  tests, including `alreadyCheckedIn`.
+
+Gap 15 already landed with the release gate and is untouched. The live
+migration, the five-POST check and the concurrency check remain pending because
+`.env.local` is absent; tests, build and fixture renders do not need it.
+
+Cron policy: any future server-triggered check-in or claim path must
+authenticate with a separate `CRON_SECRET` and must never accept a player
+header as authority. There is no cron route in the repo, so nothing is built
+for it yet.
+
 ## Gaps
 
 ### Standing and fairness
@@ -54,8 +86,8 @@ the migration before ranked is public.
 11. The check-in insert, player update and reward writes are not one transaction; a failure can leave an orphan row or partial reward.
 12. A retry after a partial failure can see the orphan row as "already checked in today" and skip the reward it owed.
 13. The disabled Home button is client-side only; the API accepts direct POSTs.
-14. Check-in has no wallet signature; it trusts `X-Player-Address`. A script or third party can trigger it for a known address, automate the ritual, or grief a player's withdrawal flags/badges.
-15. There is no rate limit on `/api/check-ins`.
+14. Check-in has no wallet signature; it trusts `X-Player-Address`. A script or third party can trigger it for a known address, automate the ritual, or grief a player's withdrawal flags/badges. **Closed in code 2026-11-11.**
+15. There is no rate limit on `/api/check-ins`. **Landed 2026-11-09** with the release gate (`consume_rate_limit`).
 
 ### Freshness and operations
 
@@ -84,8 +116,8 @@ Closes gaps 8-13, 19. Small migration and API change; no UI redesign.
 
 ### 2. Trust
 
-- Require a signed message with nonce/timestamp for player-triggered check-in/claim; verify server-side (the delete flow already has this pattern).
-- Give the cron a separate `CRON_SECRET`, never a player header.
+- Require a signed message with nonce/timestamp for player-triggered check-in/claim; verify server-side (the delete flow already has this pattern). **Done in code 2026-11-11 for check-in** (timestamp, no nonce; a claim will need its own action string).
+- Give the cron a separate `CRON_SECRET`, never a player header. **Policy recorded; no cron exists yet.**
 
 Closes gaps 14-15.
 
@@ -120,7 +152,7 @@ Closes gap 7 and the "stale at the moment of truth" risk. Full intraday accuracy
 - Five POSTs in one UTC day leave `check_in_count` at 1 and do not unlock ranked.
 - Two concurrent POSTs produce one reading and one reward set.
 - A failed player update leaves no orphan reading and no partial reward.
-- A direct POST without a valid signature is rejected after step 2.
+- A direct POST without a valid signature is rejected after step 2. **Covered in code 2026-11-11** by `src/app/api/check-ins/route.test.ts` (missing, malformed, stale, bad signature, wrong signer, other action, other address).
 - The ranked gate uses distinct-day count.
 
 ## Relevant code
