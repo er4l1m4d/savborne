@@ -5,9 +5,10 @@ to, naming the width and the element where possible.
 
 ## Sign-off
 
-- [ ] Vault - default (unlocked)
+- [ ] Vault - default (Deposit tab)
+- [ ] Vault - Withdraw tab
 - [ ] Vault - no vault
-- [ ] Vault - locked
+- [ ] Vault - locked Withdraw
 - [ ] Vault - empty movements
 - [ ] Vault - error
 - [ ] Vault - loading
@@ -24,13 +25,19 @@ Corrections:
 
 -
 
+## Vault - Withdraw tab
+
+Corrections:
+
+-
+
 ## Vault - no vault
 
 Corrections:
 
 -
 
-## Vault - locked
+## Vault - locked Withdraw
 
 Corrections:
 
@@ -88,7 +95,15 @@ Corrections:
 
 - Vault keeps the tab shell with the Home back link because it is a route in
   the `(tabs)` group. It is not converted to a pushed screen.
-- Vault section headings use `h2.sv-subheading` at 20px default text. Mint is
+- Deposit and Withdraw are `Tabs`, like Ranked/Unranked. Only the selected form
+  is visible; the balance card, banners and Recent movements stay on both. The
+  tab is local state, not a URL parameter.
+- Deposit is the default. A receipt's `?direction=out` link opens Withdraw and
+  prefills the amount.
+- The passphrase and Unlock vault live inside the Withdraw tab. Deposit stays
+  usable while the vault is locked.
+- Vault section headings use `h2.sv-subheading` at 20px default text. Deposit
+  and Withdraw no longer repeat a heading below their tab labels. Mint is
   reserved for the unlocked success line, progress and the You row. The tiny
   `Vault balance` eyebrow stays a 12px field label.
 - The two amount fields and the passphrase all use the existing `.sv-input`
@@ -126,14 +141,20 @@ Corrections:
   is unavailable in this sandbox. The fixture was reverted before the final
   test/build and is not in the committed tree. The 404 path is source-tested.
 - `getFlexCard` still selects only the explicit columns the card needs.
-- No shared CSS changed. The batch consumes `.sv-input`, `.sv-subheading`,
-  `Row`, `PixelPanel tone="off"`, `Banner`, `Button` and `LoadingState` as they
-  already exist.
+- No shared CSS changed originally. The revision adds one shared Banner rule
+  (`display: flex`, `gap: 8px`, and 8px above an in-banner action), so every
+  banner has 8px between text lines and 16px before the action. Everything else
+  still consumes `.sv-input`, `.sv-subheading`, `Row`, `PixelPanel tone="off"`,
+  `Button` and `LoadingState` as they already exist.
+- The loading dots were already centred in the running app. The first review
+  images expanded the shell to take a full-page screenshot, which collapsed the
+  body and pulled the dots upward. Loading states are now captured at viewport
+  height; no `LoadingState` code changed.
 
 ## Audit
 
-33 rows (11 states x 360/390/430): `overflowX` 0, no element wider than the
-viewport, no interactive target below 44x44, minimum font 12px, and 199
+36 rows (12 states x 360/390/430): `overflowX` 0, no element wider than the
+viewport, no interactive target below 44x44, minimum font 12px, and 236
 keyboard stops all in view, uncovered and outlined in 2px mint.
 
 The first audit pass flagged the bottom-nav outlines as the wrong colour. That

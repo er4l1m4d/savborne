@@ -1527,26 +1527,26 @@ CSS changed.
 
 | Check | Result |
 |---|---|
-| `npm test` | 409 pass, 0 fail (396 before the batch) |
+| `npm test` | 411 pass, 0 fail (396 before the batch) |
 | `npx tsc --noEmit` | clean |
 | `npm run lint` | exit 0, 49 warnings, 0 errors |
 | `npm run build` | exit 0; `/vault`, `/receipts` and `/card/[token]` compile |
 | Legacy classes | no `vpx` in the three route sources |
 | Type floor | minimum rendered font 12 |
-| Audit | 33 rows (11 states x 360/390/430): `overflowX` 0, no wide element, no target below 44px, 199 focus stops all in view, uncovered and mint-outlined |
+| Audit | 36 rows (12 states x 360/390/430): `overflowX` 0, no wide element, no target below 44px, 236 focus stops all in view, uncovered and mint-outlined |
 
 ### Renders
 
-33 after PNGs in `docs/superpowers/renders/app-routes/after/` and 9 before PNGs
+36 after PNGs in `docs/superpowers/renders/app-routes/after/` and 9 before PNGs
 in `.../before/` at 360/390/430. The review page is
 `docs/superpowers/renders/app-routes/review/index.html`; `NOTES.md` carries the
 sign-off list and deliberate choices. Raw audit is
 `.../audit/final-audit.jsonl`.
 
-Vault states: default (unlocked), no vault, locked, empty movements, error,
-loading. Receipts states: mixed included/pending/expired plus a snapshot,
-empty, error, loading. Card: valid. A 401 is source-tested rather than
-rendered.
+Vault states: Deposit default, Withdraw unlocked, no vault, Withdraw locked,
+empty movements, error, loading. Receipts states: mixed
+included/pending/expired plus a snapshot, empty, error, loading. Card: valid. A
+401 is source-tested rather than rendered.
 
 ### 360 behaviour
 
@@ -1585,6 +1585,34 @@ rendered.
 - **Audit false positive.** The first audit pass sampled the nav link outline
   30ms into `transition-colors`; waiting 200ms showed the 2px mint ring. The
   UI did not change.
+
+### Revision - 2026-11-10
+
+Three review corrections are in:
+
+- **Deposit and Withdraw are tabs.** `Tabs` now sits below the balance, shields
+  and banners, and only the selected form is visible. Deposit is the default; a
+  receipt's `?direction=out` link opens Withdraw and prefills the amount. The
+  tab is local state, not a URL parameter. Balance, banners and Recent
+  movements stay on both tabs.
+- **The passphrase moved inside Withdraw.** Selecting Withdraw while locked
+  shows the `.sv-input` passphrase and Unlock vault in that tab. Deposit stays
+  usable in its own tab. After unlock, Withdraw shows its action and the mint
+  success line.
+- **Banner spacing is a shared fix.** `.sv-banner` is a flex column with an 8px
+  gap, and `.sv-banner > .sv-btn` adds 8px, so text lines are 8px apart and the
+  action sits 16px below the text. Every screen gets the same rhythm; no local
+  wrapper is needed.
+- **Loading dots were already centred.** The first review images distorted
+  them: the capture harness expanded the shell to take a full-page screenshot,
+  which collapsed the body and pulled the dots toward the top. Loading states
+  are now captured at viewport height, so the images show the real centre. No
+  `LoadingState` code changed.
+
+The revised renders add `vault-withdraw`; `vault-locked` now opens the Withdraw
+tab. Verification after the revision is 411 tests, tsc clean, 49 lint warnings,
+build green, and a 36-row audit (236 focus stops) with no overflow, no wide
+element, no target below 44px and a 12px minimum font.
 
 ### Remaining
 

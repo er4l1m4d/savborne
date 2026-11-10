@@ -30,26 +30,30 @@
 <h1>App-specific routes - current review</h1>
 <p class="lede">
   The three routes with no handoff figure, restyled to Foundation 2 at 360, 390
-  and 430: Vault (default, no vault, locked, empty movements, error, loading),
-  Receipts (mixed, empty, error, loading) and the public Card. Renders are 2x
-  device-scale PNGs from the headless CDP harness with fixture data. A 401 on
-  Receipts is source-tested, not rendered. Write corrections in
-  <code>NOTES.md</code>.
+  and 430: Vault (Deposit tab, Withdraw tab, no vault, locked Withdraw, empty
+  movements, error, loading), Receipts (mixed, empty, error, loading) and the
+  public Card. Renders are 2x device-scale PNGs from the headless CDP harness
+  with fixture data. A 401 on Receipts is source-tested, not rendered. Write
+  corrections in <code>NOTES.md</code>.
 </p>
 
 <section class="screen">
   <h2>Audit summary</h2>
-  <p class="route">33 rows: 11 states x 360/390/430</p>
+  <p class="route">36 rows: 12 states x 360/390/430</p>
   <table>
     <tr><th>Check</th><th>Result</th></tr>
     <tr><td>Horizontal overflow</td><td>0 on every row</td></tr>
     <tr><td>Elements wider than the viewport</td><td>0</td></tr>
     <tr><td>Interactive targets below 44x44</td><td>0</td></tr>
     <tr><td>Minimum rendered font</td><td>12px</td></tr>
-    <tr><td>Keyboard stops checked</td><td>199</td></tr>
+    <tr><td>Keyboard stops checked</td><td>236</td></tr>
     <tr><td>Stops out of view or covered</td><td>0</td></tr>
     <tr><td>Stops without the 2px mint outline</td><td>0</td></tr>
   </table>
+  <p class="note">Loading states are captured at viewport height, not as
+  expanded full-page screenshots, so the three dots appear where the running app
+  actually centres them. Banner text is 8px apart and the action sits 16px below
+  the text, via the shared Banner primitive.</p>
   <p class="note">The earlier nav-link outline mismatch was a harness timing false
   positive: <code>transition-colors</code> animates <code>outline-color</code>, and
   the audit sampled 30ms after Tab. It now waits 200ms for the transition to
@@ -58,7 +62,7 @@
 
 <section class="screen">
   <h2>Vault - default (unlocked)</h2>
-  <p class="route">/vault - tab shell, Home back link, balance card, shields, 20px sub-headings, .sv-input fields, grouped movement panel, Receipts and Share links</p>
+  <p class="route">/vault - tab shell, Home back link, balance card, shields, Deposit/Withdraw tabs, Deposit selected, .sv-input, grouped movement panel</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/vault-default@360.png" alt="Vault default at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/vault-default@390.png" alt="Vault default at 390px"></figure>
@@ -69,6 +73,16 @@
     <figure><figcaption>390</figcaption><img src="../before/vault-before@390.png" alt="Vault before at 390px"></figure>
     <figure><figcaption>430</figcaption><img src="../before/vault-before@430.png" alt="Vault before at 430px"></figure>
   </div></details>
+</section>
+
+<section class="screen">
+  <h2>Vault - Withdraw tab</h2>
+  <p class="route">/vault - Withdraw selected; destination, amount, unlocked Withdraw action and the mint session line; balance, banners and movements stay in place</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/vault-withdraw@360.png" alt="Vault withdraw tab at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/vault-withdraw@390.png" alt="Vault withdraw tab at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/vault-withdraw@430.png" alt="Vault withdraw tab at 430px"></figure>
+  </div>
 </section>
 
 <section class="screen">
@@ -83,7 +97,7 @@
 
 <section class="screen">
   <h2>Vault - locked</h2>
-  <p class="route">/vault - deposit available; withdraw amount disabled; passphrase is .sv-input with a visible label; Unlock vault disabled until typed</p>
+  <p class="route">/vault - Withdraw tab selected and locked; passphrase is .sv-input with a visible label; Unlock vault disabled until typed; Deposit stays available in its tab</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/vault-locked@360.png" alt="Vault locked at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/vault-locked@390.png" alt="Vault locked at 390px"></figure>
@@ -113,7 +127,7 @@
 
 <section class="screen">
   <h2>Vault - loading</h2>
-  <p class="route">/vault - the shell header stays; the three-dot LoadingState waits below it</p>
+  <p class="route">/vault - the shell header stays; the three-dot LoadingState is centred in the viewport</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/vault-loading@360.png" alt="Vault loading at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/vault-loading@390.png" alt="Vault loading at 390px"></figure>
@@ -158,7 +172,7 @@
 
 <section class="screen">
   <h2>Receipts - loading</h2>
-  <p class="route">/receipts - intro copy stays; the three-dot LoadingState waits below it</p>
+  <p class="route">/receipts - intro copy stays; the three-dot LoadingState is centred in the viewport</p>
   <div class="strip">
     <figure><figcaption>360</figcaption><img src="../after/receipts-loading@360.png" alt="Receipts loading at 360px"></figure>
     <figure><figcaption>390</figcaption><img src="../after/receipts-loading@390.png" alt="Receipts loading at 390px"></figure>

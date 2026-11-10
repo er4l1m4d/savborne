@@ -394,3 +394,42 @@ No merge or push until sign-off.
 6. **No live data checks.** `.env.local` is absent, so Supabase and Nimiq are
    not exercised; tests, build and fixture renders are. The real-device pass
    remains the user's sign-off step.
+
+---
+
+## 11. Revision - 2026-11-10
+
+Three review corrections were approved after the first render pass.
+
+| # | Decision | Choice |
+|---|---|---|
+| 16 | Deposit / Withdraw control | The `Tabs` primitive, exactly like Ranked/Unranked. One form is visible at a time. The tabs sit below the balance, shields and banners, and above Recent movements. The balance, banners and movements stay on both tabs. |
+| 17 | Default tab and receipt links | Deposit is the default. A receipt's `?direction=out` link opens Withdraw and prefills the amount. The tab itself stays local state; it is not a URL parameter. |
+| 18 | Locked Withdraw | The passphrase `.sv-input` and `Unlock vault` live inside the Withdraw tab. Deposit stays usable in its own tab. After unlock, the tab shows the Withdraw action and the mint success line. |
+| 19 | Banner spacing | Shared `.sv-banner` fix: 8px between text lines and 16px before the action. Every banner in the app gets the same rhythm. |
+| 20 | Loading dots | The dots were already centred in the running app; the first review images distorted them by expanding the shell for a full-page screenshot. Loading states are now captured at viewport height, so they show the real centre. No LoadingState code change is needed. |
+
+### Revised Vault anatomy
+
+```
+Vault
+┌ balance card ┐
+Streak shields
+[ banners ]
+[ Deposit | Withdraw ]          Tabs, 44px, mint selected
+  selected form
+[ action error / notice ]
+Recent movements
+Receipts   Share card & backup
+```
+
+`Recent movements` keeps its 20px sub-heading. Deposit and Withdraw no longer
+repeat a heading below their tab labels.
+
+### Revised verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 411 pass, 0 fail |
+| Audit | 36 rows (12 states x 360/390/430): 236 focus stops, min font 12, no overflow, no target below 44px |
+| Renders | 36 after PNGs, including `vault-withdraw`; Vault locked now opens the Withdraw tab |

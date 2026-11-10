@@ -644,3 +644,55 @@ git log --oneline -5
 
 Expected: clean `app-routes-polish` branch, four commits, no fixture, no
 `.env.local`, no `AGENTS.md`, no InstaBox tooling. Stop and ask for sign-off.
+
+---
+
+### Task 5: Review revision - tabs, banner spacing and loading capture
+
+**Files:**
+- Modify: `src/app/(tabs)/vault/page.tsx`
+- Modify: `src/app/globals.css`
+- Modify: `src/lib/app-routes.test.ts`
+- Modify: `src/lib/ui-primitives.test.ts`
+- Modify: `docs/superpowers/renders/app-routes/after/`
+- Modify: `docs/superpowers/renders/app-routes/audit/final-audit.jsonl`
+- Modify: `docs/superpowers/renders/app-routes/review/index.html`
+- Modify: `docs/superpowers/renders/app-routes/review/NOTES.md`
+- Modify: `docs/superpowers/audits/2026-11-05-ui-gap-audit.md`
+
+- [ ] **Step 1: Switch the Vault forms to Tabs**
+
+Import `Tabs`, add a local `deposit | withdraw` state, default to Deposit, and
+set it to Withdraw when `?direction=out` arrives from an expired receipt. Render
+one form at a time below the banners. Clear the action error and notice on a tab
+change. Keep the passphrase inside the Withdraw tab.
+
+- [ ] **Step 2: Give the shared Banner its spacing**
+
+Add `display: flex`, `flex-direction: column` and `gap: 8px` to `.sv-banner`,
+and `margin-top: 8px` on `.sv-banner > .sv-btn`, so the text-to-action gap is
+16px. Extend the Banner primitives test.
+
+- [ ] **Step 3: Capture loading states at viewport height**
+
+The dots already centre in the shell body; the first full-page capture expanded
+the shell and put them near the top. Mark loading states so the harness takes a
+viewport screenshot instead of expanding the shell.
+
+- [ ] **Step 4: Re-render and re-audit**
+
+Add `vault-withdraw` to the harness. `vault-locked` clicks the Withdraw tab
+before capture. Capture 12 states x 3 widths (36 PNGs) and audit all 36.
+
+```bash
+for s in vault-default vault-withdraw vault-no-vault vault-locked vault-empty vault-error vault-loading receipts-mixed receipts-empty receipts-error receipts-loading card-valid; do
+  STATE=$s OUT_DIR=docs/superpowers/renders/app-routes/after node --import tsx /data/tmp/opencode/capture-app-routes.mjs
+  STATE=$s AUDIT=1 node --import tsx /data/tmp/opencode/capture-app-routes.mjs
+done
+```
+
+- [ ] **Step 5: Update review, audit section and verify**
+
+Add the Withdraw render and the revised choices to `review/index.html` and
+`NOTES.md`; append the revision to audit section 22. Revert the card fixture,
+then run `npm test`, `npx tsc --noEmit`, `npm run lint` and `npm run build`.
