@@ -12,6 +12,10 @@
  * definition of "friends" for v1: sent/received challenges or ranked matches).
  * Only display names are exposed — addresses never leave the server except as
  * a non-rendered key for the caller's own row.
+ *
+ * `rows` is the top 50. `you` is the caller's full row at its real rank, added
+ * so the UI can pin it outside the top 50; it is additive and `null` when the
+ * caller has no stats row. `total` stays the pre-slice cohort size.
  */
 
 import { NextResponse } from 'next/server'
@@ -88,7 +92,7 @@ export async function GET(req: Request) {
     rows.sort((a, b) => b.rating - a.rating || b.streak_current - a.streak_current || b.wins - a.wins)
   }
 
-  const top = rows.slice(0, 50).map((r, i) => ({
+  const toRow = (r: StatsRow, i: number) => ({
     rank: i + 1,
     displayName: r.display_name,
     level: r.level,
@@ -101,7 +105,11 @@ export async function GET(req: Request) {
     isMe: r.player_address === address,
     // A badge, not a ranking input: `rows` is already sorted before this map.
     verifiedSaver: r.has_vault === true,
-  }))
+  })
 
-  return NextResponse.json({ board, friendsOnly, rows: top, total: rows.length })
+  const all = rows.map(toRow)
+  const top = all.slice(0, 50)
+  const you = all.find((r) => r.isMe) ?? null
+
+  return NextResponse.json({ board, friendsOnly, rows: top, total: all.length, you })
 }

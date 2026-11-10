@@ -62,3 +62,22 @@ test('the rank-1 crown is the handoff drawing, verbatim', () => {
     assert.ok(CROWN.includes(d), `crown path missing: ${d.slice(0, 24)}...`)
   }
 })
+
+const ROUTE = readFileSync(
+  new URL('../app/api/leaderboards/route.ts', import.meta.url),
+  'utf8',
+)
+
+test('the leaderboard response adds you without changing rows or total', () => {
+  assert.match(ROUTE, /const all = rows\.map\(toRow\)/)
+  assert.match(ROUTE, /const top = all\.slice\(0, 50\)/)
+  assert.match(ROUTE, /const you = all\.find\(\(r\) => r\.isMe\) \?\? null/)
+  assert.match(ROUTE, /rows: top, total: all\.length, you/)
+  assert.match(ROUTE, /b\.rating - a\.rating \|\| b\.wins - a\.wins/)
+  assert.match(
+    ROUTE,
+    /b\.rating - a\.rating \|\| b\.streak_current - a\.streak_current \|\| b\.wins - a\.wins/,
+  )
+  assert.match(ROUTE, /amountScore: board === 'unranked' \? r\.losses : null/)
+  assert.match(ROUTE, /consistencyScore: board === 'unranked' \? r\.ties : null/)
+})
