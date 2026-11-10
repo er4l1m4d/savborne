@@ -21,6 +21,8 @@ import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { LoadingState } from '@/components/ui/LoadingState'
 
+const LOAD_ERROR = "Couldn't load your vault."
+
 export default function VaultPage() {
   const {
     vault,
@@ -138,8 +140,8 @@ export default function VaultPage() {
     return (
       <ScreenShell variant="tab" title="Vault" backHref="/">
         <Banner tone="error">
-          <p className="font-bold">Could not load your vault</p>
-          <p className="sv-label">{error}</p>
+          <p className="font-bold">{LOAD_ERROR}</p>
+          <p className="sv-label">Try again in a moment.</p>
           <Button
             variant="secondary"
             size="sm"

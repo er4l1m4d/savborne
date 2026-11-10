@@ -37,6 +37,13 @@ test('Vault balance skeleton is static under reduced motion', () => {
   assert.match(VAULT, /animate-pulse motion-reduce:animate-none/)
 })
 
+test('Vault load error is friendly and recoverable', () => {
+  assert.match(VAULT, /const LOAD_ERROR = "Couldn't load your vault\."/)
+  assert.match(VAULT, /\{LOAD_ERROR\}/)
+  assert.match(VAULT, /Try again in a moment\./)
+  assert.doesNotMatch(VAULT, /\(\$\{res\.status\}\)/)
+})
+
 const RECEIPTS = page('../app/receipts/page.tsx')
 
 test('Receipts has no legacy panels and keeps the transfer anatomy', () => {
