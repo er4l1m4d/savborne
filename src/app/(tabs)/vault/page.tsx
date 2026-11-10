@@ -16,6 +16,7 @@ import { readSession } from '@/lib/session'
 import { useVault } from '@/lib/vault/useVault'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
+import { Row } from '@/components/ui/Row'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -139,8 +140,14 @@ export default function VaultPage() {
         <Banner tone="error">
           <p className="font-bold">Could not load your vault</p>
           <p className="sv-label">{error}</p>
-          <Button variant="primary" size="sm" fullWidth={false} onClick={refresh}>
-            Retry
+          <Button
+            variant="secondary"
+            size="sm"
+            fullWidth={false}
+            className="self-start"
+            onClick={refresh}
+          >
+            Try again
           </Button>
         </Banner>
       </ScreenShell>
@@ -151,7 +158,7 @@ export default function VaultPage() {
     return (
       <ScreenShell variant="tab" title="Vault" backHref="/">
         <PixelPanel className="p-4 flex flex-col gap-3">
-          <h1 className="sv-heading">No vault yet</h1>
+          <h2 className="sv-subheading">No vault yet</h2>
           <p className="sv-body text-fg-muted">
             {hasLocalKey
               ? 'This device has a vault key, but the server has no mapping for it. Create the vault to register it.'
@@ -178,16 +185,17 @@ export default function VaultPage() {
               <p className="font-bold">Balance unavailable</p>
               <p className="sv-label">{balanceError}</p>
               <Button
-                variant="primary"
+                variant="secondary"
                 size="sm"
                 fullWidth={false}
+                className="self-start"
                 onClick={refreshBalance}
               >
-                Retry
+                Try again
               </Button>
             </Banner>
           ) : balanceNim === null ? (
-            <span className="h-9 w-40 bg-surface animate-pulse inline-block" aria-hidden />
+            <span className="h-9 w-40 bg-surface animate-pulse motion-reduce:animate-none inline-block" aria-hidden />
           ) : (
             <span className="sv-number-xl">
               {balanceNim.toFixed(2)} <span className="text-lg">NIM</span>
@@ -228,7 +236,7 @@ export default function VaultPage() {
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="sv-section-label text-mint">Deposit</h2>
+        <h2 className="sv-subheading">Deposit</h2>
         <AmountField
           label="Amount (NIM)"
           value={depositNim}
@@ -249,7 +257,7 @@ export default function VaultPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="sv-section-label text-mint">Withdraw</h2>
+        <h2 className="sv-subheading">Withdraw</h2>
         <p className="sv-label text-fg-muted sv-break">
           Destination: <br />
           <span className="font-mono">{identityAddress ?? 'your identity account'}</span>
@@ -265,13 +273,16 @@ export default function VaultPage() {
         />
         {lockState !== 'unlocked' ? (
           <div className="flex flex-col gap-2">
-            <input
-              type="password"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="Vault passphrase"
-              className="vpx bg-surface-low p-3 text-base focus:border-mint"
-            />
+            <label className="flex flex-col gap-1">
+              <span className="sv-label text-fg-faint">Vault passphrase</span>
+              <input
+                type="password"
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+                placeholder="Vault passphrase"
+                className="sv-input"
+              />
+            </label>
             <Button variant="primary" onClick={handleUnlock} disabled={passphrase.length === 0}>
               Unlock vault
             </Button>
@@ -292,21 +303,33 @@ export default function VaultPage() {
       {notice && <Banner tone="info">{notice}</Banner>}
 
       <section className="flex flex-col gap-2">
-        <h2 className="sv-section-label text-mint">Recent movements</h2>
+        <h2 className="sv-subheading">Recent movements</h2>
         {transfers.length === 0 ? (
-          <p className="sv-label text-fg-faint italic">No deposits yet.</p>
+          <p className="sv-caption text-fg-faint italic">No movements yet.</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <PixelPanel className="px-3.5 py-0.5">
             {transfers.slice(0, 8).map((t) => (
-              <li key={t.id} className="vpx-soft bg-surface p-3 flex items-center justify-between gap-3">
-                <span className="sv-label">{t.direction === 'in' ? 'Deposit' : 'Withdrawal'}</span>
-                <span className="sv-label text-fg-muted">{statusLabel(t.status, t.failureReason)}</span>
-                <span className="sv-figure">{(t.amountLuna / LUNA_PER_NIM).toFixed(2)}</span>
-              </li>
+              <Row
+                key={t.id}
+                minHeight={56}
+                divider
+                trailing={
+                  <span className="sv-figure shrink-0">
+                    {(t.amountLuna / LUNA_PER_NIM).toFixed(2)}
+                  </span>
+                }
+              >
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                  <span className="sv-label">{t.direction === 'in' ? 'Deposit' : 'Withdrawal'}</span>
+                  <span className="sv-caption text-fg-muted">
+                    {statusLabel(t.status, t.failureReason)}
+                  </span>
+                </div>
+              </Row>
             ))}
-          </ul>
+          </PixelPanel>
         )}
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-x-4">
           <Link href="/receipts" className="sv-link">
             Receipts
           </Link>
@@ -380,7 +403,7 @@ function AmountField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="vpx bg-surface-low p-3 text-base num focus:border-mint disabled:opacity-50"
+        className="sv-input num disabled:opacity-50"
       />
     </label>
   )
