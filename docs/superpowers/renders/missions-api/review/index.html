@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne — Missions API gaps review</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; padding:32px 24px 80px; background:#10171a; color:#e8efe9; font:14px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .lede { color:#9fb8ae; margin:0 0 28px; max-width:78ch; }
+  .screen { margin:0 0 40px; padding:20px; border:1px solid #2b3a35; border-radius:10px; background:#141d1f; }
+  .screen h2 { font-size:16px; margin:0; }
+  .route { color:#9fb8ae; font-size:12px; margin:2px 0 16px; }
+  .strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  figure { margin:0; }
+  figcaption { color:#9fb8ae; font-size:12px; margin:0 0 6px; }
+  img { display:block; width:100%; height:auto; border:1px solid #2b3a35; border-radius:6px; background:#0b1112; }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:#6fd0ae; font-size:13px; }
+  details .strip { margin-top:12px; }
+  .note { color:#9fb8ae; font-size:12px; margin-top:10px; }
+  table { border-collapse:collapse; width:100%; margin:12px 0 0; font-size:13px; }
+  th,td { border:1px solid #2b3a35; padding:8px 10px; text-align:left; }
+  th { color:#9fb8ae; font-weight:600; }
+  @media (max-width:760px) { .strip { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>Missions API gaps — review</h1>
+<p class="lede">
+  The two Missions API gaps closed: exact weekly mission XP and the Weekly
+  Strategist progress payload, with the handoff's <code>1 of 2 wins</code>
+  meter at 0, 1 and 2 wins. Renders are 2× device-scale PNGs from the headless
+  CDP harness with fixture data at 360, 390 and 430. Write corrections in
+  <code>NOTES.md</code>.
+</p>
+
+<section class="screen">
+  <h2>Weekly Strategist — 0 wins</h2>
+  <p class="route">/missions — Repeating tab; <code>progress: { current: 0, target: 2 }</code>; empty trough, “0 of 2 wins”</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-strategist-0@360.png" alt="Weekly Strategist at 0 wins, 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-strategist-0@390.png" alt="Weekly Strategist at 0 wins, 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-strategist-0@430.png" alt="Weekly Strategist at 0 wins, 430px"></figure>
+  </div>
+  <details><summary>Before (pre-batch Repeating screen, no meter)</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/missions-repeating@360.png" alt="Missions before the API batch at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/missions-repeating@390.png" alt="Missions before the API batch at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/missions-repeating@430.png" alt="Missions before the API batch at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen">
+  <h2>Weekly Strategist — 1 win</h2>
+  <p class="route">/missions — <code>progress: { current: 1, target: 2 }</code>; half-filled mint meter, “1 of 2 wins”</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-strategist-1@360.png" alt="Weekly Strategist at 1 win, 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-strategist-1@390.png" alt="Weekly Strategist at 1 win, 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-strategist-1@430.png" alt="Weekly Strategist at 1 win, 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Weekly Strategist — 2 wins</h2>
+  <p class="route">/missions — <code>progress: { current: 2, target: 2 }</code>; full mint meter, completed row, muted label and XP</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/missions-strategist-2@360.png" alt="Weekly Strategist at 2 wins, 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/missions-strategist-2@390.png" alt="Weekly Strategist at 2 wins, 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/missions-strategist-2@430.png" alt="Weekly Strategist at 2 wins, 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Audit</h2>
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Rows audited</td><td>9 (3 states × 360/390/430)</td></tr>
+    <tr><td>Horizontal overflow</td><td>0 on every state and width</td></tr>
+    <tr><td>Wide elements</td><td>none</td></tr>
+    <tr><td>Targets under 44×44</td><td>none (tabs are 44px; the meter and rows are not interactive)</td></tr>
+    <tr><td>Minimum font</td><td>12px</td></tr>
+    <tr><td>Focus</td><td>every tab stop in view, uncovered, 2px mint outline</td></tr>
+    <tr><td>Weekly Strategist row</td><td>58px at 360/390/430</td></tr>
+    <tr><td>Meter</td><td>90×14px, <code>role="progressbar"</code>, <code>aria-valuenow</code> 0/1/2 of 2, not focusable</td></tr>
+  </table>
+  <p class="note">Raw audit: <code>../audit/final-audit.jsonl</code>.</p>
+</section>
+
+<section class="screen">
+  <h2>Deliberate choices</h2>
+  <p class="note">
+    The progress line replaces the Weekly Strategist description, as the
+    handoff draws it, so the row keeps its 58px rhythm. The meter is the
+    existing Foundation 2 primitive at the handoff's 14px height and 90px
+    width. Completed rows keep the meter and “2 of 2 wins”, with the label and
+    XP muted. AI wins never count. The weekly XP counter is now the exact sum
+    of the week's weekly mission rewards; this screen shows 25 of 100 XP at
+    0/1 wins and 65 of 100 XP at 2 wins because the fixture leaves Steady Saver
+    open. The all-done screen's strategist row is the 2-win render; no other
+    Missions state changes.
+  </p>
+</section>
+
+<p class="note">
+  The real Supabase backend is not configured in this sandbox. Renders use
+  fixture data; the database and Nimiq Pay pass are the deployment step in
+  <code>NOTES.md</code>.
+</p>
+</body>
+</html>
