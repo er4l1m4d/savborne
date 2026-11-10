@@ -13,6 +13,7 @@
   --surface-hi:   #274438;
   --surface-low:  #101A18;
   --sprite-well:  #101A18;
+  --you-surface:  #1B2E29; /* the handoff's caller-row fill */
 
   /* TEXT */
   --fg:           #F3EEDD;
@@ -495,6 +496,15 @@ body {
 @layer components {
   .sv-row { display: flex; align-items: center; gap: 14px; min-height: 58px; }
   .sv-row--56 { min-height: 56px; }
+  .sv-row--you {
+    min-height: 60px;
+    margin-block: 4px;
+    margin-inline: -14px;
+    padding-inline: 14px;
+    background: var(--you-surface);
+    border-top: 2px solid var(--mint);
+    border-bottom: 2px solid var(--mint);
+  }
   .sv-row--divider { border-bottom: 2px solid var(--track); }
   .sv-row--divider:last-child { border-bottom: 0; }
 }

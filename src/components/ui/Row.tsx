@@ -6,6 +6,11 @@ import type { ReactNode } from 'react'
  * The parent `PixelPanel` supplies horizontal padding; a `Row` supplies the
  * 58px (or 56px rank) rhythm and the divider. The title column is `min-w-0` so
  * long names wrap instead of pushing the trailing figure off-screen.
+ *
+ * `variant="you"` is the handoff's caller row: 60px, mint top and bottom
+ * borders, and a 14px inline bleed that reaches the panel's padding edge. It
+ * matches a `px-3.5` panel. The variant owns both borders, so it never takes
+ * `sv-row--56` or `sv-row--divider`.
  */
 
 type RowProps = {
@@ -13,7 +18,9 @@ type RowProps = {
   trailing?: ReactNode
   divider?: boolean
   minHeight?: 56 | 58
-  /** Extra classes on the row itself, e.g. the current player's highlight. */
+  /** `you` draws the mint-bordered caller row; `default` is the list row. */
+  variant?: 'default' | 'you'
+  /** Extra classes on the row itself, e.g. a gap override. */
   className?: string
   children: ReactNode
 }
@@ -23,15 +30,17 @@ export function Row({
   trailing,
   divider = false,
   minHeight = 58,
+  variant = 'default',
   className,
   children,
 }: RowProps) {
+  const isYou = variant === 'you'
   return (
     <div
       className={[
         'sv-row',
-        minHeight === 56 ? 'sv-row--56' : '',
-        divider ? 'sv-row--divider' : '',
+        isYou ? 'sv-row--you' : minHeight === 56 ? 'sv-row--56' : '',
+        isYou ? '' : divider ? 'sv-row--divider' : '',
         className ?? '',
       ]
         .filter(Boolean)

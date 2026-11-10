@@ -159,3 +159,16 @@ test('FilterChip is a 44px pressed button with a cream selected fill', () => {
   const pressed = CSS.slice(CSS.indexOf(".sv-filter[aria-pressed='true']"))
   assert.doesNotMatch(pressed.slice(0, 220), /var\(--mint\)/)
 })
+
+test('Row has a mint-bordered You variant that bleeds through the panel padding', () => {
+  const src = ui('Row.tsx')
+  assert.match(src, /variant\?:\s*'default'\s*\|\s*'you'/)
+  assert.match(src, /sv-row--you/)
+  assert.match(CSS, /--you-surface:\s*#1B2E29/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*min-height:\s*60px/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*margin-inline:\s*-14px/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*padding-inline:\s*14px/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*border-top:\s*2px solid var\(--mint\)/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*border-bottom:\s*2px solid var\(--mint\)/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*background:\s*var\(--you-surface\)/)
+})
