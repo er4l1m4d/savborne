@@ -141,7 +141,7 @@ After the page is ready:
   `Unlock vault`, then wait for `Withdraw` and the movements heading.
 - `vault-locked`: do not unlock; wait for `Vault balance` and `Vault passphrase`.
 - `vault-no-vault`: wait for `No vault yet`.
-- `vault-error`: wait for `Could not load your vault`.
+- `vault-error`: wait for `Couldn't load your vault`.
 - `vault-loading`: wait 900ms after navigation.
 - `receipts-*`: wait for `Deposit` / `Nothing here yet` / `Couldn't load
   receipts.` as appropriate.
@@ -266,7 +266,8 @@ Expected: FAIL (`.vpx` inputs, mint headings, per-item cards, `h1`).
 In `src/app/(tabs)/vault/page.tsx`:
 
 1. Import `Row`.
-2. Load-error banner: keep `Could not load your vault`, replace the primary
+2. Load-error banner: use `Couldn't load your vault.` / `Try again in
+   a moment.` (no raw status) and replace the primary
    `Retry` with:
 
 ```tsx

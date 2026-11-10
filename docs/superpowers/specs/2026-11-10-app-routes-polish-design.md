@@ -79,7 +79,7 @@ should, the 12px type floor is met, and there is no `text-[10px]` or
 | 10 | Shared CSS | No changes. Every treatment already exists: `.sv-input`, `.sv-subheading`, `.sv-caption`, `Row`, `PixelPanel tone="off"`, `Banner`, `Button`. If implementation finds a real gap, it stops and proposes the shared change before editing `globals.css`. |
 | 11 | Reduced-motion skeleton | Keep `animate-pulse` but add Tailwind's `motion-reduce:animate-none`, so no shared CSS is touched and the skeleton is static when the OS asks for reduced motion. |
 | 12 | No-vault heading | The panel heading becomes `h2.sv-subheading`; the only `h1` is the shell's `Vault` title. |
-| 13 | Vault error buttons | Error banners use the system's secondary `Try again` at `size="sm"`, `fullWidth={false}`, matching Ranks, instead of a primary `Retry`. Copy keeps the useful failure text. |
+| 13 | Vault error buttons | Error banners use the system's secondary `Try again` at `size="sm"`, `fullWidth={false}`, matching Ranks, instead of a primary `Retry`. The load banner says `Couldn't load your vault.` / `Try again in a moment.` and never prints a raw HTTP status; the balance banner keeps its useful network diagnostic. |
 | 14 | Empty movements copy | `No movements yet.` instead of `No deposits yet.`, because the list covers both directions. |
 | 15 | Card shell | No `ScreenShell`. The page keeps its own `<main>` and stays public and outside the wallet gate. |
 
@@ -156,7 +156,7 @@ Receipts        Share card & backup               44px links
 | State | Content |
 |---|---|
 | Loading | Shell + `<LoadingState />`. |
-| Load error | Shell + error `Banner` with `Could not load your vault`, the message and a secondary `Try again`. |
+| Load error | Shell + error `Banner` with `Couldn't load your vault.` / `Try again in a moment.` and a secondary `Try again`; no raw status. |
 | No vault | Shell + `PixelPanel` with `h2.sv-subheading` `No vault yet`, the existing two copy variants and `Create my vault`. One `h1` in the document (the shell's). |
 | Default | Balance card, shields, deposit and withdraw with passphrase locked. |
 | Unlocked | Same, with the unlocked success label and the `Withdraw` action. |
