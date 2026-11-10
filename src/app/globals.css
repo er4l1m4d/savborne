@@ -520,6 +520,27 @@ body {
   }
 }
 
+/* ── Foundation 2: filter chips ───────────────────────────────────────── */
+@layer components {
+  .sv-filter {
+    height: 44px;
+    padding: 0 18px;
+    border: 2px solid var(--bevel);
+    background: var(--surface);
+    color: var(--fg);
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .sv-filter[aria-pressed='true'] {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--shell);
+  }
+}
+
 /* ── Foundation 2: banners ────────────────────────────────────────────── */
 @layer components {
   .sv-banner {

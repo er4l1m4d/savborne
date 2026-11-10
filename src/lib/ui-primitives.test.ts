@@ -146,3 +146,16 @@ test('ScreenShell accepts a custom back label', () => {
   assert.match(src, /backLabel\?:\s*string/)
   assert.match(src, /aria-label=\{backLabel \?\? 'Back'\}/)
 })
+
+test('FilterChip is a 44px pressed button with a cream selected fill', () => {
+  const src = ui('FilterChip.tsx')
+  assert.match(src, /aria-pressed=\{pressed\}/)
+  assert.match(src, /type="button"/)
+  assert.match(src, /sv-filter/)
+  assert.match(CSS, /\.sv-filter\s*\{[^}]*height:\s*44px/)
+  assert.match(CSS, /\.sv-filter\s*\{[^}]*padding:\s*0 18px/)
+  assert.match(CSS, /\.sv-filter\[aria-pressed='true'\]\s*\{[^}]*background:\s*var\(--fg\)/)
+  assert.match(CSS, /\.sv-filter\[aria-pressed='true'\]\s*\{[^}]*color:\s*var\(--shell\)/)
+  const pressed = CSS.slice(CSS.indexOf(".sv-filter[aria-pressed='true']"))
+  assert.doesNotMatch(pressed.slice(0, 220), /var\(--mint\)/)
+})
