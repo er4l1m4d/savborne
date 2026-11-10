@@ -17,6 +17,7 @@ import { createHash } from 'node:crypto'
 
 import { installFakeNet, rows, type FakeNet } from '@/test/fake-net'
 import { GET, DELETE } from '@/app/api/players/me/route'
+import { utcWeekStart } from '@/lib/game/time'
 import {
   DELETE_PROOF_MAX_AGE_MS,
   DELETE_PUBLIC_KEY_HEADER,
@@ -130,6 +131,45 @@ test('GET for an unknown player is 404', async () => {
   })
   const res = await GET(getReq({ 'X-Player-Address': VICTIM }))
   assert.equal(res.status, 404)
+})
+
+test('GET reports exact weekly mission XP, not a check-in count', async () => {
+  const weekStart = utcWeekStart(new Date())
+  const inWeek = new Date(weekStart.getTime() + 60_000).toISOString()
+  const beforeWeek = new Date(weekStart.getTime() - 60_000).toISOString()
+
+  net = installFakeNet((c) => {
+    if (c.resource === 'players') return rows(playerRow(VICTIM))
+    if (c.resource === 'player_missions') {
+      return rows(
+        { mission_key: 'weekly_check_in', completed_at: inWeek },
+        { mission_key: 'steady_saver', completed_at: inWeek },
+        // Duplicate credit: must not add XP twice.
+        { mission_key: 'weekly_check_in', completed_at: inWeek },
+        { mission_key: 'daily_check_in', completed_at: inWeek },
+        // Before the week window: must not count.
+        { mission_key: 'weekly_strategist', completed_at: beforeWeek },
+      )
+    }
+    if (c.resource === 'missions') {
+      return rows(
+        { key: 'weekly_check_in', type: 'weekly', xp_reward: 25 },
+        { key: 'steady_saver', type: 'weekly', xp_reward: 35 },
+        { key: 'weekly_strategist', type: 'weekly', xp_reward: 40 },
+        { key: 'daily_check_in', type: 'daily', xp_reward: 10 },
+      )
+    }
+    if (c.resource === 'daily_xp' || c.resource === 'daily_battles' || c.resource === 'vaults') {
+      return rows()
+    }
+    return undefined
+  })
+
+  const res = await GET(getReq({ 'X-Player-Address': VICTIM }))
+  assert.equal(res.status, 200)
+  const body = (await res.json()) as { player: { weeklyXpEarnedThisWeek: number } }
+  assert.equal(body.player.weeklyXpEarnedThisWeek, 60)
+  assert.equal(net.to('check_ins').length, 0)
 })
 
 // ─── DELETE: rejects before the destructive call ─────────────────────────────
