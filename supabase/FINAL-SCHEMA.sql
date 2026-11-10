@@ -183,6 +183,20 @@ create table if not exists api_rate_limits (
   count        int not null default 0
 );
 
+-- Schema version contract. The deployed app compares this marker with the
+-- version it expects; a mismatch is a failed health check, not a silent 500.
+-- Bump the version in the same edit as any schema change.
+create table if not exists schema_meta (
+  id         text primary key,
+  version    text not null,
+  applied_at timestamptz not null default now()
+);
+
+insert into schema_meta (id, version)
+values ('singleton', '2026-11-10.1')
+on conflict (id) do update
+  set version = excluded.version, applied_at = now();
+
 -- ─── Vault and savings loop (additive, spec §5) ─────────────────────────────
 -- The vault address is derived on the player's device from a 24-word phrase.
 -- The server stores the mapping only: it never holds a key and never signs.
@@ -364,6 +378,7 @@ alter table queue           enable row level security;
 alter table daily_battles   enable row level security;
 alter table daily_xp        enable row level security;
 alter table api_rate_limits enable row level security;
+alter table schema_meta     enable row level security;
 alter table vaults          enable row level security;
 alter table transfers       enable row level security;
 
@@ -880,6 +895,53 @@ revoke execute on function commit_check_in(
 grant execute on function commit_check_in(
   text, bigint, timestamptz, jsonb, int, jsonb, jsonb, jsonb
 ) to service_role;
+
+-- ─── Schema version contract ────────────────────────────────────────────────
+-- The app calls schema_health() from GET /api/health. It reports the marker
+-- plus whether the two release-gate RPCs are actually present, so a stale
+-- database is visible before a player hits a 500.
+create or replace function schema_version()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select version from schema_meta where id = 'singleton';
+$$;
+
+create or replace function schema_health()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'version', (select version from schema_meta where id = 'singleton'),
+    'commitCheckIn', exists(
+      select 1 from pg_proc
+       where proname = 'commit_check_in'
+         and pronamespace = 'public'::regnamespace
+    ),
+    'consumeRateLimit', exists(
+      select 1 from pg_proc
+       where proname = 'consume_rate_limit'
+         and pronamespace = 'public'::regnamespace
+    )
+  );
+$$;
+
+revoke all on schema_meta from public, anon, authenticated;
+grant all on schema_meta to service_role;
+
+revoke all on function schema_version() from public;
+revoke execute on function schema_version() from anon, authenticated;
+grant execute on function schema_version() to service_role;
+
+revoke all on function schema_health() from public;
+revoke execute on function schema_health() from anon, authenticated;
+grant execute on function schema_health() to service_role;
 
 -- ─── Verification (optional — paste separately, expect 11|8|6|≥1|16|3|true) ─
 -- select (select count(*) from missions) as missions,
