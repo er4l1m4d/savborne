@@ -16,10 +16,22 @@ test('Vault uses .sv-input for both amounts and the passphrase', () => {
 })
 
 test('Vault section headings are the 20px sub-heading, not mint labels', () => {
-  for (const title of ['Deposit', 'Withdraw', 'Recent movements']) {
-    assert.match(VAULT, new RegExp(`<h2 className="sv-subheading">${title}</h2>`))
-  }
+  assert.match(VAULT, /<h2 className="sv-subheading">Recent movements<\/h2>/)
   assert.doesNotMatch(VAULT, /<h2[^>]*text-mint/)
+})
+
+test('Vault switches Deposit and Withdraw with Tabs, one form at a time', () => {
+  assert.match(VAULT, /import \{ Tabs \} from '@\/components\/ui\/Tabs'/)
+  assert.match(VAULT, /ariaLabel="Vault action"/)
+  assert.match(VAULT, /value: 'deposit', label: 'Deposit'/)
+  assert.match(VAULT, /value: 'withdraw', label: 'Withdraw'/)
+  assert.match(VAULT, /\{tab === 'deposit' \? \(/)
+  assert.match(VAULT, /setTab\('withdraw'\)/)
+})
+
+test('Vault opens Withdraw from an expired withdrawal link', () => {
+  assert.match(VAULT, /direction === 'out'/)
+  assert.match(VAULT, /setWithdrawNim\(amount\)\s*setTab\('withdraw'\)/s)
 })
 
 test('Vault movements are one grouped panel of Rows', () => {

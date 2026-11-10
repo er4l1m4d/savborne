@@ -80,6 +80,10 @@ test('Banner has error and info tones', () => {
   assert.match(src, /role="alert"/)
   assert.match(CSS, /\.sv-banner--error\s*\{[^}]*background:\s*var\(--coral-tint\)/)
   assert.match(CSS, /\.sv-banner--info\s*\{[^}]*border-color:\s*var\(--mint\)/)
+  assert.match(CSS, /\.sv-banner\s*\{[^}]*display:\s*flex/)
+  assert.match(CSS, /\.sv-banner\s*\{[^}]*flex-direction:\s*column/)
+  assert.match(CSS, /\.sv-banner\s*\{[^}]*gap:\s*8px/)
+  assert.match(CSS, /\.sv-banner\s*>\s*\.sv-btn\s*\{[^}]*margin-top:\s*8px/)
 })
 
 test('BottomSheet traps focus, closes on Escape and locks scroll', () => {

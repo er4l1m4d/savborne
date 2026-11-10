@@ -17,6 +17,7 @@ import { useVault } from '@/lib/vault/useVault'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Row } from '@/components/ui/Row'
+import { Tabs } from '@/components/ui/Tabs'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -47,10 +48,17 @@ export default function VaultPage() {
   const [withdrawNim, setWithdrawNim] = useState('0.5')
   const [passphrase, setPassphrase] = useState('')
   const [unlockedMessage, setUnlockedMessage] = useState(false)
+  const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit')
 
   const host = hostNetwork()
   const networkMismatch = vault !== null && vault.network !== host
   const identityAddress = readSession()?.playerAddress ?? null
+
+  function changeTab(next: 'deposit' | 'withdraw') {
+    setTab(next)
+    setActionError(null)
+    setNotice(null)
+  }
 
   // "Try again" on an expired receipt links here with the amount pre-filled.
   // An expired hash is terminal, so the only correct action is a fresh
@@ -61,8 +69,13 @@ export default function VaultPage() {
     const amount = params.get('amount')
     const direction = params.get('direction')
     if (!amount) return
-    if (direction === 'out') setWithdrawNim(amount)
-    else setDepositNim(amount)
+    if (direction === 'out') {
+      setWithdrawNim(amount)
+      setTab('withdraw')
+    } else {
+      setDepositNim(amount)
+      setTab('deposit')
+    }
   }, [])
 
   async function handleDeposit() {
@@ -238,67 +251,85 @@ export default function VaultPage() {
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="sv-subheading">Deposit</h2>
-        <AmountField
-          label="Amount (NIM)"
-          value={depositNim}
-          onChange={setDepositNim}
-          disabled={busy || networkMismatch || vault.backupVerifiedAt === null}
+        <Tabs
+          ariaLabel="Vault action"
+          value={tab}
+          onChange={(value) => changeTab(value as 'deposit' | 'withdraw')}
+          items={[
+            { value: 'deposit', label: 'Deposit' },
+            { value: 'withdraw', label: 'Withdraw' },
+          ]}
         />
-        <Button
-          variant="primary"
-          data-tour="deposit"
-          onClick={handleDeposit}
-          disabled={busy || networkMismatch || vault.backupVerifiedAt === null}
-        >
-          {busy ? 'Waiting for the wallet…' : 'Deposit'}
-        </Button>
-        <p className="sv-label text-fg-faint">
-          Your wallet signs this deposit. Savborne only reads the vault address on chain.
-        </p>
-      </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="sv-subheading">Withdraw</h2>
-        <p className="sv-label text-fg-muted sv-break">
-          Destination: <br />
-          <span className="font-mono">{identityAddress ?? 'your identity account'}</span>
-          <br />
-          Fixed to the account that owns this vault. A mistyped address is unrecoverable, so v1
-          does not allow typing one.
-        </p>
-        <AmountField
-          label="Amount (NIM)"
-          value={withdrawNim}
-          onChange={setWithdrawNim}
-          disabled={busy || networkMismatch || lockState !== 'unlocked'}
-        />
-        {lockState !== 'unlocked' ? (
-          <div className="flex flex-col gap-2">
-            <label className="flex flex-col gap-1">
-              <span className="sv-label text-fg-faint">Vault passphrase</span>
-              <input
-                type="password"
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="Vault passphrase"
-                className="sv-input"
-              />
-            </label>
-            <Button variant="primary" onClick={handleUnlock} disabled={passphrase.length === 0}>
-              Unlock vault
+        {tab === 'deposit' ? (
+          <div className="flex flex-col gap-3">
+            <AmountField
+              label="Amount (NIM)"
+              value={depositNim}
+              onChange={setDepositNim}
+              disabled={busy || networkMismatch || vault.backupVerifiedAt === null}
+            />
+            <Button
+              variant="primary"
+              data-tour="deposit"
+              onClick={handleDeposit}
+              disabled={busy || networkMismatch || vault.backupVerifiedAt === null}
+            >
+              {busy ? 'Waiting for the wallet…' : 'Deposit'}
             </Button>
+            <p className="sv-label text-fg-faint">
+              Your wallet signs this deposit. Savborne only reads the vault address on chain.
+            </p>
           </div>
         ) : (
-          <Button
-            variant="primary"
-            onClick={handleWithdraw}
-            disabled={busy || networkMismatch}
-          >
-            {busy ? 'Signing…' : 'Withdraw'}
-          </Button>
+          <div className="flex flex-col gap-3">
+            <p className="sv-label text-fg-muted sv-break">
+              Destination: <br />
+              <span className="font-mono">{identityAddress ?? 'your identity account'}</span>
+              <br />
+              Fixed to the account that owns this vault. A mistyped address is unrecoverable, so
+              v1 does not allow typing one.
+            </p>
+            <AmountField
+              label="Amount (NIM)"
+              value={withdrawNim}
+              onChange={setWithdrawNim}
+              disabled={busy || networkMismatch || lockState !== 'unlocked'}
+            />
+            {lockState !== 'unlocked' ? (
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col gap-1">
+                  <span className="sv-label text-fg-faint">Vault passphrase</span>
+                  <input
+                    type="password"
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    placeholder="Vault passphrase"
+                    className="sv-input"
+                  />
+                </label>
+                <Button
+                  variant="primary"
+                  onClick={handleUnlock}
+                  disabled={passphrase.length === 0}
+                >
+                  Unlock vault
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                onClick={handleWithdraw}
+                disabled={busy || networkMismatch}
+              >
+                {busy ? 'Signing…' : 'Withdraw'}
+              </Button>
+            )}
+            {unlockedMessage && (
+              <p className="sv-label text-mint">Vault unlocked for this session.</p>
+            )}
+          </div>
         )}
-        {unlockedMessage && <p className="sv-label text-mint">Vault unlocked for this session.</p>}
       </section>
 
       {actionError && <Banner tone="error">{actionError}</Banner>}
