@@ -498,7 +498,7 @@ body {
   .sv-row--56 { min-height: 56px; }
   .sv-row--you {
     min-height: 60px;
-    margin-block: 4px;
+    margin-block: 0 4px;
     margin-inline: -14px;
     padding-inline: 14px;
     background: var(--you-surface);
@@ -530,23 +530,40 @@ body {
   }
 }
 
-/* ── Foundation 2: filter chips ───────────────────────────────────────── */
+/* ── Foundation 2: filter bar ─────────────────────────────────────────── */
 @layer components {
-  .sv-filter {
-    height: 44px;
-    padding: 0 18px;
+  .sv-filterbar {
+    display: inline-flex;
+    height: 32px;
     border: 2px solid var(--bevel);
     background: var(--surface);
+  }
+  .sv-filterbar__btn {
+    display: inline-flex;
+    align-items: center;
+    height: 44px;
+    margin-block: -8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
     color: var(--fg);
     font-family: var(--font-jakarta), system-ui, sans-serif;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     line-height: 1;
     cursor: pointer;
   }
-  .sv-filter[aria-pressed='true'] {
+  .sv-filterbar__seg {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 14px;
+  }
+  .sv-filterbar__btn + .sv-filterbar__btn .sv-filterbar__seg {
+    border-left: 2px solid var(--line);
+  }
+  .sv-filterbar__btn[aria-pressed='true'] .sv-filterbar__seg {
     background: var(--fg);
-    border-color: var(--fg);
     color: var(--shell);
   }
 }

@@ -16,14 +16,17 @@ sections 3.6, 6, 7, 15, 18 and 19.
 Port `/leaderboard` ("Ranks") to the handoff:
 
 - Keep the `Ranked` / `Unranked` tabs.
-- Replace the header "Friends on/off" button with `Everyone` / `Friends` 44px
-  filter chips (`aria-pressed`, cream selected fill with ground text).
+- Replace the header "Friends on/off" button with a compact, right-aligned
+  `Everyone` / `Friends` segmented bar: one 32px track, 44px segment targets,
+  cream selected segment with ground text.
 - One grouped `PixelPanel` of 56px rows: rank in a 26px column, name at 15px,
   bracket at 12px in a 52px column, and a right-aligned 14px tabular figure in
   a 48px (ranked) or 56px (unranked) column.
 - The caller's row is 60px, mint top and bottom borders, a mint rank and a
-  mint `You` tag, bleeding through the panel's 14px inline padding.
-- The caller's rank is pinned below the list when it falls outside the top 50.
+  mint `You` tag, bleeding through the panel's 14px inline padding. The grey
+  divider above it is removed and the top gap closed.
+- The caller's rank is pinned below the list when it falls outside the top 50,
+  in a mint-outlined container with a plain row.
 - The handoff's board-specific footer line at 12px, with the count and the
   verified-saver legend as a second 12px line.
 - Designed loading, error, empty, friends-empty and 401 states.
@@ -39,7 +42,8 @@ change. The only API change is an additive `you` field for the pinned row.
 
 - `/leaderboard` page structure, tabs, filter chips, rows, your row, pinned row,
   footer and copy.
-- A new `FilterChip` primitive (44px button, cream pressed fill).
+- A new `FilterBar` primitive: one 32px segmented track, right aligned, with
+  44px segment targets and a cream pressed segment.
 - A `Row` variant `you` (60px, mint borders, 14px bleed) and one new surface
   token for the tinted row.
 - A `RankCrown` art component for rank 1, extracted from the handoff figure.
@@ -70,22 +74,22 @@ change. The only API change is an additive `you` field for the pinned row.
 
 | # | Decision | Choice |
 |---|---|---|
-| 1 | Everyone/Friends control | New `FilterChip` primitive: a 44px button, 2px bevel, 18px inline padding, cream fill and ground text when pressed, mint focus ring. `Chip` stays a non-interactive 24px status span; `Tabs` stays a `role="tablist"`. |
+| 1 | Everyone/Friends control | A new `FilterBar` primitive: one 2px beveled track, right aligned below the tabs, 32px visual height with 12px/700 labels, 44px segment buttons so the touch target survives, a 2px divider between segments, and a cream fill with ground text on the pressed segment. `Chip` stays a non-interactive 24px status span; `Tabs` stays a `role="tablist"`. |
 | 2 | Unranked board | Keep the app's combined savings score for ordering and for the right column. The handoff's level ordering is recorded as a divergence. |
 | 3 | Row anatomy | Strict handoff single line: rank, name, bracket, figure. Level, wins and streak are not shown on Ranks. |
 | 4 | Rank-1 badge | Show both: the handoff crown for rank 1 **and** the verified-saver marker. The crown is positional and decorative (the rank cell already says 1); the crown art is the handoff's 24px drawing, not the 16px Golden Crown item. |
-| 5 | Your row | Handoff bleed: 60px, mint top and bottom borders, 4px block margin, 14px inline bleed, tinted surface. The row above keeps its track divider; the mint borders are the You row's own. |
+| 5 | Your row | Handoff bleed: 60px, mint top and bottom borders, 14px inline bleed, tinted surface. The row above loses its track divider and the top gap is closed, so the mint top border sits where the divider was; the bottom gap stays 4px. |
 | 6 | You tag | Existing `Chip variant="fill"` at 24px and 12px text (4px taller than the handoff; above the type floor). |
 | 7 | Footer | Board-specific handoff line at 12px, then a second 12px line with the player count and the verified-saver legend. |
 | 8 | Friends empty | A distinct friends-empty panel when the Friends list contains no one but the caller. The Everyone tab still shows the caller's row. |
-| 9 | Your rank outside top 50 | Add an additive `you` row to the API response and pin it in its own panel below the list, under a `Your rank` caption. |
+| 9 | Your rank outside top 50 | Add an additive `you` row to the API response and pin it in its own panel below the list, under a `Your rank` caption. The panel carries a mint outline; the row inside is plain (no tint, mint rank or You tag). |
 | 10 | Tab and filter state | Local React state only; no query parameter. |
 | 11 | Rank colour | Default text for ranks 1-3 and muted for 4+, as the handoff draws them. The app's gold/silver/bronze rank numbers are dropped from this screen. |
 | 12 | You row colour | New `--you-surface: #1B2E29` token (the handoff's row fill), not `--surface-hi`. |
 | 13 | Zero bracket | An em dash in the 52px bracket column, with a visually hidden `No bracket yet`. The column never collapses, so the figure stays aligned. |
 | 14 | Empty board | Everyone-empty is `Nobody on this board yet.` plus a board-specific hint; Friends-empty is its own copy. The footer is hidden in both. |
 | 15 | Crown on both boards | The crown is applied to rank 1 on Ranked and Unranked, because both handoff figures draw it. |
-| 16 | `you` shape | The pinned row is the same shape as a `rows` entry, so the UI renders one `RankRow` component in both places. |
+| 16 | `you` shape | The pinned row is the same shape as a `rows` entry, so the UI renders one `RankRow` component in both places. A `highlight` prop turns the mint row treatment off for the pinned copy. |
 
 ### 3.1 Crown naming note
 
@@ -108,7 +112,7 @@ Ranks                          (36px shell header, unchanged)
 
 [ Ranked ][ Unranked ]         (Tabs, 44px, mint selected)
 
-[ Everyone ][ Friends ]        (FilterChip, 44px, cream selected)
+                    [ Everyone | Friends ]   (FilterBar, 32px, right aligned)
 
 ┌ PixelPanel px-3.5, py-0.5 ─────────────────────────────┐
 │ 1    Adaeze ♛ ⟡                    Gold        1284   │  56px
@@ -124,10 +128,8 @@ Ranks                          (36px shell header, unchanged)
 └────────────────────────────────────────────────────────┘
 
 Your rank                      (only when outside the top 50)
-┌ PixelPanel ────────────────────────────────────────────┐
-│ ┌──────────────────────────────────────────────────┐  │
-│ │ 57  Kemi  You                Silver         812 │  │
-│ └──────────────────────────────────────────────────┘  │
+┌ PixelPanel tone="mint" ────────────────────────────────┐
+│ 57  Kemi                      Silver         812      │  56px, plain row
 └────────────────────────────────────────────────────────┘
 
 Ranked points from human ranked battles. Only display names are
@@ -160,14 +162,14 @@ Per row: 12px gaps (`gap-3` overrides `.sv-row`'s 14px), border-box heights.
 
 `Row variant="you"`:
 
-- `.sv-row--you` sets `min-height: 60px`, `margin-block: 4px`,
+- `.sv-row--you` sets `min-height: 60px`, `margin-block: 0 4px`,
   `margin-inline: -14px`, `padding-inline: 14px`, `background:
   var(--you-surface)`, and 2px mint top and bottom borders.
 - The Row does **not** add `sv-row--56` or `sv-row--divider` for this variant;
   the mint borders own both edges.
-- The row above keeps its 2px track divider, so the handoff's 4px gap sits
-  between the track divider and the mint top border. The row below starts after
-  the You row's 4px bottom margin.
+- The row above the You row loses its track divider, and the You row's top gap
+  is 0, so the mint top border sits exactly where the grey divider was. The
+  row below starts after the You row's 4px bottom margin.
 - The panel uses `px-3.5` (14px) so the bleed is exact. The bleed lands on the
   panel's inner edge and stays inside the stepped `clip-path`.
 - The You tag is `Chip variant="fill"` after the name. Rank and tag are mint;
@@ -180,15 +182,16 @@ Only when `you` exists and no `rows` entry is `isMe`:
 ```
 <section aria-label="Your rank" class="flex flex-col gap-2">
   <h2 class="sv-caption font-bold text-fg-muted">Your rank</h2>
-  <PixelPanel class="px-3.5 py-0.5">
-    <Row variant="you" ... />
+  <PixelPanel tone="mint" class="px-3.5 py-0.5">
+    <Row ... highlight={false} />
   </PixelPanel>
 </section>
 ```
 
 The separate panel and caption avoid implying rank 51, 58 or a contiguous list.
-The row reuses the exact You row component, including the bleed, crown and
-verified marker.
+The container carries the mint outline; the row inside is a plain 56px row
+(no tint, no mint rank, no `You` tag). The crown and verified marker still
+render when they apply.
 
 ### 4.4 Footer
 
@@ -202,35 +205,56 @@ Rendered only when the board has listable rows (not empty, not friends-empty):
   one rendered row (list or pinned) has `verifiedSaver`.
 - Both lines are `.sv-caption text-fg-muted`, left aligned, no truncation.
 
-### 4.5 Filter chips
+### 4.5 Filter bar
 
-`FilterChip` renders a native `button` with `type="button"`, `aria-pressed`,
-and `.sv-filter`:
+`FilterBar` renders one `role="group"` track with one native `button` per
+option. Each button carries `aria-pressed`; the visible segment is an inner
+span so the 32px bar can sit inside a 44px target. Right aligned below the
+tabs, with a 44px row height (`min-h-11`):
 
 ```css
-.sv-filter {
-  height: 44px;
-  padding: 0 18px;
+.sv-filterbar {
+  display: inline-flex;
+  height: 32px;
   border: 2px solid var(--bevel);
   background: var(--surface);
+}
+.sv-filterbar__btn {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  margin-block: -8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--fg);
   font-family: var(--font-jakarta), system-ui, sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
 }
-.sv-filter[aria-pressed='true'] {
+.sv-filterbar__seg {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 14px;
+}
+.sv-filterbar__btn + .sv-filterbar__btn .sv-filterbar__seg {
+  border-left: 2px solid var(--line);
+}
+.sv-filterbar__btn[aria-pressed='true'] .sv-filterbar__seg {
   background: var(--fg);
-  border-color: var(--fg);
   color: var(--shell);
 }
 ```
 
-The pair sits in `<div class="flex gap-2" role="group" aria-label="Board filter">`.
-Selected is cream (`--fg`) with ground (`--shell`) text, never mint. Mint stays
-for the tabs, progress, success and the You row. The global mint focus ring
-applies unchanged.
+The track is one control: the 2px bevel frame and the internal divider read as
+a segmented bar, not two chips. Selected is cream (`--fg`) with ground
+(`--shell`) text, never mint. Mint stays for the tabs, progress, success and
+the You row. The 44px button is the touch target while the 32px track and 28px
+segment are the visible control. The global mint focus ring applies to the
+button.
 
 ---
 
@@ -295,11 +319,11 @@ is `isMe`. `footerLegend` yields `1 player` / `3 players`, with
 
 1. **`--you-surface: #1B2E29`** in the `:root` SURFACE group. One token, no
    Tailwind mapping (no class needs it).
-2. **`.sv-filter` + `.sv-filter[aria-pressed='true']`** beside `.sv-tabs` in
-   `globals.css`, plus `src/components/ui/FilterChip.tsx`.
+2. **`.sv-filterbar` / `.sv-filterbar__btn` / `.sv-filterbar__seg`** beside
+   `.sv-tabs` in `globals.css`, plus `src/components/ui/FilterBar.tsx`.
 3. **`.sv-row--you`** beside `.sv-row--56` in `globals.css`, plus
    `Row variant?: 'default' | 'you'`. The variant suppresses `sv-row--56` and
-   `sv-row--divider`.
+   `sv-row--divider`, sets a 0 top margin and keeps a 4px bottom margin.
 4. **`src/components/RankCrown.tsx`**: the handoff's 24x24 crown paths as a
    decorative, `aria-hidden` art component. A source test reads
    `Savborne-handoff.html`, extracts both crown `d` values and asserts they
@@ -317,12 +341,12 @@ would rather not add `.sv-row--you`, the fallback is an inset surface highlight
 
 | State | Content |
 |---|---|
-| Loading | Tabs and filter chips stay visible; `<LoadingState />` below them. |
-| Error | `Banner tone="error"` with `Couldn't load ranks.` and a secondary `Try again` (`fullWidth={false}`, `self-start`) that refetches. Tabs and chips stay. Raw status/JS messages are never printed. |
+| Loading | Tabs and the filter bar stay visible; `<LoadingState />` below them. |
+| Error | `Banner tone="error"` with `Couldn't load ranks.` and a secondary `Try again` (`fullWidth={false}`, `self-start`) that refetches. Tabs and the filter bar stay. Raw status/JS messages are never printed. |
 | Empty (Everyone) | `Nobody on this board yet.` plus the ranked or unranked hint, in a `PixelPanel` like Missions. Footer hidden. |
-| Empty (Friends) | `No friends on this board yet.` / `Friends are players you've fought in a human battle.` Footer hidden. The Everyone chip remains one tap away. |
-| Pinned | When `you` is outside the top 50, the list plus the `Your rank` panel. Footer still shows. |
-| Your row in list | Mint-bordered 60px row in place, as the handoff draws it. |
+| Empty (Friends) | `No friends on this board yet.` / `Friends are players you've fought in a human battle.` Footer hidden. The Everyone segment remains one tap away. |
+| Pinned | When `you` is outside the top 50, the list plus the mint-outlined `Your rank` panel with a plain row. Footer still shows. |
+| Your row in list | Mint-bordered 60px row in place, no divider above it, as revised. |
 | 401 | `router.replace('/setup')`, matching Missions. Covered by a source-contract test; not a render state. |
 | Tab/filter change | Refetch with the new query; loading state covers the swap. |
 
@@ -330,8 +354,9 @@ would rather not add `.sv-row--you`, the fallback is an inset surface highlight
 
 ## 8. Accessibility
 
-- `FilterChip` is a native button with `aria-pressed`; 44x44 minimum; cream
-  selected state is also carried by `aria-pressed`, not colour alone.
+- `FilterBar` renders native buttons with `aria-pressed`; the visible 32px
+  segments sit inside 44x44 button targets; the cream selected state is also
+  carried by `aria-pressed`, not colour alone.
 - `Tabs` remains `role="tablist"` / `role="tab"` with `aria-selected` and
   `aria-label="Leaderboard"`.
 - The list is not interactive: no row focus stops, no 44px target requirement.
@@ -339,11 +364,12 @@ would rather not add `.sv-row--you`, the fallback is an inset surface highlight
   hidden `Rank` label carry the meaning.
 - The verified marker is a labelled `role="img"`; the footer legend repeats
   the meaning in text.
-- The You row is identified by the visible `You` chip and the `Your rank`
-  caption on the pinned panel, not by colour alone.
+- The in-list You row is identified by the visible `You` chip and its mint
+  frame, not by colour alone. The pinned row is identified by the `Your rank`
+  caption and the mint-outlined container.
 - Type floor: no text below 12px. Bracket and footer use the 12px `.sv-caption`;
-  the You tag uses the 24px Chip at 12px.
-- Focus: global 2px mint ring, 2px offset, on tabs, chips and Try again.
+  the You tag uses the 24px Chip at 12px; the filter segments are 12px.
+- Focus: global 2px mint ring, 2px offset, on tabs, filter buttons and Try again.
 - Heading order: the pinned panel uses an `<h2>` under the shell `<h1>Ranks`.
 
 ---
@@ -385,16 +411,31 @@ loading.
 5. **Pinned rank on Friends.** `you` is computed after the friends filter, so
    the pinned rank is the friends-board rank, which is the honest number for
    that view.
-6. **Filter chip vs tab semantics.** The chips are buttons with `aria-pressed`,
-   not a second tablist; the two controls are labelled (`Leaderboard`,
-   `Board filter`) so they do not read as one eight-item tab group.
+6. **Filter bar vs tab semantics.** The filter is one group of buttons with
+   `aria-pressed`, not a second tablist; the two controls are labelled
+   (`Leaderboard`, `Board filter`) so they do not read as one tab group.
+7. **Smaller filter bar.** The visible track is 32px, so the focus outline and
+   the 44px hit area extend into the 14px gaps above and below. The segments
+   never overlap another target, and the audit measures the 44px button, not
+   the 32px track.
 
 ---
 
-## 11. Approval needed
+## 11. Revision - 2026-11-10
 
-- Decisions 1-16, especially the two that go beyond a pure port: the crown
-  (4, 15 and 3.1) and the additive `you` field (9 and 5.1).
-- The shared CSS additions and the new `FilterChip` / `RankCrown` components
-  (section 6).
-- The render/audit/review scope and the audit-doc section (section 9).
+Three review corrections, all approved before implementation:
+
+1. **Filter bar:** the Everyone/Friends control moves to its own row, right
+   aligned, and becomes one 32px segmented track with 44px segment targets and
+   a 2px internal divider. It is visibly smaller than the 44px tabs. The
+   `FilterChip` primitive is replaced by `FilterBar`; no `.sv-filter` rules
+   remain.
+2. **Divider above the You row:** the row directly above the caller loses its
+   grey track divider, and the You row's top margin drops from 4px to 0 so the
+   mint top border sits where the divider was. The 4px bottom margin stays.
+3. **Pinned your-rank:** the `Your rank` panel takes the mint outline
+   (`PixelPanel tone="mint"`) and the row inside renders plain: no tint, no mint
+   rank, no `You` tag. The caption stays. The in-list You row is unchanged
+   apart from correction 2.
+
+The API, ranking rules, friends definition and footer copy are unchanged.

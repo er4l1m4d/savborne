@@ -147,16 +147,25 @@ test('ScreenShell accepts a custom back label', () => {
   assert.match(src, /aria-label=\{backLabel \?\? 'Back'\}/)
 })
 
-test('FilterChip is a 44px pressed button with a cream selected fill', () => {
-  const src = ui('FilterChip.tsx')
-  assert.match(src, /aria-pressed=\{pressed\}/)
-  assert.match(src, /type="button"/)
-  assert.match(src, /sv-filter/)
-  assert.match(CSS, /\.sv-filter\s*\{[^}]*height:\s*44px/)
-  assert.match(CSS, /\.sv-filter\s*\{[^}]*padding:\s*0 18px/)
-  assert.match(CSS, /\.sv-filter\[aria-pressed='true'\]\s*\{[^}]*background:\s*var\(--fg\)/)
-  assert.match(CSS, /\.sv-filter\[aria-pressed='true'\]\s*\{[^}]*color:\s*var\(--shell\)/)
-  const pressed = CSS.slice(CSS.indexOf(".sv-filter[aria-pressed='true']"))
+test('FilterBar is one 32px track with 44px pressed segments', () => {
+  const src = ui('FilterBar.tsx')
+  assert.match(src, /role="group"/)
+  assert.match(src, /aria-pressed=\{value === option\.value\}/)
+  assert.match(src, /sv-filterbar/)
+  assert.match(CSS, /\.sv-filterbar\s*\{[^}]*height:\s*32px/)
+  assert.match(CSS, /\.sv-filterbar\s*\{[^}]*border:\s*2px solid var\(--bevel\)/)
+  assert.match(CSS, /\.sv-filterbar__btn\s*\{[^}]*height:\s*44px/)
+  assert.match(CSS, /\.sv-filterbar__btn\s*\{[^}]*margin-block:\s*-8px/)
+  assert.match(CSS, /\.sv-filterbar__seg\s*\{[^}]*height:\s*28px/)
+  assert.match(
+    CSS,
+    /\.sv-filterbar__btn\[aria-pressed='true'\] \.sv-filterbar__seg\s*\{[^}]*background:\s*var\(--fg\)/,
+  )
+  assert.match(
+    CSS,
+    /\.sv-filterbar__btn\[aria-pressed='true'\] \.sv-filterbar__seg\s*\{[^}]*color:\s*var\(--shell\)/,
+  )
+  const pressed = CSS.slice(CSS.indexOf(".sv-filterbar__btn[aria-pressed='true']"))
   assert.doesNotMatch(pressed.slice(0, 220), /var\(--mint\)/)
 })
 
@@ -166,6 +175,7 @@ test('Row has a mint-bordered You variant that bleeds through the panel padding'
   assert.match(src, /sv-row--you/)
   assert.match(CSS, /--you-surface:\s*#1B2E29/)
   assert.match(CSS, /\.sv-row--you\s*\{[^}]*min-height:\s*60px/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*margin-block:\s*0 4px/)
   assert.match(CSS, /\.sv-row--you\s*\{[^}]*margin-inline:\s*-14px/)
   assert.match(CSS, /\.sv-row--you\s*\{[^}]*padding-inline:\s*14px/)
   assert.match(CSS, /\.sv-row--you\s*\{[^}]*border-top:\s*2px solid var\(--mint\)/)

@@ -20,7 +20,7 @@ import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Row } from '@/components/ui/Row'
 import { Chip } from '@/components/ui/Chip'
 import { Tabs } from '@/components/ui/Tabs'
-import { FilterChip } from '@/components/ui/FilterChip'
+import { FilterBar } from '@/components/ui/FilterBar'
 import { Banner } from '@/components/ui/Banner'
 import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -119,13 +119,16 @@ export default function LeaderboardPage() {
         ]}
       />
 
-      <div className="flex gap-2" role="group" aria-label="Board filter">
-        <FilterChip pressed={!friends} onClick={() => setFriends(false)}>
-          Everyone
-        </FilterChip>
-        <FilterChip pressed={friends} onClick={() => setFriends(true)}>
-          Friends
-        </FilterChip>
+      <div className="flex min-h-11 items-center justify-end">
+        <FilterBar
+          ariaLabel="Board filter"
+          value={friends ? 'friends' : 'everyone'}
+          onChange={(value) => setFriends(value === 'friends')}
+          options={[
+            { value: 'everyone', label: 'Everyone' },
+            { value: 'friends', label: 'Friends' },
+          ]}
+        />
       </div>
 
       {loading && <LoadingState />}
@@ -157,7 +160,7 @@ export default function LeaderboardPage() {
                   key={`${row.rank}-${row.displayName}`}
                   row={row}
                   board={board}
-                  divider={i < rows.length - 1}
+                  divider={i < rows.length - 1 && !rows[i + 1]?.isMe}
                 />
               ))}
             </PixelPanel>
@@ -165,8 +168,13 @@ export default function LeaderboardPage() {
             {pinned && you && (
               <section className="flex flex-col gap-2" aria-label="Your rank">
                 <h2 className="sv-caption font-bold text-fg-muted">Your rank</h2>
-                <PixelPanel className="px-3.5 py-0.5">
-                  <RankRowView row={you} board={board} divider={false} />
+                <PixelPanel tone="mint" className="px-3.5 py-0.5">
+                  <RankRowView
+                    row={you}
+                    board={board}
+                    divider={false}
+                    highlight={false}
+                  />
                 </PixelPanel>
               </section>
             )}
@@ -190,13 +198,17 @@ function RankRowView({
   row,
   board,
   divider,
+  highlight,
 }: {
   row: RankRow
   board: Board
   divider: boolean
+  /** Defaults to `row.isMe`; the pinned row turns the mint treatment off. */
+  highlight?: boolean
 }) {
+  const isYou = highlight ?? row.isMe
   const bracket = row.bracket ? BRACKETS[row.bracket as Bracket]?.label : undefined
-  const rankClass = row.isMe
+  const rankClass = isYou
     ? 'text-mint'
     : rankTone(row.rank) === 'strong'
       ? 'text-fg'
@@ -204,7 +216,7 @@ function RankRowView({
 
   return (
     <Row
-      variant={row.isMe ? 'you' : 'default'}
+      variant={isYou ? 'you' : 'default'}
       minHeight={56}
       divider={divider}
       className="gap-3"
@@ -248,7 +260,7 @@ function RankRowView({
             ⟡
           </span>
         )}
-        {row.isMe && <Chip variant="fill">You</Chip>}
+        {isYou && <Chip variant="fill">You</Chip>}
       </span>
     </Row>
   )

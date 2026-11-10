@@ -8,9 +8,9 @@ import type { ReactNode } from 'react'
  * long names wrap instead of pushing the trailing figure off-screen.
  *
  * `variant="you"` is the handoff's caller row: 60px, mint top and bottom
- * borders, and a 14px inline bleed that reaches the panel's padding edge. It
- * matches a `px-3.5` panel. The variant owns both borders, so it never takes
- * `sv-row--56` or `sv-row--divider`.
+ * borders, no top gap and a 4px bottom gap, and a 14px inline bleed that
+ * reaches the panel's padding edge. It matches a `px-3.5` panel. The variant
+ * owns both borders, so it never takes `sv-row--56` or `sv-row--divider`.
  */
 
 type RowProps = {

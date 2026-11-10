@@ -90,7 +90,7 @@ const PAGE = readFileSync(
 test('the page uses the shared primitives only', () => {
   for (const part of [
     '<Tabs',
-    '<FilterChip',
+    '<FilterBar',
     '<PixelPanel',
     '<Row',
     '<Banner',
@@ -100,20 +100,23 @@ test('the page uses the shared primitives only', () => {
   ]) {
     assert.match(PAGE, new RegExp(part.replace(/[<>/=]/g, '\\$&')), part)
   }
-  assert.doesNotMatch(PAGE, /vpx|Friends on|Friends off/)
+  assert.doesNotMatch(PAGE, /vpx|FilterChip|Friends on|Friends off/)
 })
 
 test('the page ports the tabs, filter and row anatomy', () => {
   assert.match(PAGE, /ariaLabel="Leaderboard"/)
+  assert.match(PAGE, /ariaLabel="Board filter"/)
   assert.match(PAGE, /Everyone/)
   assert.match(PAGE, /Friends/)
+  assert.match(PAGE, /min-h-11 items-center justify-end/)
   assert.match(PAGE, /w-\[26px\]/)
   assert.match(PAGE, /w-\[52px\]/)
   assert.match(PAGE, /text-\[15px\]/)
   assert.match(PAGE, /board === 'ranked' \? 'w-12' : 'w-14'/)
   assert.match(PAGE, /sv-caption font-bold text-fg-muted/)
-  assert.match(PAGE, /variant=\{row\.isMe \? 'you' : 'default'\}/)
+  assert.match(PAGE, /variant=\{isYou \? 'you' : 'default'\}/)
   assert.match(PAGE, /px-3\.5 py-0\.5/)
+  assert.match(PAGE, /!rows\[i \+ 1\]\?\.isMe/)
   assert.doesNotMatch(PAGE, /Lvl |\(you\)/)
   assert.doesNotMatch(PAGE, /\{row\.streak\}|\{row\.wins\}/)
 })
@@ -124,10 +127,12 @@ test('the page draws the crown and the verified marker', () => {
   assert.match(PAGE, /Verified saver/)
 })
 
-test('the page pins your rank outside the top 50', () => {
+test('the page pins your rank in a mint container with a plain row', () => {
   assert.match(PAGE, /shouldPinYou\(/)
   assert.match(PAGE, /Your rank/)
-  assert.match(PAGE, /<RankRowView row=\{you\}/)
+  assert.match(PAGE, /<RankRowView\s+row=\{you\}/)
+  assert.match(PAGE, /tone="mint"/)
+  assert.match(PAGE, /highlight=\{false\}/)
 })
 
 test('the page keeps the board, friends and state contracts', () => {
