@@ -1487,3 +1487,109 @@ revision choices. Raw audit is
 1. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step; the
    sandbox has no `.env.local`.
 2. Do not merge or push until the user signs off.
+
+---
+
+## 22. App-specific routes polish - 2026-11-10
+
+**Branch:** `app-routes-polish` (from `main` at `a41f704`).
+**Verdict:** `/vault`, `/receipts` and `/card/[token]` now use Foundation 2
+only. No `.vpx` or `.vpx-soft` remains in the three route sources, and no shared
+CSS changed.
+
+### What landed
+
+- **Vault:** `h2.sv-subheading` section headings at 20px default text; mint
+  stays for the unlocked success line. Both amount fields and the passphrase
+  use the existing 56px `.sv-input`, and the passphrase has a visible label.
+  Movements are one grouped `PixelPanel` of 56px `Row`s with direction, status
+  and amount; long status text wraps instead of truncating. The balance
+  skeleton adds `motion-reduce:animate-none`. The no-vault panel is now an
+  `h2`, so the shell owns the only `h1`. The load error is friendly
+  (`Couldn't load your vault.` / `Try again in a moment.`) with a secondary
+  Try again. The empty list reads `No movements yet.`.
+- **Receipts:** snapshot rows are `PixelPanel tone="off"` and still have no
+  hash or explorer link. The transfer anatomy is unchanged: hash, time,
+  included-only explorer link, Check again while pending and Try again while
+  expired. The load error is `Couldn't load receipts.` with a secondary Try
+  again, and a 401 redirects to `/setup`.
+- **Card:** the inner `.vpx-soft` box is a nested `PixelPanel tone="off"`; the
+  outer card stays `tone="off"`. The page remains a public server component
+  with no `ScreenShell`, wallet, session, balance or player wallet address.
+  `getFlexCard`'s explicit columns and the 404 path are untouched.
+- **No behaviour change:** `useVault`, the money handlers, polling, the receipt
+  timeline shape, the API routes, SQL and the card contract are unchanged.
+- **No shared CSS change:** the batch consumes `.sv-input`, `.sv-subheading`,
+  `Row`, `PixelPanel tone="off"`, `Banner`, `Button` and `LoadingState` as they
+  already exist.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 409 pass, 0 fail (396 before the batch) |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 49 warnings, 0 errors |
+| `npm run build` | exit 0; `/vault`, `/receipts` and `/card/[token]` compile |
+| Legacy classes | no `vpx` in the three route sources |
+| Type floor | minimum rendered font 12 |
+| Audit | 33 rows (11 states x 360/390/430): `overflowX` 0, no wide element, no target below 44px, 199 focus stops all in view, uncovered and mint-outlined |
+
+### Renders
+
+33 after PNGs in `docs/superpowers/renders/app-routes/after/` and 9 before PNGs
+in `.../before/` at 360/390/430. The review page is
+`docs/superpowers/renders/app-routes/review/index.html`; `NOTES.md` carries the
+sign-off list and deliberate choices. Raw audit is
+`.../audit/final-audit.jsonl`.
+
+Vault states: default (unlocked), no vault, locked, empty movements, error,
+loading. Receipts states: mixed included/pending/expired plus a snapshot,
+empty, error, loading. Card: valid. A 401 is source-tested rather than
+rendered.
+
+### 360 behaviour
+
+- The Vault movement status wraps under the direction rather than shrinking
+  type or truncating; the row grows past 56px when needed.
+- The passphrase label, 56px input and full-width Unlock button stack cleanly.
+- The balance card's address breaks across two lines at 360.
+- The Receipts snapshot drops the time to its own line at 360.
+- The Card is unchanged in width: `max-w-90` with the page gutter, and the
+  nested off-tone box keeps the same inner padding.
+
+### Rulings
+
+- **Tab shell for Vault.** It is a route in the `(tabs)` group, so it keeps the
+  tab shell, Home back link and bottom nav rather than becoming a pushed screen.
+- **Sub-heading, not a mint label.** Section headings move to the handoff's
+  20px sub-heading role. Mint is reserved for success/progress/you.
+- **`.sv-input` at 56px.** No compact variant and no shared CSS change.
+- **Grouped movement panel.** One panel of rows matches Ranks and Economy; the
+  per-item `.vpx-soft` cards are gone.
+- **Friendly load errors.** Both Vault and Receipts stop printing raw HTTP
+  statuses. Vault keeps its balance-banner network diagnostic because that
+  explains a real chain failure.
+- **401 redirects.** Receipts follows the other data screens with
+  `router.replace('/setup')`, covered by a source contract.
+- **Snapshots are off-tone panels.** A quiet panel reads as a different receipt
+  type, and the row still cannot render a hash.
+- **Card nested off tone.** The inner vault proof uses the same off tone as the
+  card; its 2px outline and darker 4px shadow carry the sub-box. The page stays
+  public and outside the tab shell.
+- **Card render fixture.** Supabase is unavailable in the sandbox, so the valid
+  card captures used a temporary uncommitted `getFlexCard` fixture, reverted
+  before the final test/build. The committed tree keeps Supabase only.
+- **Skeleton motion.** `motion-reduce:animate-none` gives the balance skeleton
+  a static reduced-motion path without touching `globals.css`.
+- **Audit false positive.** The first audit pass sampled the nav link outline
+  30ms into `transition-colors`; waiting 200ms showed the 2px mint ring. The
+  UI did not change.
+
+### Remaining
+
+1. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step; the
+   sandbox has no `.env.local`.
+2. Apply `supabase/FINAL-SCHEMA.sql` before deploying if the target database is
+   behind.
+3. Do not merge or push until the user signs off.

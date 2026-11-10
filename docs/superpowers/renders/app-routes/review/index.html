@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne - App-specific routes review</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; padding:32px 24px 80px; background:#10171a; color:#e8efe9; font:14px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .lede { color:#9fb8ae; margin:0 0 28px; max-width:78ch; }
+  .screen { margin:0 0 40px; padding:20px; border:1px solid #2b3a35; border-radius:10px; background:#141d1f; }
+  .screen h2 { font-size:16px; margin:0; }
+  .route { color:#9fb8ae; font-size:12px; margin:2px 0 16px; }
+  .strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:start; }
+  figure { margin:0; }
+  figcaption { color:#9fb8ae; font-size:12px; margin:0 0 6px; }
+  img { display:block; width:100%; height:auto; border:1px solid #2b3a35; border-radius:6px; background:#0b1112; }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:#6fd0ae; font-size:13px; }
+  details .strip { margin-top:12px; }
+  .note { color:#9fb8ae; font-size:12px; margin-top:10px; }
+  table { border-collapse:collapse; width:100%; margin:12px 0 0; font-size:13px; }
+  th,td { border:1px solid #2b3a35; padding:8px 10px; text-align:left; }
+  th { color:#9fb8ae; font-weight:600; }
+  @media (max-width:760px) { .strip { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>App-specific routes - current review</h1>
+<p class="lede">
+  The three routes with no handoff figure, restyled to Foundation 2 at 360, 390
+  and 430: Vault (default, no vault, locked, empty movements, error, loading),
+  Receipts (mixed, empty, error, loading) and the public Card. Renders are 2x
+  device-scale PNGs from the headless CDP harness with fixture data. A 401 on
+  Receipts is source-tested, not rendered. Write corrections in
+  <code>NOTES.md</code>.
+</p>
+
+<section class="screen">
+  <h2>Audit summary</h2>
+  <p class="route">33 rows: 11 states x 360/390/430</p>
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Horizontal overflow</td><td>0 on every row</td></tr>
+    <tr><td>Elements wider than the viewport</td><td>0</td></tr>
+    <tr><td>Interactive targets below 44x44</td><td>0</td></tr>
+    <tr><td>Minimum rendered font</td><td>12px</td></tr>
+    <tr><td>Keyboard stops checked</td><td>199</td></tr>
+    <tr><td>Stops out of view or covered</td><td>0</td></tr>
+    <tr><td>Stops without the 2px mint outline</td><td>0</td></tr>
+  </table>
+  <p class="note">The earlier nav-link outline mismatch was a harness timing false
+  positive: <code>transition-colors</code> animates <code>outline-color</code>, and
+  the audit sampled 30ms after Tab. It now waits 200ms for the transition to
+  settle.</p>
+</section>
+
+<section class="screen">
+  <h2>Vault - default (unlocked)</h2>
+  <p class="route">/vault - tab shell, Home back link, balance card, shields, 20px sub-headings, .sv-input fields, grouped movement panel, Receipts and Share links</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/vault-default@360.png" alt="Vault default at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/vault-default@390.png" alt="Vault default at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/vault-default@430.png" alt="Vault default at 430px"></figure>
+  </div>
+  <details><summary>Before (mint uppercase headings, .vpx inputs, per-item .vpx-soft cards)</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/vault-before@360.png" alt="Vault before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/vault-before@390.png" alt="Vault before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/vault-before@430.png" alt="Vault before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen">
+  <h2>Vault - no vault</h2>
+  <p class="route">/vault - one h1 (the shell's), h2.sv-subheading "No vault yet", the create CTA</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/vault-no-vault@360.png" alt="Vault no vault at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/vault-no-vault@390.png" alt="Vault no vault at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/vault-no-vault@430.png" alt="Vault no vault at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Vault - locked</h2>
+  <p class="route">/vault - deposit available; withdraw amount disabled; passphrase is .sv-input with a visible label; Unlock vault disabled until typed</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/vault-locked@360.png" alt="Vault locked at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/vault-locked@390.png" alt="Vault locked at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/vault-locked@430.png" alt="Vault locked at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Vault - empty movements</h2>
+  <p class="route">/vault - zero balance, the empty-vault sentence, "No movements yet." instead of per-item cards</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/vault-empty@360.png" alt="Vault empty at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/vault-empty@390.png" alt="Vault empty at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/vault-empty@430.png" alt="Vault empty at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Vault - error</h2>
+  <p class="route">/vault - "Couldn't load your vault." + "Try again in a moment." + secondary Try again; no raw status</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/vault-error@360.png" alt="Vault error at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/vault-error@390.png" alt="Vault error at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/vault-error@430.png" alt="Vault error at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Vault - loading</h2>
+  <p class="route">/vault - the shell header stays; the three-dot LoadingState waits below it</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/vault-loading@360.png" alt="Vault loading at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/vault-loading@390.png" alt="Vault loading at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/vault-loading@430.png" alt="Vault loading at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Receipts - mixed</h2>
+  <p class="route">/receipts - included, pending and expired transfers, then a snapshot: off-tone panel, no hash, no explorer link</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/receipts-mixed@360.png" alt="Receipts mixed at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/receipts-mixed@390.png" alt="Receipts mixed at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/receipts-mixed@430.png" alt="Receipts mixed at 430px"></figure>
+  </div>
+  <details><summary>Before (.vpx-soft snapshot row)</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/receipts-before@360.png" alt="Receipts before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/receipts-before@390.png" alt="Receipts before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/receipts-before@430.png" alt="Receipts before at 430px"></figure>
+  </div></details>
+</section>
+
+<section class="screen">
+  <h2>Receipts - empty</h2>
+  <p class="route">/receipts - the first-deposit sentence; no empty panel to invent</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/receipts-empty@360.png" alt="Receipts empty at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/receipts-empty@390.png" alt="Receipts empty at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/receipts-empty@430.png" alt="Receipts empty at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Receipts - error</h2>
+  <p class="route">/receipts - "Couldn't load receipts." + secondary Try again; a 401 redirects to /setup and is source-tested</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/receipts-error@360.png" alt="Receipts error at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/receipts-error@390.png" alt="Receipts error at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/receipts-error@430.png" alt="Receipts error at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Receipts - loading</h2>
+  <p class="route">/receipts - intro copy stays; the three-dot LoadingState waits below it</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/receipts-loading@360.png" alt="Receipts loading at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/receipts-loading@390.png" alt="Receipts loading at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/receipts-loading@430.png" alt="Receipts loading at 430px"></figure>
+  </div>
+</section>
+
+<section class="screen">
+  <h2>Card - valid</h2>
+  <p class="route">/card/[token] - public, read-only, no wallet/session, no balance, outer and inner PixelPanel tone="off"; name, level, streak, shields, bracket and short vault address</p>
+  <div class="strip">
+    <figure><figcaption>360</figcaption><img src="../after/card-valid@360.png" alt="Public card at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../after/card-valid@390.png" alt="Public card at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../after/card-valid@430.png" alt="Public card at 430px"></figure>
+  </div>
+  <details><summary>Before (.vpx-soft inner vault box)</summary><div class="strip">
+    <figure><figcaption>360</figcaption><img src="../before/card-before@360.png" alt="Card before at 360px"></figure>
+    <figure><figcaption>390</figcaption><img src="../before/card-before@390.png" alt="Card before at 390px"></figure>
+    <figure><figcaption>430</figcaption><img src="../before/card-before@430.png" alt="Card before at 430px"></figure>
+  </div></details>
+</section>
+</body>
+</html>
