@@ -1261,3 +1261,151 @@ The review page is `docs/superpowers/renders/missions/review/index.html`;
    sandbox has no `.env.local`.
 4. Do not merge or push until the user signs off.
 
+
+---
+
+## 20. Ranks UI status - 2026-11-09
+
+**Branch:** `ranks-ui-redesign` (from `main` at `646e85f`).
+**Verdict:** `/leaderboard` is the handoff's Ranks screen. Ranked/Unranked
+tabs stay; Everyone/Friends are 44px filter chips with cream selected fills; the
+board is one grouped panel of 56px rows; the caller's row is a 60px
+mint-bordered row that bleeds through the panel padding; and a caller outside
+the top 50 is pinned in its own `Your rank` panel.
+
+### What landed
+
+- **Header:** title only. The "Friends on/off" header button is gone.
+- **Filter chips:** a new `FilterChip` primitive (native button,
+  `aria-pressed`, 44px, 2px bevel, 13px/700) and `.sv-filter` plus
+  `.sv-filter[aria-pressed='true']`. Selected is cream (`--fg`) fill with
+  ground (`--shell`) text; unselected is the surface with a bevel border. Mint
+  remains the tab, progress/success and You colour.
+- **Rows:** one grouped `PixelPanel` (`px-3.5 py-0.5`) of 56px rows with 12px
+  gaps: rank in a 26px centred Jakarta 700/14 tabular column, name 15px/700,
+  bracket 12px/700 muted in a 52px column, and a 14px/700 tabular figure in a
+  48px ranked / 56px unranked column. Ranks 1-3 use default text and 4+ muted,
+  as the handoff draws them. The old level/wins/streak metadata line, the
+  bracket Chip and the `(you)` suffix are gone.
+- **Your row:** `Row variant="you"` and `.sv-row--you`: 60px, mint top and
+  bottom borders, `margin-block: 4px`, `margin-inline: -14px`,
+  `padding-inline: 14px`, `background: var(--you-surface)` (new `#1B2E29`
+  token). The variant suppresses `sv-row--56` and `sv-row--divider`; the row
+  above keeps its track divider, so the handoff's 4px gap is visible. The mint
+  rank and a 24px `Chip variant="fill"` `You` tag sit on the tinted row.
+- **Crown and verified marker:** rank 1 draws `RankCrown`, the handoff's 24x24
+  crown (yellow `#FEE761` / brown `#BD6C4A` paths), on both boards. The mint
+  verified marker remains beside names with `verifiedSaver`.
+- **Pinned rank:** when the API's additive `you` row exists and no list row is
+  `isMe`, a second `PixelPanel` under a 12px `Your rank` caption renders the
+  same You row. The panel is separate so it never reads as rank 51 or as part
+  of the contiguous list.
+- **Footer:** the board-specific handoff line at 12px (`Ranked points from
+  human ranked battles.` / `Savings score from check-in growth and
+  consistency.`) followed by `N players`, with ` · ⟡ verified saver` only when
+  a rendered row carries the marker. The "display names only, never addresses
+  or balances" promise is in both board lines.
+- **States:** loading keeps the tabs and chips with the three-dot
+  `LoadingState`; error is a `Banner` plus a 56px secondary `Try again`;
+  Everyone-empty and Friends-empty are distinct panels; a 401 redirects to
+  `/setup`. The footer is hidden in both empty states.
+- **API:** `GET /api/leaderboards` maps every sorted row through one `toRow`
+  helper and returns the caller's full row as the additive `you` field. `rows`,
+  `total`, both sorts, the friends filter and the unranked score mutation are
+  unchanged.
+- **Removed:** the header Friends button, the per-row metadata, the bracket
+  Chip and the old two-line footer. `Tabs`, `Chip`, `Button`, `Banner`,
+  `PixelPanel` and `LoadingState` are unchanged.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test` | 396 pass, 0 fail (382 before the batch) |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 49 warnings, 0 errors |
+| `npm run build` | exit 0; `/leaderboard` compiles |
+| Type floor | no `text-[10px]`/`text-[11px]`; min rendered font 12 (bracket, footer, You tag) |
+| Audit | 24 rows (8 states x 360/390/430): `overflowX: 0`, no wide element, no interactive target below 44px, min font 12, every tab stop in view/uncovered with the mint outline |
+| Geometry | 56px list rows, 60px You row, 4px block margin, 14px inline bleed; 26/52/48px columns ranked and 26/52/56 unranked |
+
+### 360 behaviour
+
+- The rank column, 52px bracket column and 48/56px figure leave a 126px name
+  column. The long fixture name wraps to two lines inside 56px; nothing
+  truncates.
+- The two tabs and the two filter chips each fit on one line; the chips keep
+  18px inline padding.
+- The ranked footer line wraps to three lines at 360 and two at 390/430, with no
+  clipping and no smaller type.
+- The You row's mint borders reach the panel's left and right inner edges; the
+  stepped panel outline is untouched.
+- With the caller pinned, the list + `Your rank` panel fill the viewport and the
+  footer scrolls into view. Empty, friends-empty, error and loading fit without
+  scrolling.
+
+### Rulings
+
+- **A new `FilterChip`, not Chip or Tabs.** `Chip` is a non-interactive 24px
+  status span; `Tabs` is a `role="tablist"` that switches panels. Everyone/
+  Friends filter one list, so they need buttons with `aria-pressed` and a
+  pressed visual state.
+- **Cream selected chip.** The handoff fills the selected chip with `#F3EEDD`
+  and ground text. Mint stays reserved for the selected tab, progress/success
+  and the You row, so the two controls never compete.
+- **Savings score stays on Unranked.** The API's combined check-in growth and
+  consistency score orders the board and fills the 56px column. The handoff's
+  level ordering and `Lv N` are a recorded divergence; changing them would be a
+  rules/API change.
+- **Single-line rows.** The handoff rows carry rank, name, bracket and figure
+  only. Level, wins and streak are still on Home and Profile; Ranks is a board,
+  not a stats sheet.
+- **Both crown and verified marker.** The user chose the handoff crown plus the
+  vault marker. The crown is positional and decorative: the rank cell already
+  announces `Rank 1`, and a provenance test extracts both `d` paths from
+  `Savborne-handoff.html` so the art cannot drift.
+- **The crown is not the Golden Crown badge.** `golden_crown` is the
+  Gold-bracket badge in `src/lib/game/badges.ts` and a 16px item. The rank-1
+  crown is the handoff's separate 24x24 drawing and means "rank 1" only. The
+  badge continues to live on Profile; the leaderboard payload has no item data.
+- **Rank colour follows the handoff.** 1-3 default, 4+ muted. The old
+  gold/silver/bronze rank numbers are dropped from Ranks.
+- **Your row bleeds on purpose.** The panel uses 14px inline padding, and the
+  row pulls back by exactly that amount. The 4px block margin plus the retained
+  divider on the row above reproduces the handoff's separated mint frame. A
+  future panel padding change must update `.sv-row--you`.
+- **The You tag is 24px.** The handoff's 20px/11px tag is below the 12px floor.
+  The existing fill Chip is 24px at 12px, so it is 4px taller and reuses the
+  primitive.
+- **The footer legend is conditional.** `⟡ verified saver` appears only when a
+  visible row carries the marker; the count always appears with a listable
+  board. The promise sentence stays attached to the board-specific line.
+- **Friends-empty is its own state.** The API always includes the caller, so a
+  Friends board with no one else would otherwise be a one-row list. The panel
+  names the definition (players you have fought in a human battle) and leaves
+  Everyone one tap away.
+- **The pinned row needed one additive API field.** `you` is the caller's full
+  row at its real rank, computed after the friends filter, so the pinned rank is
+  honest for the displayed board. `rows`, `total` and the ranking logic are
+  untouched; older clients ignore the field.
+- **Local tab/filter state.** No query parameter, matching Missions. The back
+  button does not accumulate board states.
+- **401 redirects to `/setup`.** The page previously surfaced the status
+  number; it now follows the other data screens.
+
+### Renders
+
+24 PNGs in `docs/superpowers/renders/ranks/after/` (8 states at 360/390/430)
+and 3 before PNGs in `docs/superpowers/renders/ranks/before/`. The review page
+is `docs/superpowers/renders/ranks/review/index.html`; `NOTES.md` holds the
+sign-off list and deliberate choices. Raw audit is
+`docs/superpowers/renders/ranks/audit/final-audit.jsonl`.
+
+### Remaining
+
+1. Real-device Nimiq Pay pass at 360-430 is the user's sign-off step; the
+   sandbox has no `.env.local`.
+2. If the product later wants the Golden Crown item badge on rank 1, the
+   leaderboard payload needs item/badge data; this batch shows the positional
+   crown only.
+3. Do not merge or push until the user signs off.
