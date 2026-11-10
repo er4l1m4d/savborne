@@ -40,6 +40,7 @@ test('the page uses tabs and the shared primitives only', () => {
     '<Banner',
     '<Button',
     '<LoadingState />',
+    '<Meter',
   ]) {
     assert.ok(PAGE.includes(part), part)
   }
@@ -61,8 +62,18 @@ test('the row shows a 24px status box, mint XP and open-row descriptions', () =>
   assert.match(PAGE, /<Glyph name="check"/)
   assert.match(PAGE, /sv-figure/)
   assert.match(PAGE, /m\.completed \? 'text-fg-muted' : 'text-mint'/)
-  assert.match(PAGE, /\{!m\.completed &&/)
+  assert.match(PAGE, /\) : !m\.completed \? \(/)
   assert.match(PAGE, /\(completed\)/)
+})
+
+test('Weekly Strategist renders the handoff progress meter', () => {
+  assert.match(PAGE, /m\.progress \? \(/)
+  assert.match(PAGE, /<Meter/)
+  assert.match(PAGE, /height=\{14\}/)
+  assert.match(PAGE, /w-\[90px\] shrink-0/)
+  assert.match(PAGE, /m\.progress\.current/)
+  assert.match(PAGE, /of \{m\.progress\.target\} wins/)
+  assert.match(PAGE, /label=\{`/)
 })
 
 test('the row type fits the handoff and clears the divider', () => {

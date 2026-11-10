@@ -21,6 +21,7 @@ import { Tabs } from '@/components/ui/Tabs'
 import { Banner } from '@/components/ui/Banner'
 import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { Meter } from '@/components/ui/Meter'
 import { earnedXp, xpCounter } from '@/lib/missions-ui'
 
 type Mission = {
@@ -33,6 +34,7 @@ type Mission = {
   completed: boolean
   completedAt: string | null
   nextResetAt: string | null
+  progress?: { current: number; target: number }
 }
 
 type Counters = {
@@ -212,11 +214,24 @@ function MissionRow({ m, divider }: { m: Mission; divider: boolean }) {
           {m.name}
           {m.completed && <span className="sr-only"> (completed)</span>}
         </span>
-        {!m.completed && (
+        {m.progress ? (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Meter
+              value={m.progress.current}
+              max={m.progress.target}
+              height={14}
+              label={`${m.name} wins`}
+              className="w-[90px] shrink-0"
+            />
+            <span className="sv-caption font-medium leading-[1.35] text-fg-muted tabular-nums">
+              {m.progress.current} of {m.progress.target} wins
+            </span>
+          </div>
+        ) : !m.completed ? (
           <span className="sv-caption font-medium leading-[1.35] text-fg-muted">
             {m.description}
           </span>
-        )}
+        ) : null}
       </div>
     </Row>
   )
