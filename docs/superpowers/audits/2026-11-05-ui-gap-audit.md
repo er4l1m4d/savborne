@@ -1621,3 +1621,104 @@ element, no target below 44px and a 12px minimum font.
 2. Apply `supabase/FINAL-SCHEMA.sql` before deploying if the target database is
    behind.
 3. Do not merge or push until the user signs off.
+
+
+---
+
+## 23. Missions API gaps - 2026-11-11
+
+**Branch:** `missions-api-gaps` (from `main` at `2e67f75`).
+**Verdict:** both Missions API gaps in section 19 are closed. Weekly XP is the
+exact sum of the week's weekly mission rewards in all four server call sites,
+Weekly Strategist carries an additive progress payload, AI wins no longer
+count toward it, and the handoff's `1 of 2 wins` meter is on the row.
+
+### What landed
+
+- **One helper** (`src/lib/game/weekly-missions.ts`): the pure
+  `sumWeeklyMissionXp` applies the UTC week window, dedupes by mission key,
+  keeps only `missions.type = 'weekly'` definitions, sums the exact
+  `xp_reward` values and clamps to `WEEKLY_MISSION_XP_CAP`. `weeklyMissionXp`
+  reads `player_missions` and the mission definitions;
+  `weeklyHumanWins` counts ranked/unranked battles where the player won,
+  never AI.
+- **All four call sites agree:** `/api/missions` `counters.weeklyXpEarned`,
+  `/api/players/me` `player.weeklyXpEarnedThisWeek`, `settleMissions` cap
+  headroom and the check-in route's `weeklyXpEarnedThisWeek` all call
+  `weeklyMissionXp`. The `* 33` count approximations and the weekly
+  `check_ins` read are gone.
+- **Progress payload:** `progress: { current, target }` is additive and appears
+  only on `weekly_strategist`. `current` is this UTC week's human wins clamped
+  to the target; `target` is the new shared `WEEKLY_STRATEGIST_WINS = 2`.
+- **AI and off-by-one fix:** `battleServer` now uses `weeklyHumanWins` and
+  passes the count as-is. The old query included `ai` and subtracted one even
+  though `completed_at < now` already excluded the battle being settled. The
+  award now fires on the second human win, matching the meter.
+- **Meter row:** `Meter` at 14px and 90px wide plus `N of 2 wins` replaces the
+  Weekly Strategist description. Title + line + 8px row padding keeps the row
+  at 58px. Completed rows keep the meter with `2 of 2 wins`, a muted label and
+  muted XP. No shared CSS change.
+- **Field names and shapes:** no existing API field was renamed or removed.
+  Other mission items are byte-for-byte the same shape; the only addition is
+  `progress` on the strategist item.
+
+### Verification evidence
+
+| Check | Result |
+|---|---|
+| `npm test` | 438 pass, 0 fail (412 before the test task; 411 at the branch base) |
+| `npx tsc --noEmit` | clean |
+| `npm run lint` | exit 0, 49 warnings, 0 errors |
+| `npm run build` | exit 0; `/missions` and both APIs compile |
+| Type floor | no `text-[10px]` / `text-[11px]`; min rendered font 12 |
+| Audit | 9 rows (3 states x 360/390/430): `overflowX: 0`, no wide elements, no interactive target below 44px, min font 12, every tab stop in view and uncovered with the 2px mint outline |
+| Row | Weekly Strategist is 58px at 360/390/430; meter is 90x14 |
+
+### 360 behaviour
+
+- The 90px meter plus `0/1/2 of 2 wins` fits the Weekly Strategist content
+  column at 360; the line wraps rather than overflowing if copy grows.
+- The row stays 58px at 0, 1 and 2 wins. The Steady Saver description still
+  wraps to about 73px; the strategist meter fits without growing.
+- Nothing is truncated. The 2-win completed row keeps the meter and its muted
+  label.
+
+### Rulings
+
+- **All four call sites, not two.** One weekly number means one helper. The
+  source contract test fails if any consumer stops calling it or a `* 33`
+  approximation returns.
+- **Generic progress.** `{ current, target }` keeps the payload reusable and
+  lets the UI render the target from the API. A named `weeklyWins` field would
+  hardcode the target in the page.
+- **Clamp, not raw.** A player with three wins sees `2 of 2`, never `3 of 2`.
+- **Progress replaces the description.** The handoff draws the meter where the
+  description would sit, and this keeps the 58px rhythm. Other rows are
+  unchanged.
+- **Completed rows keep the meter.** It is success/progress/you colour, and the
+  muted label and XP carry the done state alongside the check.
+- **AI wins are not human wins.** The evaluator already required
+  `isHumanOpponent`; the query now matches it.
+- **The settlement count is used as-is.** Keeping the old `- 1` would leave the
+  meter at `2 of 2` while the mission only credited on the third win. Tests pin
+  one prior win as the qualifying case.
+- **No `weekly_xp` ledger.** The exact figure is derived from the existing
+  mission credits and definitions; no SQL or schema change is needed.
+- **No other state re-rendered.** The row change only affects the strategist
+  row; the 2-win render is the completed row the all-done state would show.
+
+### Renders
+
+9 PNGs in `docs/superpowers/renders/missions-api/after/`
+(`missions-strategist-{0,1,2}@{360,390,430}.png`), 3 pre-batch images in
+`.../before/`, and the 9-row raw audit in `.../audit/final-audit.jsonl`. The
+review page is `.../review/index.html`; `NOTES.md` holds the sign-off list and
+deliberate choices.
+
+### Remaining
+
+1. The real-device Nimiq Pay pass at 360-430 is the user's sign-off step; the
+   sandbox has no `.env.local`.
+2. No live Supabase or Nimiq check was run; tests, build and fixture renders do
+   not need one.
+3. Do not merge or push until the user signs off.
