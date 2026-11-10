@@ -13,11 +13,11 @@
 
 import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { createHash } from 'node:crypto'
 
 import { installFakeNet, rows, type FakeNet } from '@/test/fake-net'
 import { GET, DELETE } from '@/app/api/players/me/route'
 import { utcWeekStart } from '@/lib/game/time'
+import { newWalletSigner } from '@/test/wallet-signer'
 import {
   DELETE_PROOF_MAX_AGE_MS,
   DELETE_PUBLIC_KEY_HEADER,
@@ -25,8 +25,8 @@ import {
   DELETE_SIGNED_AT_HEADER,
   deleteAuthHeaders,
   deleteMessage,
-  nimiqSignedPayload,
 } from '@/lib/delete-request'
+import { checkInAuthHeaders, checkInMessage } from '@/lib/checkin-request'
 
 const CREATED_AT = '2026-11-03T18:20:00.123Z'
 /** A plausible address no generated test key will control. */
@@ -79,20 +79,14 @@ function emptyQueries(resource: string | null) {
 }
 
 async function newSigner() {
-  const { KeyPair } = await import('@nimiq/core')
-  const keyPair = KeyPair.generate()
+  // One real-keypair signer is shared with the check-in tests; this wrapper
+  // only names the delete message.
+  const signer = await newWalletSigner()
   return {
-    address: keyPair.publicKey.toAddress().toUserFriendlyAddress(),
+    address: signer.address,
     async sign(namedAddress: string, createdAt: string, signedAt: number) {
-      const { Signature } = await import('@nimiq/core')
       const message = deleteMessage({ address: namedAddress, createdAt, signedAt })
-      const hash = createHash('sha256').update(nimiqSignedPayload(message)).digest()
-      const signature = Signature.create(keyPair.privateKey, keyPair.publicKey, hash)
-      return {
-        publicKey: keyPair.publicKey.toHex(),
-        signature: signature.toHex(),
-        signedAt,
-      }
+      return { ...(await signer.sign(message)), signedAt }
     },
   }
 }
@@ -258,6 +252,53 @@ test('a valid signature from a key that does not control the address is rejected
   const res = await DELETE(deleteReq({ 'X-Player-Address': VICTIM, ...deleteAuthHeaders(proof) }))
   assert.equal(res.status, 401)
   assert.deepEqual(await res.json(), { error: 'wrong_signer' })
+  assert.equal(net.calls.filter((c) => c.rpc === 'delete_player').length, 0)
+})
+
+// ─── DELETE: the two namespaces cannot cross ─────────────────────────────────
+
+test('a check-in proof carries no delete headers, so it is missing', async () => {
+  const signer = await newWalletSigner()
+  const signedAt = Date.now() - 1_000
+  const proof = {
+    ...(await signer.sign(checkInMessage({ address: signer.address, signedAt }))),
+    signedAt,
+  }
+
+  net = installFakeNet(() => {
+    throw new Error('should not query')
+  })
+  const res = await DELETE(
+    deleteReq({
+      'X-Player-Address': signer.address,
+      ...checkInAuthHeaders(proof),
+    }),
+  )
+  assert.equal(res.status, 401)
+  assert.deepEqual(await res.json(), { error: 'missing' })
+  assert.equal(net.calls.length, 0)
+})
+
+test('a check-in signature replayed in delete headers is a bad signature', async () => {
+  const signer = await newWalletSigner()
+  const signedAt = Date.now() - 1_000
+  const proof = {
+    ...(await signer.sign(checkInMessage({ address: signer.address, signedAt }))),
+    signedAt,
+  }
+
+  net = installFakeNet((c) => {
+    if (c.resource === 'players') return rows(playerRow(signer.address))
+    return undefined
+  })
+  const res = await DELETE(
+    deleteReq({
+      'X-Player-Address': signer.address,
+      ...deleteAuthHeaders(proof),
+    }),
+  )
+  assert.equal(res.status, 401)
+  assert.deepEqual(await res.json(), { error: 'bad_signature' })
   assert.equal(net.calls.filter((c) => c.rpc === 'delete_player').length, 0)
 })
 

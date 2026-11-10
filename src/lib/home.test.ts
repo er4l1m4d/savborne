@@ -28,6 +28,13 @@ test('Home owns check-in inside the savings card', () => {
   assert.match(HOME, /Open vault/)
 })
 
+test('Home signs the check-in before it POSTs', () => {
+  assert.match(HOME, /signMessage\(checkInMessage/)
+  assert.match(HOME, /checkInAuthHeaders/)
+  assert.match(HOME, /authHeaders\(checkInAuthHeaders/)
+  assert.match(HOME, /checkInErrorMessage/)
+})
+
 test('Home has the mission rows and Battle card', () => {
   assert.match(HOME, /MissionsPanel/)
   assert.match(HOME, /mission\.name/)

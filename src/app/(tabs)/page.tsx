@@ -11,8 +11,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { WalletError } from '@/lib/nimiq'
+import { WalletError, signMessage } from '@/lib/nimiq'
 import { authHeaders } from '@/lib/session'
+import {
+  checkInAuthHeaders,
+  checkInErrorMessage,
+  checkInMessage,
+} from '@/lib/checkin-request'
 import { usePlayerSession, type PlayerMe } from '@/lib/usePlayerSession'
 import {
   BATTLE,
@@ -84,23 +89,37 @@ export default function HomePage() {
     setCheckError(null)
     setAwards(null)
     try {
+      // The address header is identity; the signature is authority. Sign the
+      // same address the request carries, with a fresh timestamp so the server
+      // can bound replay. Nimiq Pay applies the signed-message envelope.
+      const address = session.playerAddress
+      const signedAt = Date.now()
+      const proof = await signMessage(checkInMessage({ address, signedAt }))
       const res = await fetch('/api/check-ins', {
         method: 'POST',
-        headers: authHeaders(),
+        headers: authHeaders(checkInAuthHeaders({ ...proof, signedAt })),
       })
       if (!res.ok) {
         const text = await res.text().catch(() => '')
-        if (res.status === 503) {
-          let code: string | undefined
-          try {
-            code = (JSON.parse(text) as { error?: string }).error
-          } catch {
-            // Not JSON; keep the generic inline error.
-          }
-          if (code === 'rpc_unreachable') {
-            router.push('/balance-error')
-            return
-          }
+        let code: string | undefined
+        try {
+          code = (JSON.parse(text) as { error?: string }).error
+        } catch {
+          // Not JSON; keep the generic inline error.
+        }
+        if (res.status === 503 && code === 'rpc_unreachable') {
+          router.push('/balance-error')
+          return
+        }
+        // A proof rejection is actionable; show it in the existing Banner
+        // instead of a generic "Check-in failed (401)".
+        if (
+          (res.status === 400 || res.status === 401) &&
+          code !== undefined &&
+          ['missing', 'malformed', 'stale', 'bad_signature', 'wrong_signer'].includes(code)
+        ) {
+          setCheckError(checkInErrorMessage(code, res.status))
+          return
         }
         throw new Error(`Check-in failed (${res.status}): ${text}`)
       }
@@ -462,7 +481,7 @@ function describeError(err: unknown): string {
       case 'NETWORK_ERROR':
         return 'The Nimiq network is busy. Try checking in again in a moment.'
       case 'PERMISSION_DENIED':
-        return 'Wallet access declined. Reconnect your wallet in Nimiq Pay and try again.'
+        return 'Check-in needs your wallet signature. Tap Check in now to try again.'
       default:
         return err.message || 'Could not read your balance.'
     }
