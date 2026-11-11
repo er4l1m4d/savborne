@@ -10,7 +10,7 @@ balance you can see on chain into XP, streaks, items, missions, badges, and rank
 `nimiqpay://miniapp?url=https://savborne.vercel.app`
 
 [![Live](https://img.shields.io/badge/live-savborne.vercel.app-6FD0AE)](https://savborne.vercel.app)
-[![Tests](https://img.shields.io/badge/tests-527%20passing-6FD0AE)](https://github.com/er4l1m4d/savborne)
+[![Tests](https://img.shields.io/badge/tests-528%20passing-6FD0AE)](https://github.com/er4l1m4d/savborne)
 [![CI](https://github.com/er4l1m4d/savborne/actions/workflows/ci.yml/badge.svg)](https://github.com/er4l1m4d/savborne/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-C9C1A8)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000)](https://nextjs.org)
@@ -191,7 +191,7 @@ Then open the URL in Nimiq Pay or use
 ## Quality
 
 ```bash
-npm test              # 527 tests, 0 failures
+npm test              # 528 tests, 0 failures
 npx tsc --noEmit      # clean
 npm run lint          # 0 errors, 0 warnings
 npm run build         # production build
