@@ -18,6 +18,10 @@ const SQL = readFileSync(
   new URL('../../supabase/FINAL-SCHEMA.sql', import.meta.url),
   'utf8',
 )
+const HEALTH_WORKFLOW = readFileSync(
+  new URL('../../.github/workflows/health.yml', import.meta.url),
+  'utf8',
+)
 
 test('the SQL marker and the app expect the same schema version', () => {
   const inserted = SQL.match(
@@ -36,4 +40,12 @@ test('the version contract is idempotent and service-role only', () => {
   assert.match(SQL, /revoke all on schema_meta from public, anon, authenticated/i)
   assert.match(SQL, /revoke execute on function schema_health\(\) from anon, authenticated/i)
   assert.match(SQL, /grant execute on function schema_health\(\) to service_role/i)
+})
+
+
+test('the scheduled health probe expects the same version as the app', () => {
+  assert.ok(
+    HEALTH_WORKFLOW.includes(EXPECTED_SCHEMA_VERSION),
+    'health.yml must grep for EXPECTED_SCHEMA_VERSION',
+  )
 })
