@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A clean checkout must pass with no .env.local: the suite uses a fake network,
+# tsc and lint do not read the environment, and the build is designed to run
+# without Supabase credentials (clients are created lazily).
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit and route tests
+        run: npm test
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      # Informational: a new high-severity advisory should be visible in the
+      # job log, but it must not block a docs-only fix. Review it, then update.
+      - name: Audit production dependencies (informational)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
