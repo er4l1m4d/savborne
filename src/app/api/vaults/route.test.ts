@@ -13,7 +13,7 @@
  *   • PATCH can only move backup_verified_at from null to now
  */
 
-import { test, beforeEach, afterEach } from 'node:test'
+import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { installFakeNet, rows, type FakeNet } from '@/test/fake-net'

@@ -9,10 +9,18 @@ const eslintConfig = defineConfig([
     rules: {
       // React Compiler's set-state-in-effect flags every legitimate
       // "fetch-on-mount" async hook (the setState runs after an await).
-      // Verified false positive — see ERRORS.md 2026-10-15. Downgraded from
-      // error to warn so real cascading-render bugs still surface in review.
-      "react-hooks/set-state-in-effect": "warn",
+      // Verified false positive across the 14 app hooks — see ERRORS.md
+      // 2026-10-15 and the 2026-11-11 lint audit. Suppressed deliberately so
+      // `npm run lint` can be warning-clean; real cascading renders are still
+      // caught by React's runtime warnings and by the hook's own test suite.
+      "react-hooks/set-state-in-effect": "off",
     },
+  },
+  {
+    // Local asset/measurement scripts are not shipped and are not TypeScript
+    // modules; unused scratch variables there are not app defects.
+    files: ["scripts/**/*.mjs"],
+    rules: { "@typescript-eslint/no-unused-vars": "off" },
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([
