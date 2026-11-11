@@ -1,14 +1,16 @@
 # Check-in and standing integrity - backlog
 
 **Date:** 2026-11-09
-**Status:** release gate landed in code; trust step 2 closed in code; migration pending deployment
+**Status:** release gate and trust steps closed in code (schema `2026-11-11.1`); the production paste and live wallet test remain
 **Origin:** Home UI review discussion about automatic check-ins and players hiding withdrawals.
-**Release gate:** do not expose ranked battles publicly until item 1 below is fixed.
+**Release gate:** closed in code and covered by tests; production verification is tracked in the release checklist.
 
 ## Why this exists
 
-The current check-in is the only time the server reads a player's vault balance.
-The balance read itself is trustworthy: `/api/check-ins` reads the chain
+At the time this backlog was written, the check-in was the only time the server
+read a player's vault balance. A daily cron now reads every vault as well, so
+standing no longer depends on the player showing up. The balance read itself is
+trustworthy: `/api/check-ins` reads the chain
 server-side and never accepts a client-reported amount. The weakness is that the
 player controls **when** that read happens, and several counters/writes are not
 idempotent.
@@ -65,6 +67,31 @@ Cron policy: any future server-triggered check-in or claim path must
 authenticate with a separate `CRON_SECRET` and must never accept a player
 header as authority. There is no cron route in the repo, so nothing is built
 for it yet.
+
+## Status as of 2026-11-11
+
+| # | Gap | Status |
+|---:|---|---|
+| 1 | A withdrawal can be hidden by never checking in | **Closed** - daily cron `record_reading` refreshes standing. |
+| 2 | Leaderboard uses `players.bracket` | **Closed** - `leaderboard_stats()` reads the latest reading; API caches 60s. |
+| 3 | Ranked join uses a stale bracket | **Closed** - join reads the chain (60s cache); ranked counts claimed days. |
+| 4 | Week Warrior / Iron Saver revoked only at check-in | **Closed** - `record_reading` revokes on a lower reading. |
+| 5 | Golden Crown held after demotion | **Closed** - `record_reading` revokes below Gold; the next claim re-awards via `computeBadgeActions`. |
+| 6 | Withdrawal flags stale | **Closed** - `record_reading` updates them from the snapshot. |
+| 7 | Intraday withdraw-and-redeposit | **Accepted risk** - a sampling policy has a window. Only continuous chain indexing would close it. |
+| 8 | `check_in_count` counted POSTs | **Closed** - counts `claimed_at is not null` days. |
+| 9 | No unique player/day | **Closed** - `check_ins_player_day_uidx`. |
+| 10 | Concurrent POSTs both award | **Closed** - unique constraint + one `commit_check_in` transaction; route test covers the race. |
+| 11 | Reading/rewards not atomic | **Closed** for check-in - `commit_check_in`. Battle settlement remains sequential (separate concern). |
+| 12 | Retry after partial failure | **Closed** - the transaction leaves no orphan reading or partial reward. |
+| 13 | Disabled button was client-only | **Closed** - signed proof, session, rate limit. |
+| 14 | Address header authorised actions | **Closed** - every route requires a signed 12-hour session. |
+| 15 | No check-in rate limit | **Closed** - plus session, players, vaults, queue, battle move, transfers, profile and leaderboards. |
+| 16 | Home and Vault disagree | **Day-level closed** - cron updates Home's stored balance. Between samples they can still differ; intraday is accepted risk #7. |
+| 17 | No scheduled reading | **Closed** - `GET /api/cron/read-vaults`, 00:00 UTC. |
+| 18 | RPC failure blocks the only reading | **Closed** - `NIMIQ_RPC_URLS` fallback + per-call timeout; failure is an error, never zero. |
+| 19 | No `source` / `claimed_at` | **Closed** - columns + `record_reading` + claim-once commit. |
+| 20 | Unlocks gated by opening the app | **Partly by design** - standing refreshes daily, but celebrations still render when the player opens the app. Accepted for v1. |
 
 ## Gaps
 

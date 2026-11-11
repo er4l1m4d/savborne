@@ -261,6 +261,28 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** Removed the build-time dependency. The three latin woff2 files (Jakarta variable 200–800, Silkscreen 400 and 700) are vendored in `src/app/fonts/`, loaded with `next/font/local` in `src/app/layout.tsx`, keeping the same `--font-jakarta` / `--font-silkscreen` variables, weights, latin subset and `display: swap`. `npm run fonts:vendor` (`scripts/vendor-fonts.mjs`) re-pins them and asserts the `wOF2` magic. Verified with a clean `.next` build: the three files are emitted to `.next/static/media`, the CSS declares `--font-jakarta: "jakarta", "jakarta Fallback"` and `--font-silkscreen: "silkscreen", "silkscreen Fallback"`, and a grep of the build output finds zero `fonts.googleapis.com` / `fonts.gstatic.com` / `@vercel/turbopack-next/internal/font` references.
 **Prevention:** Treat "asset fetched during build" as a release dependency. Any loader that downloads at build time (`next/font/google`, remote image/icon pipelines) can fail a deploy with no code change to blame. Vendor the bytes, keep a script that regenerates them, and check that the build output contains no reference to the remote host. The local build passing is not evidence the Vercel build will — same code, different network.
 
+### [2026-11-10] Production check-in 500: the deployed code was ahead of the database
+**Symptom:** Every real check-in returned HTTP 500 `{"error":"Could not find the function public.consume_rate_limit(p_key, p_limit, p_window_seconds) in the schema cache"}`. `/api/vaults` and `/api/leaderboards` still answered 200, so the database was reachable.
+**Context:** `savborne.vercel.app` after the check-in trust batch deployed; production Supabase had never had `FINAL-SCHEMA.sql` applied.
+**Root cause:** Deployment and schema were released as separate steps with no contract between them. The app called `consume_rate_limit` and `commit_check_in`, which existed only in the repo.
+**Fix:** Applied the whole idempotent schema file in the Supabase SQL Editor. Added `schema_meta`, `schema_version()`, `schema_health()` and `GET /api/health`; the health check reports a version mismatch or a missing RPC as a 503 instead of letting players discover it. The fake-proof probe moved from 500 to 401 `bad_signature`.
+**Prevention:** `/api/health` is polled every 15 minutes by `.github/workflows/health.yml`; `schema_version` is bumped in the same edit as any schema change and pinned to `EXPECTED_SCHEMA_VERSION` by a test.
+
+### [2026-11-11] A session token in normalised form broke every exact-match query
+**Symptom:** After sessions were added, battle routes returned 403 "Not your battle" and vault reads returned empty for addresses that existed. `npx tsc` was clean.
+**Context:** `issueSessionToken` stored the normalised address (`NQ07...`, no spaces) while Postgres stores the wallet's spaced user-friendly form (`NQ07 ...`). Routes used the token address in `.eq('address', ...)` and in string comparisons.
+**Root cause:** Two representations of the same identity. Normalising for the signed message is correct; normalising the identity used for storage lookups is not.
+**Fix:** The token payload keeps the caller's submitted formatting (the HMAC protects it), while the signed message still binds the normalised form. Route tests use the wallet's spaced form and `sameAddress` where a comparison is semantic.
+**Prevention:** Identity tests cover a token + header mismatch and a scoped read; the session test asserts the token preserves the wallet's spacing.
+
+### [2026-11-11] Repo-wide typecheck and lint picked up an untracked local workspace
+**Symptom:** `npx tsc --noEmit` failed with errors in `ai-launch-videos/savborne-film/src/*.tsx`, and lint gained three warnings, on a branch that had not touched those files.
+**Context:** A local motion-design workspace appeared under the repo but is not tracked by git.
+**Root cause:** `tsconfig.json` includes `**/*.tsx`, and ESLint walks the repo; both saw local scratch work that a fresh clone does not have.
+**Fix:** Added `ai-launch-videos/**` to the TypeScript and ESLint ignores with a comment that it is local, non-app tooling. The directory itself was not modified.
+**Prevention:** Treat a new top-level workspace as local until it is intentionally added; keep `npm test`, `tsc`, `lint` and `build` meaningful on a clean checkout (CI proves it).
+
+
 ---
 
 ## Historical
