@@ -12,12 +12,13 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const address = _req.headers.get(PLAYER_HEADER)
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const address = req.headers.get(PLAYER_HEADER)
   if (!address) {
     return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
   }
@@ -29,7 +30,11 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     .select('*')
     .eq('id', id)
     .maybeSingle()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    return routeError({
+      req, route: '/api/battles/[id]/join', code: 'db_error', status: 500, error,
+    })
+  }
   if (!battle) return NextResponse.json({ error: 'Battle not found' }, { status: 404 })
 
   if (battle.status !== 'pending' || battle.player_b !== null) {
@@ -48,7 +53,11 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     .eq('id', id)
     .eq('status', 'pending')
     .is('player_b', null) // atomic guard against a double-join race
-  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
+  if (updErr) {
+    return routeError({
+      req, route: '/api/battles/[id]/join', code: 'db_error', status: 500, error: updErr,
+    })
+  }
 
   // Verify we were the one who claimed it (someone else may have raced us).
   const { data: fresh } = await db.from('battles').select('player_b').eq('id', id).single()

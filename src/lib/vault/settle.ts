@@ -16,6 +16,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { bracketFromLuna } from '@/lib/constants'
 import type { TransferRow } from '@/lib/database.types'
 import { itemsToUnlock, type ItemKey } from '@/lib/game/items'
+import { reportEvent, requestIdFor, safeErrorDetails } from '@/lib/report'
 import { getAccount, getChainTransaction, type RpcOptions } from './rpc'
 import { VAULT_NETWORK_ID } from './network'
 import { verifyClaim, type FailureReason } from './verify'
@@ -97,7 +98,16 @@ export async function pollAndSettle(
     .select()
     .maybeSingle()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    reportEvent({
+      route: 'vault.settle.commit',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+    throw new Error('db_error')
+  }
   if (!updated) {
     // Someone else won the race. Their side effects are already running.
     return { transfer, changed: false, balanceLuna: null }
@@ -121,7 +131,15 @@ export async function pollAndSettle(
     .from('players')
     .update(playerUpdate)
     .eq('address', transfer.player_address)
-  if (playerErr) console.error('Failed to update player after settle:', playerErr.message)
+  if (playerErr) {
+    reportEvent({
+      route: 'vault.settle.player',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(playerErr),
+    })
+  }
 
   if (transfer.direction === 'out') {
     // Withdrawals revoke the streak badges immediately (existing rules).
@@ -131,7 +149,15 @@ export async function pollAndSettle(
       .eq('player_address', transfer.player_address)
       .in('badge_key', ['week_warrior', 'iron_saver'])
       .is('revoked_at', null)
-    if (badgeErr) console.error('Failed to revoke badges:', badgeErr.message)
+    if (badgeErr) {
+    reportEvent({
+      route: 'vault.settle.badges',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(badgeErr),
+    })
+  }
   }
 
   await unlockItems(db, transfer.player_address, newBracket)
@@ -207,5 +233,13 @@ async function unlockItems(
   const { error } = await db
     .from('player_items')
     .upsert(rows, { onConflict: 'player_address,item_key', ignoreDuplicates: true })
-  if (error) console.error('Failed to unlock items after settle:', error.message)
+  if (error) {
+    reportEvent({
+      route: 'vault.settle.items',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+  }
 }

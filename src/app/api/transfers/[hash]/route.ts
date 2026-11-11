@@ -11,6 +11,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
+import { routeError } from '@/lib/report'
 import type { TransferRow, VaultRow } from '@/lib/database.types'
 import { toTransferDto } from '@/lib/vault/dto'
 import type { Network } from '@/lib/nimiq'
@@ -40,7 +41,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ hash: st
     .maybeSingle()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/transfers/[hash]', code: 'db_error', status: 500, error,
+    })
   }
   if (!row) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -61,8 +64,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ hash: st
     })
   } catch (err) {
     if (err instanceof RpcError) {
-      return NextResponse.json({ error: 'rpc_unreachable', reason: err.message }, { status: 503 })
+      return routeError({
+        req, route: '/api/transfers/[hash]', code: 'rpc_unreachable', status: 503, error: err,
+      })
     }
-    throw err
+    return routeError({
+      req, route: '/api/transfers/[hash]', code: 'db_error', status: 500, error: err,
+    })
   }
 }

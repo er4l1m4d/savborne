@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -28,7 +29,9 @@ export async function POST(req: Request) {
     .delete()
     .eq('player_address', address)
     .neq('status', 'matched')
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    return routeError({ req, route: '/api/queue/leave', code: 'db_error', status: 500, error })
+  }
 
   return NextResponse.json({ ok: true })
 }

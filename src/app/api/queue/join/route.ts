@@ -17,6 +17,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
 import { RANKED, BATTLE, type Bracket } from '@/lib/constants'
 import { utcDayOf } from '@/lib/game/time'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -82,7 +83,9 @@ export async function POST(req: Request) {
     status: 'waiting',
     battle_id: null,
   }, { onConflict: 'player_address' })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    return routeError({ req, route: '/api/queue/join', code: 'db_error', status: 500, error })
+  }
 
   return NextResponse.json({ ok: true, waiting: true }, { status: 201 })
 }

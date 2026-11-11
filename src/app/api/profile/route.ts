@@ -13,6 +13,7 @@ import { PLAYER_HEADER } from '@/lib/session'
 import type { Bracket } from '@/lib/constants'
 import type { BadgeKey } from '@/lib/game/badges'
 import { ownedItemKeys } from '@/lib/game/owned-items'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -36,7 +37,9 @@ export async function GET(req: Request) {
     ])
 
   if (playerErr) {
-    return NextResponse.json({ error: playerErr.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/profile', code: 'db_error', status: 500, error: playerErr,
+    })
   }
   if (!player) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 })

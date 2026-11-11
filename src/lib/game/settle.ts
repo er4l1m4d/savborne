@@ -21,6 +21,7 @@ import type { CompletedMission } from './missions'
 import { computeBadgeActions, type BadgeKey, type BadgeSnapshot } from './badges'
 import { utcDayOf } from './time'
 import { weeklyMissionXp } from './weekly-missions'
+import { reportEvent, requestIdFor, safeErrorDetails } from '@/lib/report'
 
 export type MissionAwardSummary = {
   key: string
@@ -129,7 +130,15 @@ export async function settleMissions(
       reset_at: m.isOnetime ? null : computeResetAt(m.key, now),
     }))
     const { error } = await db.from('player_missions').insert(rows)
-    if (error) console.error('settleMissions: player_missions insert failed:', error.message)
+    if (error) {
+    reportEvent({
+      route: 'game.settle.missions',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+  }
   }
 
   if (newXp !== player.xp) {
@@ -137,7 +146,15 @@ export async function settleMissions(
       .from('players')
       .update({ xp: newXp, level: newLevel })
       .eq('address', address)
-    if (error) console.error('settleMissions: player xp update failed:', error.message)
+    if (error) {
+    reportEvent({
+      route: 'game.settle.playerXp',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+  }
   }
 
   if (totalApplied > 0) {
@@ -161,7 +178,15 @@ export async function awardRawXp(
       .from('players')
       .update({ xp: newXp, level: newLevel })
       .eq('address', address)
-    if (error) console.error('awardRawXp: update failed:', error.message)
+    if (error) {
+    reportEvent({
+      route: 'game.settle.rawXp',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+  }
   }
   return { applied: amount, leveledUp: newLevel > player.level, newLevel, newXp }
 }
@@ -201,7 +226,15 @@ export async function settleBadges(
         badge_key: action.badge,
         awarded_at: now.toISOString(),
       })
-      if (error) console.error(`settleBadges: award ${action.badge} failed:`, error.message)
+      if (error) {
+    reportEvent({
+      route: 'game.settle.badgeAward',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+  }
     } else {
       const { error } = await db
         .from('player_badges')
@@ -209,7 +242,15 @@ export async function settleBadges(
         .eq('player_address', address)
         .eq('badge_key', action.badge)
         .is('revoked_at', null)
-      if (error) console.error(`settleBadges: revoke ${action.badge} failed:`, error.message)
+      if (error) {
+    reportEvent({
+      route: 'game.settle.badgeRevoke',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+  }
     }
   }
   return actions
@@ -230,13 +271,29 @@ async function upsertDailyXp(db: SupabaseClient, address: string, day: string, a
       .update({ xp_earned: cur.xp_earned + addXp })
       .eq('player_address', address)
       .eq('utc_date', day)
-    if (error) console.error('upsertDailyXp update failed:', error.message)
+    if (error) {
+    reportEvent({
+      route: 'game.settle.dailyXpUpdate',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+  }
     return
   }
   const { error } = await db
     .from('daily_xp')
     .insert({ player_address: address, utc_date: day, xp_earned: addXp })
-  if (error) console.error('upsertDailyXp insert failed:', error.message)
+  if (error) {
+    reportEvent({
+      route: 'game.settle.dailyXpInsert',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+  }
 }
 
 function computeResetAt(key: string, now: Date): string | null {

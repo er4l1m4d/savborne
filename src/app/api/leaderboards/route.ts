@@ -22,6 +22,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
 import { AI_ADDRESS } from '@/lib/game/battleServer'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -62,7 +63,11 @@ export async function GET(req: Request) {
           .neq('mode', 'ai')
       : Promise.resolve({ data: null }),
   ])
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    return routeError({
+      req, route: '/api/leaderboards', code: 'db_error', status: 500, error,
+    })
+  }
 
   let rows = (stats ?? []) as StatsRow[]
   if (friendsOnly) {

@@ -20,6 +20,7 @@ import { utcDayOf } from '@/lib/game/time'
 import { weeklyMissionXp } from '@/lib/game/weekly-missions'
 import { readDeleteProof } from '@/lib/delete-request'
 import { verifyDeleteSignature } from '@/lib/delete-verify'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -44,7 +45,9 @@ export async function GET(req: Request) {
     ])
 
   if (playerErr) {
-    return NextResponse.json({ error: playerErr.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/players/me', code: 'db_error', status: 500, error: playerErr,
+    })
   }
   if (!player) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 })
@@ -126,7 +129,9 @@ export async function DELETE(req: Request) {
     .maybeSingle()
 
   if (playerErr) {
-    return NextResponse.json({ error: playerErr.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/players/me', code: 'db_error', status: 500, error: playerErr,
+    })
   }
   // Nothing to delete. Stay idempotent and skip the destructive call.
   if (!player) {
@@ -138,8 +143,10 @@ export async function DELETE(req: Request) {
   let verified
   try {
     verified = await verifyDeleteSignature({ address, createdAt, proof: proof.proof })
-  } catch {
-    return NextResponse.json({ error: 'Could not verify the signature.' }, { status: 500 })
+  } catch (err) {
+    return routeError({
+      req, route: '/api/players/me', code: 'verification_failed', status: 500, error: err,
+    })
   }
   if (!verified.ok) {
     return NextResponse.json(
@@ -151,7 +158,9 @@ export async function DELETE(req: Request) {
   const { data, error } = await db.rpc('delete_player', { p_address: address })
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/players/me', code: 'db_error', status: 500, error,
+    })
   }
 
   return NextResponse.json(data)
@@ -188,7 +197,9 @@ export async function PATCH(req: Request) {
     .maybeSingle()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/players/me', code: 'db_error', status: 500, error,
+    })
   }
   if (!data) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 })

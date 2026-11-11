@@ -361,5 +361,5 @@ test('a failing RPC is a 500, not a silent success', async () => {
     deleteReq({ 'X-Player-Address': signer.address, ...deleteAuthHeaders(proof) }),
   )
   assert.equal(res.status, 500)
-  assert.deepEqual(await res.json(), { error: 'foreign key violation' })
+  assert.deepEqual(await res.json(), { error: 'db_error' })
 })

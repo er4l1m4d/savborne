@@ -372,6 +372,30 @@ test('a denied rate limit is 429 before any player, vault or chain read', async 
   assert.equal(net.calls.filter((c) => c.rpc === 'commit_check_in').length, 0)
 })
 
+test('a database failure is a stable db_error with no schema names in the body', async () => {
+  net = installFakeNet((c) => {
+    if (c.rpc === 'consume_rate_limit') {
+      return {
+        status: 500,
+        json: {
+          code: '42P01',
+          message: 'relation "api_rate_limits" does not exist',
+          details: 'column key',
+        },
+      }
+    }
+    return undefined
+  })
+
+  const res = await POST(await signedReq())
+  const text = await res.text()
+
+  assert.equal(res.status, 500)
+  assert.deepEqual(JSON.parse(text), { error: 'db_error' })
+  assert.doesNotMatch(text, /api_rate_limits|relation|column|does not exist/i)
+  assert.equal(net.to('players').length, 0)
+})
+
 test('an RPC outage is a 503 and writes no check-in', async () => {
   net = installFakeNet((c) => {
     if (gate(c)) return gate(c)

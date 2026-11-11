@@ -17,6 +17,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
 import { RANKED } from '@/lib/constants'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -33,7 +34,9 @@ export async function POST(req: Request) {
   // Attempt pairing (returns battle uuid or null).
   const { data: battleId, error: matchErr } = await db.rpc('match_me', { me_address: address })
   if (matchErr) {
-    return NextResponse.json({ error: matchErr.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/queue/poll', code: 'db_error', status: 500, error: matchErr,
+    })
   }
   if (battleId) {
     return NextResponse.json({ matched: true, battleId })
@@ -46,7 +49,9 @@ export async function POST(req: Request) {
     .select('status, battle_id, entered_at')
     .eq('player_address', address)
     .maybeSingle()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    return routeError({ req, route: '/api/queue/poll', code: 'db_error', status: 500, error })
+  }
   if (!row) return NextResponse.json({ matched: false, left: true })
   if (row.status === 'matched' && row.battle_id) {
     return NextResponse.json({ matched: true, battleId: row.battle_id })

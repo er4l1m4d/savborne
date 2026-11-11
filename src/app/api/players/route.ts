@@ -34,6 +34,7 @@ import { isPlausibleAddress } from '@/lib/vault/address'
 import { toVaultDto } from '@/lib/vault/dto'
 import { isNetwork } from '@/lib/vault/network'
 import type { PlayerRow, VaultRow } from '@/lib/database.types'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -128,7 +129,9 @@ export async function POST(req: Request) {
     if (error.message.includes('vault_exists')) {
       return NextResponse.json({ error: 'vault_exists' }, { status: 409 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/players', code: 'db_error', status: 500, error,
+    })
   }
 
   const result = data as CreateResult

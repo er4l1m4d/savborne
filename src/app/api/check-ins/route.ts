@@ -65,6 +65,7 @@ import { getAccount, RpcError } from '@/lib/vault/rpc'
 import { weeklyMissionXp } from '@/lib/game/weekly-missions'
 import { readCheckInProof } from '@/lib/checkin-request'
 import { verifyCheckInSignature } from '@/lib/checkin-verify'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -103,7 +104,9 @@ export async function POST(req: Request) {
     p_window_seconds: RATE_LIMIT.windowSeconds,
   })
   if (rateErr) {
-    return NextResponse.json({ error: rateErr.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/check-ins', code: 'db_error', status: 500, error: rateErr,
+    })
   }
   if (rate && rate.allowed === false) {
     const retryAfter = Number(rate.retryAfterSeconds ?? RATE_LIMIT.windowSeconds)
@@ -119,8 +122,10 @@ export async function POST(req: Request) {
   let verified
   try {
     verified = await verifyCheckInSignature({ address, proof: proof.proof })
-  } catch {
-    return NextResponse.json({ error: 'Could not verify the signature.' }, { status: 500 })
+  } catch (err) {
+    return routeError({
+      req, route: '/api/check-ins', code: 'verification_failed', status: 500, error: err,
+    })
   }
   if (!verified.ok) {
     return NextResponse.json(
@@ -136,7 +141,11 @@ export async function POST(req: Request) {
     .select('*')
     .eq('address', address)
     .maybeSingle()
-  if (playerErr) return NextResponse.json({ error: playerErr.message }, { status: 500 })
+  if (playerErr) {
+    return routeError({
+      req, route: '/api/check-ins', code: 'db_error', status: 500, error: playerErr,
+    })
+  }
   if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
 
   const { data: vault, error: vaultErr } = await db
@@ -144,7 +153,11 @@ export async function POST(req: Request) {
     .select('address, network')
     .eq('player_address', address)
     .maybeSingle()
-  if (vaultErr) return NextResponse.json({ error: vaultErr.message }, { status: 500 })
+  if (vaultErr) {
+    return routeError({
+      req, route: '/api/check-ins', code: 'db_error', status: 500, error: vaultErr,
+    })
+  }
   if (!vault) {
     // No vault, no trusted balance. Never fall back to a client-reported one.
     return NextResponse.json({ error: 'vault_required' }, { status: 409 })
@@ -171,12 +184,13 @@ export async function POST(req: Request) {
     account = await getAccount(vault.address, vault.network as Network)
   } catch (err) {
     if (err instanceof RpcError) {
-      return NextResponse.json(
-        { error: 'rpc_unreachable', reason: err.message },
-        { status: 503 },
-      )
+      return routeError({
+        req, route: '/api/check-ins', code: 'rpc_unreachable', status: 503, error: err,
+      })
     }
-    throw err
+    return routeError({
+      req, route: '/api/check-ins', code: 'db_error', status: 500, error: err,
+    })
   }
   const balanceLuna = account.balanceLuna
 
@@ -398,7 +412,9 @@ export async function POST(req: Request) {
     ),
   })
   if (commitErr) {
-    return NextResponse.json({ error: commitErr.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/check-ins', code: 'db_error', status: 500, error: commitErr,
+    })
   }
   if (!committed || committed.claimed === false) {
     // A concurrent request won the reading insert. Nothing was written by this

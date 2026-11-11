@@ -21,6 +21,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
+import { routeError } from '@/lib/report'
 import type { TransferRow, VaultRow } from '@/lib/database.types'
 import { toTransferDto } from '@/lib/vault/dto'
 import type { Network } from '@/lib/nimiq'
@@ -51,7 +52,7 @@ export async function GET(req: Request) {
     .limit(50)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return routeError({ req, route: '/api/transfers', code: 'db_error', status: 500, error })
   }
 
   const network = await vaultNetwork(db, address)
@@ -130,7 +131,9 @@ export async function POST(req: Request) {
 
   if (insert.error) {
     if (!isUniqueViolation(insert.error)) {
-      return NextResponse.json({ error: insert.error.message }, { status: 500 })
+      return routeError({
+        req, route: '/api/transfers', code: 'db_error', status: 500, error: insert.error,
+      })
     }
     const { data: existing } = await db
       .from('transfers')
@@ -159,7 +162,11 @@ export async function POST(req: Request) {
     transfer = outcome.transfer
     verified = outcome.changed && transfer.status === 'included'
   } catch (err) {
-    if (!(err instanceof RpcError)) throw err
+    if (!(err instanceof RpcError)) {
+      return routeError({
+        req, route: '/api/transfers', code: 'db_error', status: 500, error: err,
+      })
+    }
   }
 
   return NextResponse.json(

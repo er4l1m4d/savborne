@@ -19,6 +19,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { reportEvent, requestIdFor, safeErrorDetails } from '@/lib/report'
 import { BATTLE, XP_VALUES, eloDelta, type Bracket } from '../constants'
 import {
   aiChooseMove,
@@ -124,8 +125,14 @@ export async function startBattle(
     .select()
     .single()
   if (error || !battle) {
-    console.error('startBattle insert failed:', error?.message)
-    return { ok: false, code: 'unknown', error: error?.message ?? 'Insert failed' }
+    reportEvent({
+      route: 'battleServer.startBattle',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+    return { ok: false, code: 'unknown', error: 'db_error' }
   }
 
   return { ok: true, battleId: battle.id }
@@ -185,7 +192,16 @@ export async function loadBattle(
   now: Date,
 ): Promise<BattleView | { error: string; status: number }> {
   const { data: battle, error } = await db.from('battles').select('*').eq('id', battleId).maybeSingle()
-  if (error) return { error: error.message, status: 500 }
+  if (error) {
+    reportEvent({
+      route: 'battleServer.loadBattle',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+    return { error: 'db_error', status: 500 }
+  }
   if (!battle) return { error: 'Battle not found', status: 404 }
   const row = battle as BattleRow
   // Participant check. The challenged side of a still-pending friend battle
@@ -512,7 +528,15 @@ async function settleBattle(
         .from('players')
         .update({ rating: own + delta })
         .eq('address', address)
-      if (eloErr) console.error('settleBattle: elo update failed:', eloErr.message)
+      if (eloErr) {
+        reportEvent({
+          route: 'battleServer.settleBattle',
+          code: 'db_error',
+          status: 500,
+          requestId: requestIdFor(),
+          ...safeErrorDetails(eloErr),
+        })
+      }
     }
 
     // W/L/T record.

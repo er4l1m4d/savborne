@@ -18,6 +18,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { PLAYER_HEADER } from '@/lib/session'
+import { routeError } from '@/lib/report'
 import { isPlausibleAddress } from '@/lib/vault/address'
 import { toVaultDto } from '@/lib/vault/dto'
 import { isNetwork } from '@/lib/vault/network'
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
     .maybeSingle()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return routeError({ req, route: '/api/vaults', code: 'db_error', status: 500, error })
   }
   return NextResponse.json({ vault: data ? toVaultDto(data as VaultRow) : null })
 }
@@ -73,7 +74,9 @@ export async function POST(req: Request) {
 
   const existing = await db.from('vaults').select('address').eq('player_address', address).maybeSingle()
   if (existing.error) {
-    return NextResponse.json({ error: existing.error.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/vaults', code: 'db_error', status: 500, error: existing.error,
+    })
   }
   if (existing.data) {
     return NextResponse.json({ error: 'has_vault' }, { status: 409 })
@@ -96,7 +99,7 @@ export async function POST(req: Request) {
     if (error.code === '23505' || error.message.includes('duplicate key')) {
       return NextResponse.json({ error: 'vault_taken' }, { status: 409 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return routeError({ req, route: '/api/vaults', code: 'db_error', status: 500, error })
   }
 
   return NextResponse.json({ vault: toVaultDto(data as VaultRow) }, { status: 201 })
@@ -128,7 +131,7 @@ export async function PATCH(req: Request) {
     .maybeSingle()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return routeError({ req, route: '/api/vaults', code: 'db_error', status: 500, error })
   }
   if (data) {
     return NextResponse.json({ vault: toVaultDto(data as VaultRow) })
@@ -141,7 +144,9 @@ export async function PATCH(req: Request) {
     .eq('player_address', address)
     .maybeSingle()
   if (current.error) {
-    return NextResponse.json({ error: current.error.message }, { status: 500 })
+    return routeError({
+      req, route: '/api/vaults', code: 'db_error', status: 500, error: current.error,
+    })
   }
   if (!current.data) {
     return NextResponse.json({ error: 'no_vault' }, { status: 404 })
