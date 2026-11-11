@@ -6,7 +6,7 @@
 
 - [ ] CI is green on the release commit (tests, tsc, lint, build).
 - [ ] `supabase/FINAL-SCHEMA.sql` has been pasted into production and
-      `GET /api/health` reports `schemaVersion = 2026-11-11.1`.
+      `GET /api/health` reports `schemaVersion = 2026-11-11.4`.
 - [ ] The env vars below exist in Vercel for the Production environment.
 - [ ] `git status` is clean and no secret is staged.
 
@@ -37,7 +37,7 @@ or a chat.
 
 ```bash
 curl -sS https://savborne.vercel.app/api/health -w "\n%{http_code}\n"
-# 200, ok:true, schemaVersion 2026-11-11.1, all three checks true
+# 200, ok:true, schemaVersion 2026-11-11.4, all six checks true
 
 NOW=$(date +%s%3N); PK=$(openssl rand -hex 32); SIG=$(openssl rand -hex 64)
 curl -sS -X POST https://savborne.vercel.app/api/check-ins \

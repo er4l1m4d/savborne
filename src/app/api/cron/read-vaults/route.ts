@@ -86,6 +86,10 @@ export async function GET(req: Request) {
   const db = supabaseAdmin()
   const recordedAt = new Date().toISOString()
 
+  // Expired sessions have no further use; removing them keeps the per-request
+  // liveness check cheap.
+  await db.from('player_sessions').delete().lt('expires_at', recordedAt)
+
   let processed = 0
   let recorded = 0
   let failed = 0

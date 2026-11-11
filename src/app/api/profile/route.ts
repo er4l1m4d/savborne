@@ -20,7 +20,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
   const limited = await rateLimitOrError({
@@ -72,6 +72,7 @@ export async function GET(req: Request) {
       wins: player.wins,
       losses: player.losses,
       ties: player.ties,
+      showStats: player.show_stats !== false,
     },
     ownedItems: ownedItemKeys(
       (items ?? []).map((r) => r.item_key),

@@ -39,7 +39,7 @@ const TRANSFER_COLUMNS =
   'id, player_address, vault_address, direction, amount_luna, fee_luna, tx_hash, status, block_height, failure_reason, created_at, confirmed_at'
 
 export async function GET(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
 
@@ -62,7 +62,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
 

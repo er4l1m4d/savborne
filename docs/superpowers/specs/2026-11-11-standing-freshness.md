@@ -1,7 +1,7 @@
 # Spec - standing freshness (daily readings vs the claimed ritual)
 
 **Date:** 2026-11-11
-**Status:** implemented; streak semantics chosen as recommended, pending human sign-off
+**Status:** implemented and decided: the streak counts claimed days.
 **Closes:** backlog gaps 1-7, 16-20 for day-level changes.
 
 ## Decision
@@ -20,9 +20,8 @@
 - A forgotten claim breaks the streak even though the cron recorded the
   balance. That is the point of the ritual: showing up is the game.
 
-This is the recommended option from the backlog. Changing it (for example,
-letting cron readings count for the streak) is a product decision and a
-schema/route change; it is explicitly not silent.
+This is the final product rule. A cron reading keeps standing fresh but never
+performs the ritual; only a claim advances the streak or ranked count.
 
 ## Daily flow
 
@@ -47,13 +46,13 @@ schema/route change; it is explicitly not silent.
    - `commit_check_in` wraps the reading, player patch, XP, missions, items and
      badges in one transaction and sets `claimed_at` exactly once.
 
-3. **Ranked queue join** reads the vault balance from chain (60s cache) and
-   derives the bracket at join time. `match_me` still re-checks the stored
-   bracket at match time.
+3. **Ranked queue join** reads the vault balance from chain on every join and
+   derives the bracket there. `match_me` still re-checks the stored bracket at
+   match time.
 
 4. **Leaderboard** derives each row's bracket from that player's latest reading
-   (SQL) and caches the aggregate for at most 60s. It no longer trusts
-   `players.bracket`.
+   (SQL) with no cache, so a claim or snapshot is visible immediately. It no
+   longer trusts `players.bracket`.
 
 ## Known limits
 

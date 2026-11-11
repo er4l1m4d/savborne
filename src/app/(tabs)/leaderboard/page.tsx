@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { authHeaders } from '@/lib/session'
+import { apiFetch } from '@/lib/client-session'
 import { BRACKETS, type Bracket } from '@/lib/constants'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
@@ -37,14 +37,15 @@ import {
 type RankRow = {
   rank: number
   displayName: string
-  level: number
+  level: number | null
   bracket: string | null
-  score: number
-  wins: number
+  score: number | null
+  wins: number | null
   amountScore: number | null
   consistencyScore: number | null
-  streak: number
+  streak: number | null
   isMe: boolean
+  statsHidden: boolean
   verifiedSaver: boolean
 }
 
@@ -73,9 +74,8 @@ export default function LeaderboardPage() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `/api/leaderboards?board=${board}&friends=${friends ? 1 : 0}`,
-          { headers: authHeaders() },
         )
         if (res.status === 401) {
           router.replace('/setup')
@@ -229,20 +229,24 @@ function RankRowView({
         </span>
       }
       trailing={
-        <span className="flex shrink-0 items-center gap-3">
-          <span className="sv-caption w-[52px] shrink-0 whitespace-nowrap font-bold text-fg-muted">
-            {bracket ?? '—'}
-            {!bracket && <span className="sr-only">No bracket yet</span>}
+        row.statsHidden ? (
+          <span className="sv-caption shrink-0 text-fg-faint">Private</span>
+        ) : (
+          <span className="flex shrink-0 items-center gap-3">
+            <span className="sv-caption w-[52px] shrink-0 whitespace-nowrap font-bold text-fg-muted">
+              {bracket ?? '—'}
+              {!bracket && <span className="sr-only">No bracket yet</span>}
+            </span>
+            <span
+              className={`num shrink-0 text-right text-[14px] font-bold ${
+                board === 'ranked' ? 'w-12' : 'w-14'
+              }`}
+            >
+              <span className="sr-only">Score </span>
+              {row.score ?? '—'}
+            </span>
           </span>
-          <span
-            className={`num shrink-0 text-right text-[14px] font-bold ${
-              board === 'ranked' ? 'w-12' : 'w-14'
-            }`}
-          >
-            <span className="sr-only">Score </span>
-            {row.score}
-          </span>
-        </span>
+        )
       }
     >
       <span className="flex min-w-0 items-center gap-2">

@@ -56,7 +56,9 @@ create table if not exists players (
   shields                 int not null default 1,
   shields_earned          int not null default 0,
   privacy_consent_at      timestamptz,
-  privacy_notice_version  text
+  privacy_notice_version  text,
+  -- Opt-out for level/bracket/score on other players' leaderboards.
+  show_stats              boolean not null default true
 );
 
 create table if not exists check_ins (
@@ -199,7 +201,7 @@ create table if not exists schema_meta (
 );
 
 insert into schema_meta (id, version)
-values ('singleton', '2026-11-11.1')
+values ('singleton', '2026-11-11.4')
 on conflict (id) do update
   set version = excluded.version, applied_at = now();
 
@@ -209,6 +211,21 @@ create table if not exists cron_state (
   cursor     text,
   updated_at timestamptz not null default now()
 );
+
+-- One row per issued 12-hour player session. The token carries the row id, so
+-- a lost/stolen device can be revoked before the token expires. No FK to
+-- players: onboarding needs a session before the player row exists.
+create table if not exists player_sessions (
+  id             uuid primary key,
+  player_address text not null,
+  created_at     timestamptz not null default now(),
+  expires_at     timestamptz not null,
+  revoked_at     timestamptz,
+  last_seen_at   timestamptz
+);
+
+create index if not exists player_sessions_player_idx
+  on player_sessions (player_address, expires_at desc);
 
 -- ─── Vault and savings loop (additive, spec §5) ─────────────────────────────
 -- The vault address is derived on the player's device from a 24-word phrase.
@@ -259,6 +276,7 @@ alter table players add column if not exists privacy_notice_version text;
 
 -- The chosen Hero/Heroine drawing. Existing rows default to Hero.
 alter table players add column if not exists avatar text not null default 'hero';
+alter table players add column if not exists show_stats boolean not null default true;
 do $$ begin
   alter table players add constraint players_avatar_check check (avatar in ('hero','heroine'));
 exception when duplicate_object then null; end $$;
@@ -406,6 +424,7 @@ alter table daily_xp        enable row level security;
 alter table api_rate_limits enable row level security;
 alter table schema_meta     enable row level security;
 alter table cron_state      enable row level security;
+alter table player_sessions enable row level security;
 alter table vaults          enable row level security;
 alter table transfers       enable row level security;
 
@@ -527,7 +546,7 @@ grant all privileges on all sequences in schema public to service_role;
 -- "balance growth between check-ins", net since joining). Normalisation to
 -- 0–100 happens in the API route (it needs the whole cohort's max).
 -- A function's return type cannot be changed by CREATE OR REPLACE, so the drop
--- is required for an already-applied database to gain the has_vault column.
+-- is required for an already-applied database to gain new columns.
 drop function if exists leaderboard_stats();
 
 create or replace function leaderboard_stats()
@@ -543,7 +562,8 @@ returns table (
   streak_current  int,
   streak_best     int,
   growth_luna     bigint,
-  has_vault       boolean
+  has_vault       boolean,
+  show_stats      boolean
 )
 language sql
 security definer
@@ -577,7 +597,8 @@ as $$
         limit 1),
       p.current_balance_luna
     ) as growth_luna,
-    (v.address is not null) as has_vault
+    (v.address is not null) as has_vault,
+    p.show_stats
   from players p
   left join vaults v on v.player_address = p.address
   where p.address <> 'ai-savborne'
@@ -687,6 +708,9 @@ begin
          );
 
   delete from battle_moves
+   where player_address = p_address;
+
+  delete from player_sessions
    where player_address = p_address;
 
   delete from battles
@@ -1011,7 +1035,18 @@ begin
       else steady_hand_started_at end
   where address = p_address;
 
-  if v_bracket is distinct from 'gold' then
+  if v_bracket = 'gold' then
+    -- Standing can restore the status as well as remove it. The badge and the
+    -- cosmetic item are separate rows; both are idempotent to re-award.
+    insert into player_badges (player_address, badge_key, awarded_at)
+    values (p_address, 'golden_crown', p_recorded_at)
+    on conflict (player_address, badge_key) where revoked_at is null
+      do nothing;
+
+    insert into player_items (player_address, item_key, unlocked_at)
+    values (p_address, 'golden_crown', p_recorded_at)
+    on conflict (player_address, item_key) do nothing;
+  else
     update player_badges
        set revoked_at = p_recorded_at
      where player_address = p_address
@@ -1040,6 +1075,142 @@ revoke execute on function record_reading(text, bigint, timestamptz, text)
   from anon, authenticated;
 grant execute on function record_reading(text, bigint, timestamptz, text)
   to service_role;
+
+-- ─── Player sessions (revocable) ─────────────────────────────────────────────
+-- The token is stateless HMAC but carries a session row id. This check is the
+-- one database read on an authenticated request; without the row (expired,
+-- revoked, or deleted account) the token is dead.
+create or replace function session_is_active(p_sid uuid, p_address text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists(
+    select 1 from player_sessions
+     where id = p_sid
+       and player_address = p_address
+       and revoked_at is null
+       and expires_at > now()
+  );
+$$;
+
+revoke all on function session_is_active(uuid, text) from public;
+revoke execute on function session_is_active(uuid, text) from anon, authenticated;
+grant execute on function session_is_active(uuid, text) to service_role;
+
+-- ─── Battle settlement transaction ──────────────────────────────────────────
+-- The battle row, both players' XP/level/rating/W-L-T, the daily XP ledger,
+-- mission credits and badge changes commit together. The caller computes the
+-- rewards in TypeScript (the rules live there) and passes one payload.
+-- The `status <> 'completed'` guard makes a retry after a lost response a
+-- no-op instead of a double award.
+create or replace function settle_battle(
+  p_battle_id uuid,
+  p_battle    jsonb,
+  p_players   jsonb
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_player  jsonb;
+  v_mission jsonb;
+  v_badge   jsonb;
+begin
+  update battles set
+    status = 'completed',
+    winner = nullif(p_battle->>'winner', ''),
+    player_a_hp = (p_battle->>'player_a_hp')::int,
+    player_b_hp = (p_battle->>'player_b_hp')::int,
+    current_turn = (p_battle->>'current_turn')::int,
+    turn_deadline = null,
+    completed_at = (p_battle->>'completed_at')::timestamptz
+  where id = p_battle_id and status <> 'completed';
+
+  if not found then
+    return jsonb_build_object('settled', false);
+  end if;
+
+  for v_player in
+    select * from jsonb_array_elements(coalesce(p_players, '[]'::jsonb))
+  loop
+    update players set
+      xp = coalesce((v_player->>'xp')::int, xp),
+      level = coalesce((v_player->>'level')::int, level),
+      rating = coalesce((v_player->>'rating')::int, rating),
+      wins = coalesce((v_player->>'wins')::int, wins),
+      losses = coalesce((v_player->>'losses')::int, losses),
+      ties = coalesce((v_player->>'ties')::int, ties)
+    where address = v_player->>'address';
+
+    if coalesce((v_player->>'daily_xp')::int, 0) > 0 then
+      insert into daily_xp (player_address, utc_date, xp_earned)
+      values (
+        v_player->>'address',
+        ((p_battle->>'completed_at')::timestamptz at time zone 'utc')::date,
+        (v_player->>'daily_xp')::int
+      )
+      on conflict (player_address, utc_date) do update
+        set xp_earned = daily_xp.xp_earned + excluded.xp_earned;
+    end if;
+
+    for v_mission in
+      select * from jsonb_array_elements(coalesce(v_player->'missions', '[]'::jsonb))
+    loop
+      insert into player_missions (
+        player_address, mission_key, completed_at, reset_at
+      ) values (
+        v_player->>'address',
+        v_mission->>'mission_key',
+        coalesce(
+          (v_mission->>'completed_at')::timestamptz,
+          (p_battle->>'completed_at')::timestamptz
+        ),
+        nullif(v_mission->>'reset_at', '')::timestamptz
+      );
+    end loop;
+
+    for v_badge in
+      select * from jsonb_array_elements(coalesce(v_player->'badges', '[]'::jsonb))
+    loop
+      if v_badge->>'action' = 'award' then
+        insert into player_badges (
+          player_address, badge_key, awarded_at, revoked_at
+        ) values (
+          v_player->>'address',
+          v_badge->>'badge_key',
+          coalesce(
+            (v_badge->>'at')::timestamptz,
+            (p_battle->>'completed_at')::timestamptz
+          ),
+          null
+        )
+        on conflict (player_address, badge_key) where revoked_at is null
+          do nothing;
+      elsif v_badge->>'action' = 'revoke' then
+        update player_badges
+          set revoked_at = coalesce(
+            (v_badge->>'at')::timestamptz,
+            (p_battle->>'completed_at')::timestamptz
+          )
+          where player_address = v_player->>'address'
+            and badge_key = v_badge->>'badge_key'
+            and revoked_at is null;
+      end if;
+    end loop;
+  end loop;
+
+  return jsonb_build_object('settled', true);
+end;
+$$;
+
+revoke all on function settle_battle(uuid, jsonb, jsonb) from public;
+revoke execute on function settle_battle(uuid, jsonb, jsonb)
+  from anon, authenticated;
+grant execute on function settle_battle(uuid, jsonb, jsonb) to service_role;
 
 -- ─── Schema version contract ────────────────────────────────────────────────
 -- The app calls schema_health() from GET /api/health. It reports the marker
@@ -1073,6 +1244,21 @@ as $$
       select 1 from pg_proc
        where proname = 'consume_rate_limit'
          and pronamespace = 'public'::regnamespace
+    ),
+    'recordReading', exists(
+      select 1 from pg_proc
+       where proname = 'record_reading'
+         and pronamespace = 'public'::regnamespace
+    ),
+    'settleBattle', exists(
+      select 1 from pg_proc
+       where proname = 'settle_battle'
+         and pronamespace = 'public'::regnamespace
+    ),
+    'sessionIsActive', exists(
+      select 1 from pg_proc
+       where proname = 'session_is_active'
+         and pronamespace = 'public'::regnamespace
     )
   );
 $$;
@@ -1088,7 +1274,7 @@ revoke all on function schema_health() from public;
 revoke execute on function schema_health() from anon, authenticated;
 grant execute on function schema_health() to service_role;
 
--- ─── Verification (optional — paste separately, expect 11|8|6|≥1|16|3|true) ─
+-- ─── Verification (optional — paste separately; counts depend on the row set) ─
 -- select (select count(*) from missions) as missions,
 --        (select count(*) from items) as items,
 --        (select count(*) from badges) as badges,

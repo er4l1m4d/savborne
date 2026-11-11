@@ -78,8 +78,8 @@ test('the leaderboard response adds you without changing rows or total', () => {
     ROUTE,
     /b\.rating - a\.rating \|\| b\.streak_current - a\.streak_current \|\| b\.wins - a\.wins/,
   )
-  assert.match(ROUTE, /amountScore: board === 'unranked' \? r\.losses : null/)
-  assert.match(ROUTE, /consistencyScore: board === 'unranked' \? r\.ties : null/)
+  assert.match(ROUTE, /amountScore: hidden \? null : board === 'unranked' \? r\.losses : null/)
+  assert.match(ROUTE, /consistencyScore: hidden \? null : board === 'unranked' \? r\.ties : null/)
 })
 
 const PAGE = readFileSync(

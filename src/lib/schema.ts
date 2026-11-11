@@ -7,11 +7,14 @@
  * check-in 500.
  */
 
-export const EXPECTED_SCHEMA_VERSION = '2026-11-11.1'
+export const EXPECTED_SCHEMA_VERSION = '2026-11-11.4'
 
 /** The shape `schema_health()` returns from Postgres. */
 export type SchemaHealthRow = {
   version: string | null
   commitCheckIn: boolean
   consumeRateLimit: boolean
+  recordReading: boolean
+  settleBattle: boolean
+  sessionIsActive: boolean
 }

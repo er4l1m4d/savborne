@@ -27,7 +27,7 @@ const TRANSFER_COLUMNS =
 export async function GET(req: Request, { params }: { params: Promise<{ hash: string }> }) {
   const { hash } = await params
 
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
 

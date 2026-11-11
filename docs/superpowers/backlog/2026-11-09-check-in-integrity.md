@@ -1,7 +1,7 @@
 # Check-in and standing integrity - backlog
 
 **Date:** 2026-11-09
-**Status:** release gate and trust steps closed in code (schema `2026-11-11.1`); the production paste and live wallet test remain
+**Status:** release gate and trust steps closed in code (schema `2026-11-11.4`); the production paste and live wallet test remain
 **Origin:** Home UI review discussion about automatic check-ins and players hiding withdrawals.
 **Release gate:** closed in code and covered by tests; production verification is tracked in the release checklist.
 
@@ -73,8 +73,8 @@ for it yet.
 | # | Gap | Status |
 |---:|---|---|
 | 1 | A withdrawal can be hidden by never checking in | **Closed** - daily cron `record_reading` refreshes standing. |
-| 2 | Leaderboard uses `players.bracket` | **Closed** - `leaderboard_stats()` reads the latest reading; API caches 60s. |
-| 3 | Ranked join uses a stale bracket | **Closed** - join reads the chain (60s cache); ranked counts claimed days. |
+| 2 | Leaderboard uses `players.bracket` | **Closed** - `leaderboard_stats()` reads the latest reading; no API cache. |
+| 3 | Ranked join uses a stale bracket | **Closed** - join reads the chain on every attempt; ranked counts claimed days. |
 | 4 | Week Warrior / Iron Saver revoked only at check-in | **Closed** - `record_reading` revokes on a lower reading. |
 | 5 | Golden Crown held after demotion | **Closed** - `record_reading` revokes below Gold; the next claim re-awards via `computeBadgeActions`. |
 | 6 | Withdrawal flags stale | **Closed** - `record_reading` updates them from the snapshot. |
@@ -82,10 +82,10 @@ for it yet.
 | 8 | `check_in_count` counted POSTs | **Closed** - counts `claimed_at is not null` days. |
 | 9 | No unique player/day | **Closed** - `check_ins_player_day_uidx`. |
 | 10 | Concurrent POSTs both award | **Closed** - unique constraint + one `commit_check_in` transaction; route test covers the race. |
-| 11 | Reading/rewards not atomic | **Closed** for check-in - `commit_check_in`. Battle settlement remains sequential (separate concern). |
+| 11 | Reading/rewards not atomic | **Closed** - `commit_check_in` for check-in and `settle_battle` for battle rewards. |
 | 12 | Retry after partial failure | **Closed** - the transaction leaves no orphan reading or partial reward. |
 | 13 | Disabled button was client-only | **Closed** - signed proof, session, rate limit. |
-| 14 | Address header authorised actions | **Closed** - every route requires a signed 12-hour session. |
+| 14 | Address header authorised actions | **Closed** - every route requires a signed, revocable 12-hour session. |
 | 15 | No check-in rate limit | **Closed** - plus session, players, vaults, queue, battle move, transfers, profile and leaderboards. |
 | 16 | Home and Vault disagree | **Day-level closed** - cron updates Home's stored balance. Between samples they can still differ; intraday is accepted risk #7. |
 | 17 | No scheduled reading | **Closed** - `GET /api/cron/read-vaults`, 00:00 UTC. |

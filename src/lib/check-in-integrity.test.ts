@@ -89,7 +89,10 @@ test('readings carry source, claim time and the bracket at read time', () => {
 
 test('a cron reading never unlocks ranked and never awards the ritual', () => {
   assert.match(SQL, /create or replace function record_reading\(/i)
-  const body = SQL.slice(SQL.indexOf('create or replace function record_reading('))
+  const body = SQL.slice(
+    SQL.indexOf('create or replace function record_reading('),
+    SQL.indexOf('create or replace function settle_battle('),
+  )
   assert.match(body, /values \(p_address, p_balance_luna, p_recorded_at, 'cron'/i)
   assert.doesNotMatch(body, /daily_xp/i)
   assert.doesNotMatch(body, /player_missions/i)
@@ -98,7 +101,10 @@ test('a cron reading never unlocks ranked and never awards the ritual', () => {
 })
 
 test('a snapshot can revoke the crown and withdrawal badges', () => {
-  const body = SQL.slice(SQL.indexOf('create or replace function record_reading('))
+  const body = SQL.slice(
+    SQL.indexOf('create or replace function record_reading('),
+    SQL.indexOf('create or replace function settle_battle('),
+  )
   assert.match(body, /badge_key = 'golden_crown'/i)
   assert.match(body, /badge_key in \('week_warrior', 'iron_saver'\)/i)
 })
@@ -129,4 +135,34 @@ test('record_reading is service-role only', () => {
     SQL,
     /grant execute on function record_reading\(text, bigint, timestamptz, text\)\s+to service_role/i,
   )
+})
+
+test('a snapshot restores Golden Crown when the bracket returns to Gold', () => {
+  const body = SQL.slice(
+    SQL.indexOf('create or replace function record_reading('),
+    SQL.indexOf('create or replace function settle_battle('),
+  )
+  assert.match(body, /if v_bracket = 'gold' then/i)
+  assert.match(body, /insert into player_badges[\s\S]*?'golden_crown'/i)
+  assert.match(body, /insert into player_items[\s\S]*?'golden_crown'/i)
+})
+
+test('battle settlement is one guarded transaction with a retry no-op', () => {
+  assert.match(SQL, /create or replace function settle_battle\(/i)
+  const body = SQL.slice(SQL.indexOf('create or replace function settle_battle('))
+  assert.match(body, /update battles set[\s\S]*?status = 'completed'/i)
+  assert.match(body, /where id = p_battle_id and status <> 'completed'/i)
+  assert.match(body, /return jsonb_build_object\('settled', false\)/i)
+  assert.match(body, /update players set/i)
+  assert.match(body, /insert into daily_xp/i)
+  assert.match(body, /insert into player_missions/i)
+  assert.match(body, /insert into player_badges/i)
+  assert.match(SQL, /grant execute on function settle_battle\(uuid, jsonb, jsonb\) to service_role/i)
+})
+
+test('the leaderboard can hide a player\'s stats without hiding their name', () => {
+  assert.match(SQL, /show_stats\s+boolean not null default true/i)
+  const body = SQL.slice(SQL.indexOf('create or replace function leaderboard_stats()'))
+  assert.match(body, /show_stats\s+boolean/i)
+  assert.match(body, /p\.show_stats/i)
 })

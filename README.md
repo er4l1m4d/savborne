@@ -10,7 +10,7 @@ balance you can see on chain into XP, streaks, items, missions, badges, and rank
 `nimiqpay://miniapp?url=https://savborne.vercel.app`
 
 [![Live](https://img.shields.io/badge/live-savborne.vercel.app-6FD0AE)](https://savborne.vercel.app)
-[![Tests](https://img.shields.io/badge/tests-528%20passing-6FD0AE)](https://github.com/er4l1m4d/savborne)
+[![Tests](https://img.shields.io/badge/tests-542%20passing-6FD0AE)](https://github.com/er4l1m4d/savborne)
 [![CI](https://github.com/er4l1m4d/savborne/actions/workflows/ci.yml/badge.svg)](https://github.com/er4l1m4d/savborne/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-C9C1A8)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000)](https://nextjs.org)
@@ -43,8 +43,9 @@ to level up.
 3. **Check in daily.** The server claims today's stored reading (or reads the
    vault over Nimiq RPC when no reading exists) and awards XP, streak progress,
    missions, items and badge changes exactly once. One claim per UTC day; a
-   same-day retry is idempotent. A daily cron also records standing, so a
-   withdrawal is visible without waiting for the player to check in.
+   same-day retry is idempotent. The streak counts claimed days; a daily cron
+   also records standing, so a withdrawal is visible without waiting for the
+   player to check in, but a snapshot never advances the ritual.
 4. **Grow.** Balance brackets (Entry / Bronze / Silver / Gold) unlock items and
    change your character. Missions reward consistency, not deposit size.
 5. **Battle.** Duel the AI, challenge a friend, or climb the ranked
@@ -91,8 +92,9 @@ cannot restore it.
 - Missions: daily and weekly repeating missions plus one-time goals.
 - Battles: AI duels, friend challenges, a ranked queue with rating, and a
   five-turn arena with items and special moves.
-- Leaderboards: ranked and savings boards, plus a friends view. Only display
-  names are public - never addresses or balances.
+- Leaderboards: ranked and savings boards, plus a friends view. Display names
+  are always shown; level, bracket and score are visible by default and can be
+  hidden in Settings. Addresses and balances are never public.
 - Profile: character choice, badges, check-in record, and settings.
 - Account deletion with a signed proof, plus privacy notice and consent
   capture during onboarding.
@@ -104,8 +106,9 @@ cannot restore it.
 - **No custody.** The server never has a key that can move NIM. There is no
   withdrawal endpoint that takes an amount from the client.
 - **Signed identity.** `POST /api/session` exchanges a wallet signature for a
-  12-hour HMAC token; every authenticated route, reads included, requires it.
-  A bare `X-Player-Address` is never authority.
+  12-hour HMAC token backed by a revocable `player_sessions` row; every
+  authenticated route, reads included, checks it. A bare
+  `X-Player-Address` is never authority. Disconnect revokes every session.
 - **Signed actions.** Check-in and delete additionally require their own wallet
   proofs, bound to the address, the action, and a timestamp. Missing, stale, or
   wrong-signer proofs are rejected before any table or chain read.
@@ -169,7 +172,7 @@ and RPCs.
 | `SENTRY_DSN` | optional | Only if a reporter is explicitly approved |
 
 `GET /api/health` is the readiness probe: 200 only when the database is
-reachable, its `schema_meta` version matches the build, and both check-in RPCs
+reachable, its `schema_meta` version matches the build, and the required RPCs
 exist. It exposes no player data and needs no secret.
 
 ### Testing inside Nimiq Pay
@@ -191,7 +194,7 @@ Then open the URL in Nimiq Pay or use
 ## Quality
 
 ```bash
-npm test              # 528 tests, 0 failures
+npm test              # 542 tests, 0 failures
 npx tsc --noEmit      # clean
 npm run lint          # 0 errors, 0 warnings
 npm run build         # production build

@@ -18,6 +18,7 @@ import type { BattleMove } from '@/lib/game/battle'
 import type { ItemKey } from '@/lib/game/items'
 import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 import { rateLimitOrError } from '@/lib/rate-limit'
+import { routeError } from '@/lib/report'
 
 const VALID_MOVES = new Set(['attack', 'defend', 'special', 'item'])
 
@@ -25,7 +26,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
   const limited = await rateLimitOrError({
@@ -55,7 +56,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   const db = supabaseAdmin()
-  const result = await submitMove(db, id, address, body.move as BattleMove, itemKey, new Date())
+  let result: Awaited<ReturnType<typeof submitMove>>
+  try {
+    result = await submitMove(db, id, address, body.move as BattleMove, itemKey, new Date())
+  } catch (error) {
+    return routeError({
+      req, route: '/api/battles/[id]/move', code: 'db_error', status: 500, error,
+    })
+  }
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status })
   }

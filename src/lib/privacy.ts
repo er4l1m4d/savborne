@@ -39,7 +39,7 @@ export const PRIVACY_CARDS: PrivacyCard[] = [
     key: 'public',
     title: "What's public",
     tone: 'muted',
-    body: 'Your display name, level, bracket and leaderboard score are visible to other players. Your wallet address, vault address and balance are never shown on any public or in-app leaderboard.',
+    body: 'Your display name, level, bracket and leaderboard score are visible to other players by default. You can hide your stats in Settings; your name and rank still appear. Your wallet address, vault address and balance are never shown on any public or in-app leaderboard.',
   },
   {
     key: 'stored',

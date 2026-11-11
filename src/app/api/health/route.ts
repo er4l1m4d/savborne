@@ -33,6 +33,9 @@ type HealthBody = {
     db: boolean
     checkInRpc: boolean
     rateLimitRpc: boolean
+    recordReadingRpc: boolean
+    settleBattleRpc: boolean
+    sessionRpc: boolean
   }
 }
 
@@ -41,6 +44,9 @@ export async function GET() {
     db: false,
     checkInRpc: false,
     rateLimitRpc: false,
+    recordReadingRpc: false,
+    settleBattleRpc: false,
+    sessionRpc: false,
   }
   let schemaVersion: string | null = null
 
@@ -59,6 +65,9 @@ export async function GET() {
       schemaVersion = typeof row.version === 'string' ? row.version : null
       checks.checkInRpc = row.commitCheckIn === true
       checks.rateLimitRpc = row.consumeRateLimit === true
+      checks.recordReadingRpc = row.recordReading === true
+      checks.settleBattleRpc = row.settleBattle === true
+      checks.sessionRpc = row.sessionIsActive === true
     }
   } catch {
     // Missing env or an unreachable host: keep every check false. The error is
@@ -69,6 +78,9 @@ export async function GET() {
     checks.db &&
     checks.checkInRpc &&
     checks.rateLimitRpc &&
+    checks.recordReadingRpc &&
+    checks.settleBattleRpc &&
+    checks.sessionRpc &&
     schemaVersion === EXPECTED_SCHEMA_VERSION
 
   const body: HealthBody = {

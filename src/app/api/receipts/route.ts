@@ -35,7 +35,7 @@ const SWEEP_MIN_AGE_MS = 10_000
 const TIMELINE_LIMIT = 200
 
 export async function GET(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
 

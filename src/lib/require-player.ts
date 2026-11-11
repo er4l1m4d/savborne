@@ -13,13 +13,16 @@
  */
 
 import { NextResponse } from 'next/server'
+import { supabaseAdmin } from './supabase'
 import { PLAYER_HEADER, SESSION_HEADER } from './session'
 import { verifySessionToken } from './session-token'
 import { sameAddress } from './vault/address'
 
-export type PlayerAuth = { address: string } | NextResponse
+export type PlayerAuth =
+  | { address: string; sessionId: string }
+  | NextResponse
 
-export function requirePlayer(req: Request): PlayerAuth {
+export async function requirePlayer(req: Request): Promise<PlayerAuth> {
   const token = req.headers.get(SESSION_HEADER)
   if (!token) {
     return NextResponse.json({ error: 'session_required' }, { status: 401 })
@@ -38,12 +41,27 @@ export function requirePlayer(req: Request): PlayerAuth {
     return NextResponse.json({ error }, { status: 401 })
   }
 
+  // The HMAC says the token was minted by us; the session row says it is still
+  // alive. Revoking the row kills a stolen token before its 12h expiry.
+  try {
+    const { data: active, error } = await supabaseAdmin().rpc('session_is_active', {
+      p_sid: result.sessionId,
+      p_address: result.address,
+    })
+    if (error) throw error
+    if (active !== true) {
+      return NextResponse.json({ error: 'session_revoked' }, { status: 401 })
+    }
+  } catch {
+    return NextResponse.json({ error: 'session_unavailable' }, { status: 503 })
+  }
+
   const claimed = req.headers.get(PLAYER_HEADER)
   if (claimed && !sameAddress(claimed, result.address)) {
     return NextResponse.json({ error: 'session_mismatch' }, { status: 401 })
   }
 
-  return { address: result.address }
+  return { address: result.address, sessionId: result.sessionId }
 }
 
 /** True when `requirePlayer` returned a response instead of an identity. */

@@ -6,8 +6,9 @@ database, a partially applied one, or one that already has the schema.
 
 It contains the tables, catalog seeds, indexes, RLS policies, grants and every
 RPC the app calls: `match_me`, `leaderboard_stats`,
-`create_player_with_vault`, `delete_player`, `consume_rate_limit` and
-`commit_check_in`.
+`create_player_with_vault`, `delete_player`, `consume_rate_limit`,
+`commit_check_in`, `record_reading`, `settle_battle`, `session_is_active`,
+`schema_version` and `schema_health`.
 
 The timestamped files in `supabase/migrations/` were removed on 2026-11-09.
 This project is solo-tested and has no `supabase db push` path (the pooler
@@ -67,6 +68,9 @@ select tablename, policyname from pg_policies where schemaname = 'public';
 -- Release-gate objects
 select exists(select 1 from pg_proc where proname = 'commit_check_in') as commit_check_in,
        exists(select 1 from pg_proc where proname = 'consume_rate_limit') as consume_rate_limit,
+       exists(select 1 from pg_proc where proname = 'record_reading') as record_reading,
+       exists(select 1 from pg_proc where proname = 'settle_battle') as settle_battle,
+       exists(select 1 from pg_proc where proname = 'session_is_active') as session_is_active,
        exists(select 1 from pg_indexes
                where schemaname = 'public'
                  and indexname = 'check_ins_player_day_uidx') as check_in_day_index;

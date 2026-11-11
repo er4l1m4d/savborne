@@ -22,19 +22,27 @@ import { loadBattle, AI_ADDRESS } from '@/lib/game/battleServer'
 import { modsForItems, specialAvailable, type BattleMove } from '@/lib/game/battle'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { requirePlayer, isAuthResponse } from '@/lib/require-player'
+import { routeError } from '@/lib/report'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
   const { id } = await ctx.params
   const db = supabaseAdmin()
   const now = new Date()
 
-  const loaded = await loadBattle(db, id, address, now)
+  let loaded: Awaited<ReturnType<typeof loadBattle>>
+  try {
+    loaded = await loadBattle(db, id, address, now)
+  } catch (error) {
+    return routeError({
+      req, route: '/api/battles/[id]', code: 'db_error', status: 500, error,
+    })
+  }
   if ('error' in loaded) return NextResponse.json({ error: loaded.error }, { status: loaded.status })
   const { battle, moves, opponentAddress } = loaded
 

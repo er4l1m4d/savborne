@@ -383,3 +383,51 @@ test('PATCH with a bare player header is rejected before any query', async () =>
   assert.deepEqual(await res.json(), { error: 'session_required' })
   assert.equal(net.calls.length, 0)
 })
+
+test('PATCH saves the leaderboard privacy flag', async () => {
+  net = installFakeNet((c) => {
+    if (c.resource === 'players' && c.method === 'PATCH') {
+      return rows({ avatar: 'hero', show_stats: false })
+    }
+    return undefined
+  })
+
+  const res = await PATCH(
+    authRequest('http://test/api/players/me', {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        'X-Player-Address': VICTIM,
+      },
+      body: JSON.stringify({ showStats: false }),
+    }),
+  )
+
+  assert.equal(res.status, 200)
+  assert.deepEqual(await res.json(), { avatar: 'hero', showStats: false })
+
+  const patch = net.to('players').find((c) => c.method === 'PATCH')
+  assert.ok(patch)
+  assert.deepEqual(patch.body, { show_stats: false })
+})
+
+test('PATCH rejects a non-boolean leaderboard flag', async () => {
+  net = installFakeNet(() => {
+    throw new Error('should not query')
+  })
+
+  const res = await PATCH(
+    authRequest('http://test/api/players/me', {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        'X-Player-Address': VICTIM,
+      },
+      body: JSON.stringify({ showStats: 'yes' }),
+    }),
+  )
+
+  assert.equal(res.status, 400)
+  assert.deepEqual(await res.json(), { error: 'showStats must be a boolean' })
+  assert.equal(net.calls.length, 0)
+})

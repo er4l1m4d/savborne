@@ -23,6 +23,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { AI_ADDRESS } from '@/lib/game/battleServer'
 import { routeError } from '@/lib/report'
 import { rateLimitOrError } from '@/lib/rate-limit'
+import { sameAddress } from '@/lib/vault/address'
 import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
@@ -42,28 +43,23 @@ type StatsRow = {
   growth_luna: number | string
   /** Derived in `leaderboard_stats()` from the vaults mapping, never a client flag. */
   has_vault: boolean
+  /** False means hide level/bracket/score from other players. */
+  show_stats: boolean
 }
 
 /**
- * The aggregate is cohort-wide, so it is cached for everyone for at most 60s.
- * The bracket inside each row comes from the latest reading in SQL, not from
- * `players.bracket`, so a cron snapshot or a claim is visible on the next
- * refresh even when the player never checked in.
+ * No cache: every read reflects the latest reading in SQL, not
+ * `players.bracket`, so a cron snapshot or a claim is visible immediately.
+ * The aggregate query is cohort-sized and cheap at this scale.
  */
-const STATS_TTL_MS = 60_000
-let statsCache: { at: number; rows: StatsRow[] } | null = null
-
 async function loadStats(db: ReturnType<typeof supabaseAdmin>): Promise<StatsRow[]> {
-  if (statsCache && Date.now() - statsCache.at < STATS_TTL_MS) return statsCache.rows
   const { data, error } = await db.rpc('leaderboard_stats')
   if (error) throw error
-  const rows = (data ?? []) as StatsRow[]
-  statsCache = { at: Date.now(), rows }
-  return rows
+  return (data ?? []) as StatsRow[]
 }
 
 export async function GET(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
   const limited = await rateLimitOrError({
@@ -125,20 +121,27 @@ export async function GET(req: Request) {
     rows.sort((a, b) => b.rating - a.rating || b.streak_current - a.streak_current || b.wins - a.wins)
   }
 
-  const toRow = (r: StatsRow, i: number) => ({
-    rank: i + 1,
-    displayName: r.display_name,
-    level: r.level,
-    bracket: r.bracket,
-    score: r.rating,
-    wins: r.wins,
-    amountScore: board === 'unranked' ? r.losses : null,
-    consistencyScore: board === 'unranked' ? r.ties : null,
-    streak: r.streak_current,
-    isMe: r.player_address === address,
-    // A badge, not a ranking input: `rows` is already sorted before this map.
-    verifiedSaver: r.has_vault === true,
-  })
+  const toRow = (r: StatsRow, i: number) => {
+    const isMe = sameAddress(r.player_address, address)
+    // The rank and display name stay public; the numbers are opt-out. The
+    // caller always sees their own row in full.
+    const hidden = r.show_stats === false && !isMe
+    return {
+      rank: i + 1,
+      displayName: r.display_name,
+      level: hidden ? null : r.level,
+      bracket: hidden ? null : r.bracket,
+      score: hidden ? null : r.rating,
+      wins: hidden ? null : r.wins,
+      amountScore: hidden ? null : board === 'unranked' ? r.losses : null,
+      consistencyScore: hidden ? null : board === 'unranked' ? r.ties : null,
+      streak: hidden ? null : r.streak_current,
+      isMe,
+      statsHidden: hidden,
+      // A badge, not a ranking input: `rows` is already sorted before this map.
+      verifiedSaver: r.has_vault === true,
+    }
+  }
 
   const all = rows.map(toRow)
   const top = all.slice(0, 50)

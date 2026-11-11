@@ -9,11 +9,12 @@
 import { test, before, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { installFakeNet, type FakeNet } from '@/test/fake-net'
-import { POST } from '@/app/api/session/route'
+import { installFakeNet, type FakeCall, type FakeNet, type FakeReply } from '@/test/fake-net'
+import { POST, DELETE } from '@/app/api/session/route'
 import { sessionMessage } from '@/lib/session-request'
-import { verifySessionToken } from '@/lib/session-token'
+import { issueSessionToken, verifySessionToken } from '@/lib/session-token'
 import { newWalletSigner, type TestSigner } from '@/test/wallet-signer'
+import { PLAYER_HEADER, SESSION_HEADER } from '@/lib/session'
 
 let signer: TestSigner
 let attacker: TestSigner
@@ -45,6 +46,14 @@ async function signedBody(
   return { address, signedAt, ...proof }
 }
 
+/** Session issuance writes the revocable row; that write is expected. */
+function install(handler: (call: FakeCall) => FakeReply | undefined): FakeNet {
+  return installFakeNet((call) => {
+    if (call.resource === 'player_sessions') return { json: {} }
+    return handler(call)
+  })
+}
+
 function req(payload: unknown): Request {
   return new Request('http://test/api/session', {
     method: 'POST',
@@ -54,7 +63,7 @@ function req(payload: unknown): Request {
 }
 
 test('a valid proof returns a token that verifies for that address', async () => {
-  net = installFakeNet(() => undefined)
+  net = install(() => undefined)
 
   const res = await POST(req(await signedBody()))
   assert.equal(res.status, 200)
@@ -70,11 +79,76 @@ test('a valid proof returns a token that verifies for that address', async () =>
     assert.equal(verified.address, signer.address)
     assert.equal(json.address, signer.address.replace(/[\s+]/g, '').toUpperCase())
     assert.equal(verified.expiresAt, json.expiresAt)
+
+    const inserted = net.to('player_sessions').find((c) => c.method === 'POST')
+    assert.ok(inserted)
+    const row = inserted.body as { id: string; player_address: string; expires_at: string }
+    assert.equal(row.id, verified.sessionId)
+    assert.equal(row.player_address, signer.address)
+    assert.equal(row.expires_at, new Date(json.expiresAt).toISOString())
   }
 })
 
+test('DELETE revokes only the current session by default', async () => {
+  net = install(() => undefined)
+  const { token, sessionId } = issueSessionToken(signer.address)
+
+  const res = await DELETE(
+    new Request('http://test/api/session', {
+      method: 'DELETE',
+      headers: { [SESSION_HEADER]: token, [PLAYER_HEADER]: signer.address },
+    }),
+  )
+
+  assert.equal(res.status, 200)
+  assert.deepEqual(await res.json(), { ok: true, revoked: 'current' })
+
+  const patch = net.to('player_sessions').find((c) => c.method === 'PATCH')
+  assert.ok(patch)
+  assert.equal(patch.query.get('id'), `eq.${sessionId}`)
+  assert.equal(patch.query.get('player_address'), `eq.${signer.address}`)
+})
+
+test('DELETE ?all=1 revokes every session without an id filter', async () => {
+  net = install(() => undefined)
+  const { token } = issueSessionToken(signer.address)
+
+  const res = await DELETE(
+    new Request('http://test/api/session?all=1', {
+      method: 'DELETE',
+      headers: { [SESSION_HEADER]: token, [PLAYER_HEADER]: signer.address },
+    }),
+  )
+
+  assert.equal(res.status, 200)
+  assert.deepEqual(await res.json(), { ok: true, revoked: 'all' })
+
+  const patch = net.to('player_sessions').find((c) => c.method === 'PATCH')
+  assert.ok(patch)
+  assert.equal(patch.query.get('id'), null)
+  assert.equal(patch.query.get('player_address'), `eq.${signer.address}`)
+})
+
+test('DELETE with a revoked session is 401 and writes nothing', async () => {
+  net = install((call) =>
+    call.rpc === 'session_is_active' ? { json: false } : undefined,
+  )
+  const { token } = issueSessionToken(signer.address)
+
+  const res = await DELETE(
+    new Request('http://test/api/session', {
+      method: 'DELETE',
+      headers: { [SESSION_HEADER]: token, [PLAYER_HEADER]: signer.address },
+    }),
+  )
+
+  assert.equal(res.status, 401)
+  assert.deepEqual(await res.json(), { error: 'session_revoked' })
+  assert.equal(net.to('player_sessions').filter((c) => c.method === 'PATCH').length, 0)
+})
+
 test('a proof signed by another wallet is wrong_signer, not consent', async () => {
-  net = installFakeNet(() => undefined)
+  net = install(() => undefined)
 
   const res = await POST(req(await signedBody(Date.now(), signer.address, attacker)))
   assert.equal(res.status, 401)
@@ -82,7 +156,7 @@ test('a proof signed by another wallet is wrong_signer, not consent', async () =
 })
 
 test('a stale proof is rejected before verification', async () => {
-  net = installFakeNet(() => undefined)
+  net = install(() => undefined)
 
   const res = await POST(req(await signedBody(Date.now() - 10 * 60_000)))
   assert.equal(res.status, 401)
@@ -90,7 +164,7 @@ test('a stale proof is rejected before verification', async () => {
 })
 
 test('a tampered signature is bad_signature', async () => {
-  net = installFakeNet(() => undefined)
+  net = install(() => undefined)
   const payload = await signedBody()
   const signature = payload.signature
   payload.signature = (signature[0] === 'a' ? 'b' : 'a') + signature.slice(1)
@@ -101,7 +175,7 @@ test('a tampered signature is bad_signature', async () => {
 })
 
 test('a malformed body is a 400 and a bad address is rejected', async () => {
-  net = installFakeNet(() => undefined)
+  net = install(() => undefined)
 
   const malformed = await POST(req(body()))
   assert.equal(malformed.status, 401)
@@ -113,7 +187,7 @@ test('a malformed body is a 400 and a bad address is rejected', async () => {
 })
 
 test('the endpoint is rate limited per IP before the proof', async () => {
-  net = installFakeNet((call) =>
+  net = install((call) =>
     call.rpc === 'consume_rate_limit'
       ? { json: { allowed: false, remaining: 0, retryAfterSeconds: 42 } }
       : undefined,

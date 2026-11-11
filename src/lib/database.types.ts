@@ -40,6 +40,7 @@ export type Database = {
           withdrawal_in_progress: boolean
           last_withdrawal_at: string | null
           steady_hand_started_at: string | null
+          show_stats?: boolean
         }
         Insert: Partial<Database['public']['Tables']['players']['Row']> & {
           address: string
@@ -55,6 +56,9 @@ export type Database = {
           balance_luna: number
           recorded_at: string
           utc_date: string
+          source?: 'player' | 'cron'
+          claimed_at?: string | null
+          bracket?: string | null
         }
         Insert: Omit<Database['public']['Tables']['check_ins']['Row'], 'id' | 'recorded_at' | 'utc_date'>
         Update: never

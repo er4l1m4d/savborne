@@ -8,10 +8,9 @@
  * drift apart.
  *
  * Everything here takes an already-created Supabase admin client, so the
- * caller controls the trust boundary. Writes are sequential service-role
- * operations; a mid-pipeline failure is logged and leaves the ledgers
- * eventually-consistent, which is acceptable at v1 scale (see ERRORS.md
- * note on transactional settlement).
+ * caller controls the trust boundary. Battle settlement uses planMissions and
+ * one SQL transaction; the direct writers remain for small start-of-battle
+ * credits and are logged if a write fails.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -41,19 +40,33 @@ export type SettleMissionsResult = {
 const DAILY_KEYS = new Set(['daily_check_in', 'quick_duel'])
 const WEEKLY_KEYS = new Set(['weekly_check_in', 'steady_saver', 'weekly_strategist'])
 
+export type PlannedMissionRow = {
+  mission_key: string
+  completed_at: string
+  reset_at: string | null
+}
+
+export type MissionPlan = {
+  rows: PlannedMissionRow[]
+  awarded: MissionAwardSummary[]
+  appliedTotal: number
+  leveledUp: boolean
+  newLevel: number
+  newXp: number
+}
+
 /**
- * Credit `missions` for `address`, enforcing the daily (25) and weekly (100)
- * mission XP caps, then persist xp/level and the per-day ledger. Missions
- * already credited (one-time ever, repeatable within their window) are
- * skipped. The caller passes `now` so the whole event shares one timestamp.
+ * Compute the mission credits for an event without writing anything. The
+ * battle settlement passes this plan to one SQL transaction; `settleMissions`
+ * writes it directly for the start-of-battle Quick Duel credit.
  */
-export async function settleMissions(
+export async function planMissions(
   db: SupabaseClient,
   address: string,
   player: { xp: number; level: number; wins: number },
   missions: CompletedMission[],
   now: Date,
-): Promise<SettleMissionsResult> {
+): Promise<MissionPlan> {
   const today = utcDayOf(now)
   const weekStart = new Date(now)
   {
@@ -119,49 +132,79 @@ export async function settleMissions(
     awarded.push({ key: m.key, xpApplied: r.applied, xpCapped: r.capped, onetime: m.isOnetime })
   }
 
-  const newXp = running.xp
-  const newLevel = levelFromXp(newXp)
+  const rows = toCredit.map((m) => ({
+    mission_key: m.key,
+    completed_at: now.toISOString(),
+    reset_at: m.isOnetime ? null : computeResetAt(m.key, now),
+  }))
 
-  if (toCredit.length > 0) {
-    const rows = toCredit.map((m) => ({
-      player_address: address,
-      mission_key: m.key,
-      completed_at: now.toISOString(),
-      reset_at: m.isOnetime ? null : computeResetAt(m.key, now),
-    }))
-    const { error } = await db.from('player_missions').insert(rows)
+  return {
+    rows,
+    awarded,
+    appliedTotal: totalApplied,
+    leveledUp,
+    newLevel: levelFromXp(running.xp),
+    newXp: running.xp,
+  }
+}
+
+/**
+ * Credit `missions` for `address`, enforcing the daily (25) and weekly (100)
+ * mission XP caps, then persist xp/level and the per-day ledger. Missions
+ * already credited (one-time ever, repeatable within their window) are
+ * skipped. The caller passes `now` so the whole event shares one timestamp.
+ */
+export async function settleMissions(
+  db: SupabaseClient,
+  address: string,
+  player: { xp: number; level: number; wins: number },
+  missions: CompletedMission[],
+  now: Date,
+): Promise<SettleMissionsResult> {
+  const plan = await planMissions(db, address, player, missions, now)
+
+  if (plan.rows.length > 0) {
+    const { error } = await db.from('player_missions').insert(
+      plan.rows.map((row) => ({ player_address: address, ...row })),
+    )
     if (error) {
-    reportEvent({
-      route: 'game.settle.missions',
-      code: 'db_error',
-      status: 500,
-      requestId: requestIdFor(),
-      ...safeErrorDetails(error),
-    })
-  }
+      reportEvent({
+        route: 'game.settle.missions',
+        code: 'db_error',
+        status: 500,
+        requestId: requestIdFor(),
+        ...safeErrorDetails(error),
+      })
+    }
   }
 
-  if (newXp !== player.xp) {
+  if (plan.newXp !== player.xp) {
     const { error } = await db
       .from('players')
-      .update({ xp: newXp, level: newLevel })
+      .update({ xp: plan.newXp, level: plan.newLevel })
       .eq('address', address)
     if (error) {
-    reportEvent({
-      route: 'game.settle.playerXp',
-      code: 'db_error',
-      status: 500,
-      requestId: requestIdFor(),
-      ...safeErrorDetails(error),
-    })
-  }
-  }
-
-  if (totalApplied > 0) {
-    await upsertDailyXp(db, address, today, totalApplied)
+      reportEvent({
+        route: 'game.settle.playerXp',
+        code: 'db_error',
+        status: 500,
+        requestId: requestIdFor(),
+        ...safeErrorDetails(error),
+      })
+    }
   }
 
-  return { appliedTotal: totalApplied, awarded, leveledUp, newLevel, newXp }
+  if (plan.appliedTotal > 0) {
+    await upsertDailyXp(db, address, utcDayOf(now), plan.appliedTotal)
+  }
+
+  return {
+    appliedTotal: plan.appliedTotal,
+    awarded: plan.awarded,
+    leveledUp: plan.leveledUp,
+    newLevel: plan.newLevel,
+    newXp: plan.newXp,
+  }
 }
 
 /** Award uncapped XP (battle outcomes). Independent of mission caps. */

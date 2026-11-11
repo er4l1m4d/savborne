@@ -13,7 +13,7 @@ const BATTLE = source('../app/api/battles/[id]/route.ts')
 
 test('players stores the consent timestamp and notice version', () => {
   assert.match(SQL, /privacy_consent_at\s+timestamptz,/)
-  assert.match(SQL, /privacy_notice_version\s+text\n\);/)
+  assert.match(SQL, /privacy_notice_version\s+text,/)
   assert.match(SQL, /add column if not exists privacy_consent_at\s+timestamptz/)
   assert.match(SQL, /add column if not exists privacy_notice_version text/)
 })
@@ -63,7 +63,8 @@ test('the route forwards a validated avatar', () => {
 test('the profile and battle readers return the avatar, and PATCH changes it', () => {
   assert.match(ME, /avatar: player\.avatar/)
   assert.match(ME, /export async function PATCH/)
-  assert.match(ME, /\.update\(\{ avatar: body\.avatar \}\)/)
+  assert.match(ME, /\.update\(patch\)/)
+  assert.match(ME, /patch\.avatar = body\.avatar/)
   assert.match(PROFILE, /avatar: player\.avatar/)
   assert.match(BATTLE, /avatar: viewerInfo\?\.avatar \?\? 'hero'/)
 })

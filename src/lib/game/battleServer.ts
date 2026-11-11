@@ -12,15 +12,15 @@
  * activates its loadout before turn 1 per spec 11.2 (no turn cost, because
  * it is "at the start of the battle").
  *
- * Settlement is a sequence of service-role writes rather than a single SQL
- * transaction. If a write fails mid-settlement the row logs and the next
- * poll re-drives it (settle is idempotent for battles already completed).
- * A Postgres function version is a Phase 6 hardening candidate.
+ * Settlement computes the rewards in TypeScript and applies them, together
+ * with the battle row, in one `settle_battle` transaction. A failed RPC
+ * leaves the battle active, so the next poll re-drives the final turn; a
+ * duplicate call is a no-op because the SQL guard only settles once.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { reportEvent, requestIdFor, safeErrorDetails } from '@/lib/report'
-import { BATTLE, XP_VALUES, eloDelta, type Bracket } from '../constants'
+import { BATTLE, XP_VALUES, eloDelta, levelFromXp, type Bracket } from '../constants'
 import {
   aiChooseMove,
   aiStartingItems,
@@ -33,7 +33,8 @@ import {
 } from './battle'
 import type { ItemKey } from './items'
 import { evaluateForBattle, type CompletedMission } from './missions'
-import { settleMissions, awardRawXp, settleBadges } from './settle'
+import { settleMissions, planMissions } from './settle'
+import { computeBadgeActions, type BadgeKey } from './badges'
 import { utcDayOf } from './time'
 import { weeklyHumanWins } from './weekly-missions'
 
@@ -420,19 +421,11 @@ async function resolveAndAdvance(
         : over.winner === 'a'
           ? battle.player_a
           : battle.player_b
-    await db
-      .from('battles')
-      .update({
-        player_a_hp: hpA,
-        player_b_hp: hpB,
-        status: 'completed',
-        winner: winnerAddress,
-        current_turn: turn,
-        turn_deadline: null,
-        completed_at: now.toISOString(),
-      })
-      .eq('id', battle.id)
-    await settleBattle(db, battle, winnerAddress, viewerAddress, now)
+    await settleBattle(db, battle, winnerAddress, viewerAddress, now, {
+      playerAHp: hpA,
+      playerBHp: hpB,
+      currentTurn: turn,
+    })
     return
   }
 
@@ -484,12 +477,13 @@ async function timeoutResolveTurn(db: SupabaseClient, battle: BattleRow, now: Da
 
 // ─── Settlement ─────────────────────────────────────────────────────────────
 
-async function settleBattle(
+export async function settleBattle(
   db: SupabaseClient,
   battle: BattleRow,
   winnerAddress: string | null,
   viewerAddress: string,
   now: Date,
+  final: { playerAHp: number; playerBHp: number; currentTurn: number },
 ) {
   const winnerSide: 'a' | 'b' | 'tie' =
     winnerAddress === null ? 'tie' : winnerAddress === battle.player_a ? 'a' : 'b'
@@ -506,6 +500,9 @@ async function settleBattle(
       .in('address', participants)
     for (const r of preRows ?? []) addressRow.set(r.address, { rating: r.rating })
   }
+
+  const payloads: Record<string, unknown>[] = []
+
   for (const address of participants) {
     const { data: p } = await db.from('players').select('*').eq('address', address).single()
     if (!p) continue
@@ -513,42 +510,12 @@ async function settleBattle(
     const outcome: 'win' | 'loss' | 'tie' =
       winnerSide === 'tie' ? 'tie' : winnerSide === perspective ? 'win' : 'loss'
 
-    // Battle XP is uncapped raw XP (spec 9.6).
+    // Battle XP is uncapped raw XP (spec 9.6). Mission XP is capped separately
+    // by planMissions, starting from the post-battle XP.
     const xp = battleXp(winnerSide, perspective)
-    await awardRawXp(db, address, { xp: p.xp, level: p.level }, xp)
+    const afterRawXp = p.xp + xp
 
-    // Elo rating change (ranked only).
-    if (battle.mode === 'ranked') {
-      const own = addressRow.get(address)?.rating ?? p.rating
-      const oppAddr = participants.find((x) => x !== address)
-      const opp = oppAddr ? (addressRow.get(oppAddr)?.rating ?? 1000) : 1000
-      const resultNum = outcome === 'win' ? 1 : outcome === 'tie' ? 0.5 : 0
-      const delta = eloDelta(own, opp, resultNum)
-      const { error: eloErr } = await db
-        .from('players')
-        .update({ rating: own + delta })
-        .eq('address', address)
-      if (eloErr) {
-        reportEvent({
-          route: 'battleServer.settleBattle',
-          code: 'db_error',
-          status: 500,
-          requestId: requestIdFor(),
-          ...safeErrorDetails(eloErr),
-        })
-      }
-    }
-
-    // W/L/T record.
-    const update =
-      outcome === 'win'
-        ? { wins: p.wins + 1 }
-        : outcome === 'loss'
-          ? { losses: p.losses + 1 }
-          : { ties: p.ties + 1 }
-    await db.from('players').update(update).eq('address', address)
-
-    // Battle missions.
+    // Battle mission inputs.
     const { data: ownMoves } = await db
       .from('battle_moves')
       .select('move_type')
@@ -562,36 +529,101 @@ async function settleBattle(
       .eq('player_address', address)
       .eq('utc_date', utcDayOf(now))
       .maybeSingle()
-    const snap = {
+    const missions: CompletedMission[] = evaluateForBattle({
       isHumanOpponent: battle.mode !== 'ai',
       outcome,
       usedDefend: moveSet.has('defend'),
       usedSpecial: moveSet.has('special'),
       weeklyWinsBefore,
       firstBattleToday: (todayRow?.count ?? 1) <= 1,
-    }
-    const missions: CompletedMission[] = evaluateForBattle(snap)
-    await settleMissions(
-      db,
-      address,
-      { xp: p.xp + xp, level: p.level, wins: p.wins + (outcome === 'win' ? 1 : 0) },
-      missions,
-      now,
-    )
-    // Badges: First Blade on a win, plus streak fields carried through.
-    await settleBadges(
+    })
+
+    const plan = await planMissions(
       db,
       address,
       {
+        xp: afterRawXp,
+        level: levelFromXp(afterRawXp),
+        wins: p.wins + (outcome === 'win' ? 1 : 0),
+      },
+      missions,
+      now,
+    )
+
+    // Elo rating change (ranked human-vs-human only).
+    let rating: number | undefined
+    if (battle.mode === 'ranked') {
+      const own = addressRow.get(address)?.rating ?? p.rating
+      const oppAddr = participants.find((x) => x !== address)
+      const opp = oppAddr ? (addressRow.get(oppAddr)?.rating ?? 1000) : 1000
+      const resultNum = outcome === 'win' ? 1 : outcome === 'tie' ? 0.5 : 0
+      rating = own + eloDelta(own, opp, resultNum)
+    }
+
+    // Badges: First Blade on a win, plus the existing status rules.
+    const { data: activeRows } = await db
+      .from('player_badges')
+      .select('badge_key')
+      .eq('player_address', address)
+      .is('revoked_at', null)
+    const alreadyActive = new Set<BadgeKey>(
+      (activeRows ?? []).map((r) => r.badge_key as BadgeKey),
+    )
+    const badgeActions = computeBadgeActions(
+      {
+        hasAnyCheckIn: p.check_in_count > 0,
         streakCurrent: p.streak_current,
         bracket: p.bracket as Bracket | null,
         withdrawalJustNow: false,
+        daysSinceLastWithdrawalReset: 0,
         hasBattleWin: outcome === 'win' || p.wins > 0,
-        hasAnyCheckIn: p.check_in_count > 0,
       },
-      now,
+      alreadyActive,
     )
+
+    payloads.push({
+      address,
+      xp: plan.newXp,
+      level: plan.newLevel,
+      rating,
+      wins: p.wins + (outcome === 'win' ? 1 : 0),
+      losses: p.losses + (outcome === 'loss' ? 1 : 0),
+      ties: p.ties + (outcome === 'tie' ? 1 : 0),
+      daily_xp: plan.appliedTotal,
+      missions: plan.rows,
+      badges: badgeActions.map((action) => ({
+        badge_key: action.badge,
+        action: action.kind,
+        at: now.toISOString(),
+      })),
+    })
   }
+
+  const { data: settled, error } = await db.rpc('settle_battle', {
+    p_battle_id: battle.id,
+    p_battle: {
+      winner: winnerAddress,
+      player_a_hp: final.playerAHp,
+      player_b_hp: final.playerBHp,
+      current_turn: final.currentTurn,
+      completed_at: now.toISOString(),
+    },
+    p_players: payloads,
+  })
+  if (error) {
+    reportEvent({
+      route: 'battleServer.settleBattle',
+      code: 'db_error',
+      status: 500,
+      requestId: requestIdFor(),
+      ...safeErrorDetails(error),
+    })
+    // Leave the battle active: the next poll re-drives the final turn.
+    throw new Error('db_error')
+  }
+  // A concurrent poll may have settled first. The guard in SQL made this a
+  // no-op; there is nothing else to write.
+  return settled
 }
 
 // ─── Item / move helpers ────────────────────────────────────────────────────

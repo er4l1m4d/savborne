@@ -28,6 +28,9 @@ function healthReply(overrides: Record<string, unknown> = {}): FakeReply {
       version: EXPECTED_SCHEMA_VERSION,
       commitCheckIn: true,
       consumeRateLimit: true,
+      recordReading: true,
+      settleBattle: true,
+      sessionIsActive: true,
       ...overrides,
     },
   }
@@ -46,7 +49,14 @@ test('a matching schema returns 200 and the full contract', async () => {
     ok: true,
     schemaVersion: EXPECTED_SCHEMA_VERSION,
     expectedSchemaVersion: EXPECTED_SCHEMA_VERSION,
-    checks: { db: true, checkInRpc: true, rateLimitRpc: true },
+    checks: {
+      db: true,
+      checkInRpc: true,
+      rateLimitRpc: true,
+      recordReadingRpc: true,
+      settleBattleRpc: true,
+      sessionRpc: true,
+    },
   })
 })
 
@@ -64,7 +74,14 @@ test('a stale schema version returns 503 but still reports the database is up', 
   assert.equal(body.ok, false)
   assert.equal(body.schemaVersion, '2026-10-01.1')
   assert.equal(body.expectedSchemaVersion, EXPECTED_SCHEMA_VERSION)
-  assert.deepEqual(body.checks, { db: true, checkInRpc: true, rateLimitRpc: true })
+  assert.deepEqual(body.checks, {
+    db: true,
+    checkInRpc: true,
+    rateLimitRpc: true,
+    recordReadingRpc: true,
+    settleBattleRpc: true,
+    sessionRpc: true,
+  })
 })
 
 test('a missing release-gate RPC returns 503 and names the missing check', async () => {
@@ -79,7 +96,14 @@ test('a missing release-gate RPC returns 503 and names the missing check', async
 
   assert.equal(res.status, 503)
   assert.equal(body.ok, false)
-  assert.deepEqual(body.checks, { db: true, checkInRpc: false, rateLimitRpc: true })
+  assert.deepEqual(body.checks, {
+    db: true,
+    checkInRpc: false,
+    rateLimitRpc: true,
+    recordReadingRpc: true,
+    settleBattleRpc: true,
+    sessionRpc: true,
+  })
 })
 
 test('a database without schema_health is reachable but unversioned: 503', async () => {
@@ -101,7 +125,14 @@ test('a database without schema_health is reachable but unversioned: 503', async
   assert.equal(res.status, 503)
   assert.equal(body.ok, false)
   assert.equal(body.schemaVersion, null)
-  assert.deepEqual(body.checks, { db: true, checkInRpc: false, rateLimitRpc: false })
+  assert.deepEqual(body.checks, {
+    db: true,
+    checkInRpc: false,
+    rateLimitRpc: false,
+    recordReadingRpc: false,
+    settleBattleRpc: false,
+    sessionRpc: false,
+  })
 })
 
 test('an unreachable database returns 503 with db:false and leaks no internals', async () => {
@@ -115,6 +146,29 @@ test('an unreachable database returns 503 with db:false and leaks no internals',
 
   assert.equal(res.status, 503)
   assert.equal(body.ok, false)
-  assert.deepEqual(body.checks, { db: false, checkInRpc: false, rateLimitRpc: false })
+  assert.deepEqual(body.checks, {
+    db: false,
+    checkInRpc: false,
+    rateLimitRpc: false,
+    recordReadingRpc: false,
+    settleBattleRpc: false,
+    sessionRpc: false,
+  })
   assert.doesNotMatch(text, /ECONNREFUSED|5432|secret-host|schema cache|public\./i)
+})
+
+
+test('a missing session RPC is a 503 even when the older checks pass', async () => {
+  net = installFakeNet((call) =>
+    call.rpc === 'schema_health'
+      ? healthReply({ sessionIsActive: false })
+      : undefined,
+  )
+
+  const res = await GET()
+  const body = await res.json()
+
+  assert.equal(res.status, 503)
+  assert.equal(body.ok, false)
+  assert.equal(body.checks.sessionRpc, false)
 })

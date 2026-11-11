@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { readSession, writeSession, authHeaders, type Session } from '@/lib/session'
+import { revokeSessionOnSignOut } from '@/lib/client-session'
 import { listAccounts, WalletError } from '@/lib/nimiq'
 import { playLevelUp } from '@/lib/level-up-sound'
 import { buzz } from '@/lib/haptics'
@@ -157,6 +158,7 @@ export function usePlayerSession(): UsePlayerSessionResult {
   }, [refresh])
 
   const signOut = useCallback(() => {
+    revokeSessionOnSignOut()
     writeSession(null)
     setSession(null)
     setPlayer(null)

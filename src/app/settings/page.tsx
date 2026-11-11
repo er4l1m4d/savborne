@@ -32,7 +32,7 @@ import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { LoadingState } from '@/components/ui/LoadingState'
-import { apiFetch } from '@/lib/client-session'
+import { apiFetch, revokeSessionOnSignOut } from '@/lib/client-session'
 
 const CONTACT_EMAIL = 'damilareogooluwade@outlook.com'
 
@@ -42,6 +42,7 @@ type Profile = {
     displayName: string
     avatar: Avatar
     bracket: Bracket | null
+    showStats?: boolean
   }
 }
 
@@ -58,6 +59,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('')
   const [avatar, setAvatar] = useState<Avatar>('hero')
   const [bracket, setBracket] = useState<Bracket | null>(null)
+  const [showStats, setShowStats] = useState(true)
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const [vault, setVault] = useState<SettingsVault | null>(null)
   const [vaultUnavailable, setVaultUnavailable] = useState(false)
@@ -89,6 +91,7 @@ export default function SettingsPage() {
       setDisplayName(profile.player.displayName)
       setAvatar(profile.player.avatar ?? 'hero')
       setBracket(profile.player.bracket ?? null)
+      setShowStats(profile.player.showStats !== false)
 
       if (vaultRes.ok) {
         const body = (await vaultRes.json()) as { vault: SettingsVault | null }
@@ -137,6 +140,26 @@ export default function SettingsPage() {
     }
   }
 
+  async function changeShowStats() {
+    if (busy) return
+    setBusy(true)
+    setAvatarError(null)
+    try {
+      const next = !showStats
+      const res = await apiFetch('/api/players/me', {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ showStats: next }),
+      })
+      if (!res.ok) throw new Error('Could not save the leaderboard setting.')
+      setShowStats(next)
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Could not save the setting.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   function showTourAgain() {
     try {
       window.localStorage.removeItem(TOUR_FLAG_KEY)
@@ -163,6 +186,7 @@ export default function SettingsPage() {
       // A blocked storage API must not trap the player on a disabled sheet.
     }
     try {
+      revokeSessionOnSignOut()
       writeSession(null)
     } catch {
       // Best-effort.
@@ -208,6 +232,24 @@ export default function SettingsPage() {
                     bracket={bracket}
                     disabled={busy}
                   />
+                </div>
+              </Row>
+              <Row divider>
+                <div className="flex flex-wrap items-center justify-between gap-3 py-2">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="sv-label text-fg-muted">Public stats</span>
+                    <span className="sv-caption text-fg-faint">
+                      Level, bracket and score on leaderboards
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="px-0 text-mint"
+                    onClick={() => void changeShowStats()}
+                    disabled={busy}
+                  >
+                    {showStats ? 'Shown' : 'Hidden'}
+                  </Button>
                 </div>
               </Row>
               <Row divider>

@@ -14,7 +14,7 @@
  * is always `bad_signature`, never a misleading `expired`.
  */
 
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
 
 /** 12 hours. Long enough for a play session; short enough to bound theft. */
 export const SESSION_TTL_MS = 12 * 60 * 60 * 1000
@@ -24,11 +24,15 @@ const MIN_SECRET_BYTES = 32
 type SessionPayload = {
   addr: string
   exp: number
+  /** Row id in player_sessions, so a token can be revoked before expiry. */
+  sid: string
 }
 
 export type VerifySessionResult =
-  | { ok: true; address: string; expiresAt: number }
+  | { ok: true; address: string; expiresAt: number; sessionId: string }
   | { ok: false; reason: 'malformed' | 'expired' | 'bad_signature' }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function sessionSecret(): Buffer {
   const value = process.env.SESSION_SECRET
@@ -50,15 +54,16 @@ function isBase64Url(value: string): boolean {
 export function issueSessionToken(
   address: string,
   now: number = Date.now(),
-): { token: string; expiresAt: number } {
+  sessionId: string = randomUUID(),
+): { token: string; expiresAt: number; sessionId: string } {
   const expiresAt = now + SESSION_TTL_MS
   // Keep the caller's formatting: the database stores the wallet's spaced
   // user-friendly address, and exact-match queries must keep working. The
   // signed message binds the normalised form; the HMAC binds this string.
-  const payload: SessionPayload = { addr: address.trim(), exp: expiresAt }
+  const payload: SessionPayload = { addr: address.trim(), exp: expiresAt, sid: sessionId }
   const encoded = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url')
   const token = `${encoded}.${signPayload(encoded)}`
-  return { token, expiresAt }
+  return { token, expiresAt, sessionId }
 }
 
 /** Verify shape, signature and expiry. Never throws for a bad token. */
@@ -90,14 +95,17 @@ export function verifySessionToken(
     return { ok: false, reason: 'malformed' }
   }
   if (!payload || typeof payload !== 'object') return { ok: false, reason: 'malformed' }
-  const { addr, exp } = payload as Partial<SessionPayload>
+  const { addr, exp, sid } = payload as Partial<SessionPayload>
   if (typeof addr !== 'string' || addr.length === 0) {
     return { ok: false, reason: 'malformed' }
   }
   if (typeof exp !== 'number' || !Number.isSafeInteger(exp)) {
     return { ok: false, reason: 'malformed' }
   }
+  if (typeof sid !== 'string' || !UUID_RE.test(sid)) {
+    return { ok: false, reason: 'malformed' }
+  }
   if (exp <= now) return { ok: false, reason: 'expired' }
 
-  return { ok: true, address: addr, expiresAt: exp }
+  return { ok: true, address: addr, expiresAt: exp, sessionId: sid }
 }

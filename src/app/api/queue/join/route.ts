@@ -27,26 +27,15 @@ export const dynamic = 'force-dynamic'
 
 /**
  * Ranked eligibility must reflect the vault's balance at the moment of truth,
- * not the last check-in. A 60s in-process cache bounds chain calls when a
- * client retries; a cache miss always reads the chain. A null bracket is
- * cached too (an empty vault stays empty for the same minute).
+ * not the last check-in and not a cached value. Every join reads the chain.
  */
-const BALANCE_TTL_MS = 60_000
-const bracketCache = new Map<string, { at: number; bracket: Bracket | null }>()
-
 async function freshBracket(vaultAddress: string, network: Network): Promise<Bracket | null> {
-  const key = `${network}:${vaultAddress}`
-  const cached = bracketCache.get(key)
-  if (cached && Date.now() - cached.at < BALANCE_TTL_MS) return cached.bracket
-
   const account = await getAccount(vaultAddress, network)
-  const bracket = bracketFromLuna(account.balanceLuna)
-  bracketCache.set(key, { at: Date.now(), bracket })
-  return bracket
+  return bracketFromLuna(account.balanceLuna)
 }
 
 export async function POST(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
   const limited = await rateLimitOrError({

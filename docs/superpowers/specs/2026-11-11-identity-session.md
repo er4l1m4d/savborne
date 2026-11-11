@@ -37,16 +37,18 @@ that proof (defense in depth); the session is added on top.
    needs.
 
 2. **Token.** The response is
-   `{ token, expiresAt }`. The token is stateless:
-   `base64url(JSON.stringify({ addr, exp })).base64url(HMAC-SHA256(payload, SESSION_SECRET))`.
-   `exp` is unix milliseconds, TTL **12 hours**. `SESSION_SECRET` is a new
-   server-only environment variable of at least 32 bytes. No token is stored in
-   the database, so there is nothing to revoke server-side; expiry is the bound.
+   `{ token, expiresAt }`. The token is
+   `base64url(JSON.stringify({ addr, exp, sid })).base64url(HMAC-SHA256(payload, SESSION_SECRET))`.
+   `exp` is unix milliseconds, TTL **12 hours**. `sid` names a row in
+   `player_sessions`; every authenticated request checks that the row is
+   unrevoked and unexpired. `SESSION_SECRET` is a new server-only environment
+   variable of at least 32 bytes.
 
 3. **Present.** Every authenticated request carries
    `X-Savborne-Session: <token>`. `X-Player-Address` may still be sent; if it is
    present it must match the token (`session_mismatch` otherwise). The token's
-   address is the authority.
+   address is the authority. A revoked/expired session row is
+   `session_revoked`.
 
 4. **Guard.** `requirePlayer(req)` returns `{ address }` or a 401
    `NextResponse` with a stable code:
@@ -57,6 +59,7 @@ that proof (defense in depth); the session is added on top.
    | `session_expired` | `exp <= now` | sign once, retry |
    | `session_invalid` | bad shape/signature | sign once, retry |
    | `session_mismatch` | token and player header disagree | sign out / reconnect |
+   | `session_revoked` | the session row was revoked or deleted | sign in again |
 
    Every authenticated route uses it, reads included: profile, transfers,
    receipts, leaderboards, missions, vaults, battles, queue, check-ins and
@@ -70,14 +73,15 @@ that proof (defense in depth); the session is added on top.
    dead end. `authHeaders()` stays synchronous for callers that already hold a
    token; `apiFetch()` owns the obtain/refresh/retry path.
 
-## Why not a database session table
+## Revocation
 
-Stateless HMAC keeps the smallest possible server surface: no new table, no
-cleanup job, no session id to leak, and the non-custodial model is untouched.
-The trade-off is that a stolen token is valid until `exp`; 12 hours is short
-enough for game state with no money-moving authority. If per-device revocation
-is needed later, add a `session_epoch` per player and include it in the
-payload - a schema change, deliberately out of scope here.
+`player_sessions` stores one row per issued token: `id`, `player_address`,
+`expires_at`, `revoked_at`. `session_is_active(sid, address)` is the one
+database read on an authenticated request. `DELETE /api/session` revokes the
+current row; `DELETE /api/session?all=1` revokes every row for the wallet and
+is what the client calls on disconnect, so a token copied from another device
+dies too. Account deletion removes the rows. Expired rows are cleaned by the
+daily cron.
 
 ## Rate limits
 

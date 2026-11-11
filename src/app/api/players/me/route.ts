@@ -27,7 +27,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
 
@@ -105,7 +105,7 @@ export async function GET(req: Request) {
  * rather than a 404, so a retry after a dropped response is safe.
  */
 export async function DELETE(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
 
@@ -172,18 +172,24 @@ export async function DELETE(req: Request) {
  * Response: 200 { avatar }, 400, 401, 404, 500.
  */
 export async function PATCH(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
 
-  let body: { avatar?: unknown }
+  let body: { avatar?: unknown; showStats?: unknown }
   try {
-    body = (await req.json()) as { avatar?: unknown }
+    body = (await req.json()) as { avatar?: unknown; showStats?: unknown }
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
-  if (!isAvatar(body.avatar)) {
+  if (body.avatar !== undefined && !isAvatar(body.avatar)) {
     return NextResponse.json({ error: 'Invalid avatar' }, { status: 400 })
+  }
+  if (body.showStats !== undefined && typeof body.showStats !== 'boolean') {
+    return NextResponse.json({ error: 'showStats must be a boolean' }, { status: 400 })
+  }
+  if (body.avatar === undefined && body.showStats === undefined) {
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
   }
 
   const limited = await rateLimitOrError({
@@ -195,12 +201,16 @@ export async function PATCH(req: Request) {
   })
   if (limited) return limited
 
+  const patch: { avatar?: unknown; show_stats?: boolean } = {}
+  if (body.avatar !== undefined) patch.avatar = body.avatar
+  if (body.showStats !== undefined) patch.show_stats = body.showStats
+
   const db = supabaseAdmin()
   const { data, error } = await db
     .from('players')
-    .update({ avatar: body.avatar })
+    .update(patch)
     .eq('address', address)
-    .select('avatar')
+    .select('avatar, show_stats')
     .maybeSingle()
 
   if (error) {
@@ -211,5 +221,5 @@ export async function PATCH(req: Request) {
   if (!data) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 })
   }
-  return NextResponse.json({ avatar: data.avatar })
+  return NextResponse.json({ avatar: data.avatar, showStats: data.show_stats })
 }

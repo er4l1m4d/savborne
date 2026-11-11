@@ -163,3 +163,25 @@ export async function apiFetch(
   res = await send()
   return res
 }
+
+
+/**
+ * Fire-and-forget revocation for a real sign-out. Revokes every session for
+ * the wallet, so a token copied from another device dies too. The request is
+ * sent before the caller clears local storage; `keepalive` lets it finish.
+ */
+export function revokeSessionOnSignOut(): void {
+  if (typeof window === 'undefined') return
+  const cached = readSessionToken()
+  if (!cached) return
+  void fetch('/api/session?all=1', {
+    method: 'DELETE',
+    headers: {
+      [PLAYER_HEADER]: cached.address,
+      [SESSION_HEADER]: cached.token,
+    },
+    keepalive: true,
+  }).catch(() => {
+    // Best effort: local sign-out must never block on the network.
+  })
+}

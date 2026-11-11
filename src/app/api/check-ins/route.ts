@@ -81,7 +81,7 @@ type CheckInRowLite = {
 }
 
 export async function POST(req: Request) {
-  const auth = requirePlayer(req)
+  const auth = await requirePlayer(req)
   if (isAuthResponse(auth)) return auth
   const address = auth.address
 

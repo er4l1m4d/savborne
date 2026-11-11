@@ -96,16 +96,32 @@ export function installFakeNet(handler: FakeHandler): FakeNet {
       wantsSingleObject:
         new Headers(init?.headers ?? {}).get('accept') === 'application/vnd.pgrst.object+json',
     }
-    calls.push(call)
-
-    const reply =
-      handler(call) ??
-      // Rate limiting is infrastructure: every route may call it, and only the
-      // tests that care about 429 provide an explicit reply. Everything else
-      // stays strict (an unmatched call still throws).
-      (call.rpc === 'consume_rate_limit'
-        ? { json: { allowed: true, remaining: 1, retryAfterSeconds: 0 } }
-        : undefined)
+    // Session liveness is checked on every authenticated request, including
+    // the "reject before any query" tests. Treat it as infrastructure: allow a
+    // handler to override the answer (revocation tests) but never record it as
+    // a business query and never let a strict handler's throw break it.
+    let reply
+    if (call.rpc === 'session_is_active') {
+      let override
+      try {
+        override = handler(call)
+      } catch {
+        override = undefined
+      }
+      // A catch-all handler often returns `rows()` for unknown calls. Only an
+      // explicit boolean is a real override; everything else means "active".
+      reply =
+        override && typeof override.json === 'boolean' ? override : { json: true }
+    } else {
+      calls.push(call)
+      reply =
+        handler(call) ??
+        // Rate limiting is infrastructure too: tests that care about 429
+        // provide an explicit reply; everything else stays strict.
+        (call.rpc === 'consume_rate_limit'
+          ? { json: { allowed: true, remaining: 1, retryAfterSeconds: 0 } }
+          : undefined)
+    }
     if (reply === undefined) {
       throw new Error(
         `Unmatched fake-network call: ${method} ${url.hostname}${url.pathname}` +

@@ -29,7 +29,7 @@ after(() => {
 
 test('a fresh token verifies to the normalised address and its expiry', () => {
   const now = 1_800_000_000_000
-  const { token, expiresAt } = issueSessionToken(ADDRESS, now)
+  const { token, expiresAt, sessionId } = issueSessionToken(ADDRESS, now)
 
   assert.equal(expiresAt, now + SESSION_TTL_MS)
   const result = verifySessionToken(token, now)
@@ -37,6 +37,8 @@ test('a fresh token verifies to the normalised address and its expiry', () => {
   if (result.ok) {
     assert.equal(result.address, ADDRESS)
     assert.equal(result.expiresAt, expiresAt)
+    assert.equal(result.sessionId, sessionId)
+    assert.match(sessionId, /^[0-9a-f-]{36}$/)
   }
 })
 
