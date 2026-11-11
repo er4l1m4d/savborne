@@ -5,6 +5,9 @@ agent sandbox and the SQL is never run from tooling.
 
 **Target schema version:** `2026-11-11.4`
 
+**Applied:** 2026-11-11. `schema_health()` returned
+`{"version":"2026-11-11.4","settleBattle":true,"commitCheckIn":true,"recordReading":true,"sessionIsActive":true,"consumeRateLimit":true}`.
+
 > **Revision 2026-11-11.4 (second paste).** After the first paste fixed
 > check-ins, the standing-freshness release added `check_ins.source`,
 > `check_ins.claimed_at`, `check_ins.bracket`, the `record_reading` RPC and the
