@@ -22,6 +22,7 @@ import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 const LOAD_ERROR = "Couldn't load receipts."
 
@@ -37,7 +38,7 @@ export default function ReceiptsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/receipts', { headers: authHeaders() })
+      const res = await apiFetch('/api/receipts', { headers: authHeaders() })
       if (res.status === 401) {
         router.replace('/setup')
         return
@@ -61,7 +62,7 @@ export default function ReceiptsPage() {
     setChecking(txHash)
     setCheckResult(null)
     try {
-      const res = await fetch(`/api/transfers/${txHash}`, { headers: authHeaders() })
+      const res = await apiFetch(`/api/transfers/${txHash}`, { headers: authHeaders() })
       const body = (await res.json()) as { transfer?: TransferItem }
       setCheckResult(
         body.transfer?.status === 'included'

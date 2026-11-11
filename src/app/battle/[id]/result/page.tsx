@@ -33,6 +33,7 @@ import { ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { Arena } from '@/components/battle/Arena'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 type ResultState = {
   battle: {
@@ -81,8 +82,8 @@ export default function BattleResultPage() {
     async function load() {
       try {
         const [battleRes, profileRes] = await Promise.all([
-          fetch(`/api/battles/${id}`, { headers: authHeaders() }),
-          fetch('/api/profile', { headers: authHeaders() }).catch(() => null),
+          apiFetch(`/api/battles/${id}`, { headers: authHeaders() }),
+          apiFetch('/api/profile', { headers: authHeaders() }).catch(() => null),
         ])
         if (cancelled) return
         if (battleRes.status === 403 || battleRes.status === 404) {

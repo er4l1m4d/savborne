@@ -16,11 +16,11 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import type { CheckInRow, TransferRow, VaultRow } from '@/lib/database.types'
 import type { Network } from '@/lib/nimiq'
 import { mergeTimeline, toSnapshotItem, toTransferItem, type TimelineItem } from '@/lib/vault/receipts'
 import { pollAndSettle } from '@/lib/vault/settle'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,10 +35,9 @@ const SWEEP_MIN_AGE_MS = 10_000
 const TIMELINE_LIMIT = 200
 
 export async function GET(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   const db = supabaseAdmin()
 

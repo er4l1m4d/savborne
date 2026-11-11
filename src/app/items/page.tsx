@@ -21,6 +21,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Banner } from '@/components/ui/Banner'
 import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 type ItemsData = {
   player: { bracket: Bracket | null }
@@ -39,7 +40,7 @@ export default function ItemsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/profile', { headers: authHeaders() })
+      const res = await apiFetch('/api/profile', { headers: authHeaders() })
       if (res.status === 401) {
         redirected = true
         router.replace('/setup')

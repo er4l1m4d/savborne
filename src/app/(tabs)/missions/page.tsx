@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { Meter } from '@/components/ui/Meter'
 import { earnedXp, xpCounter } from '@/lib/missions-ui'
+import { apiFetch } from '@/lib/client-session'
 
 type Mission = {
   key: string
@@ -61,7 +62,7 @@ export default function MissionsPage() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch('/api/missions', { headers: authHeaders() })
+        const res = await apiFetch('/api/missions', { headers: authHeaders() })
         if (res.status === 401) {
           router.replace('/setup')
           return

@@ -13,10 +13,11 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { submitMove } from '@/lib/game/battleServer'
 import type { BattleMove } from '@/lib/game/battle'
 import type { ItemKey } from '@/lib/game/items'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
+import { rateLimitOrError } from '@/lib/rate-limit'
 
 const VALID_MOVES = new Set(['attack', 'defend', 'special', 'item'])
 
@@ -24,10 +25,18 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
+  const limited = await rateLimitOrError({
+    req,
+    route: '/api/battles/[id]/move',
+    key: `battle-move:${address}`,
+    limit: 30,
+    windowSeconds: 60,
+  })
+  if (limited) return limited
+
   const { id } = await ctx.params
 
   let body: { move?: unknown; itemKey?: unknown }

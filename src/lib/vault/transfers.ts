@@ -14,6 +14,7 @@
 
 import type { Network } from '@/lib/nimiq'
 import { authHeaders, readSession } from '@/lib/session'
+import { apiFetch } from '@/lib/client-session'
 
 export type TransferView = {
   id: number
@@ -39,7 +40,7 @@ export async function submitTransfer(args: {
   amountLuna: number
   network: Network
 }): Promise<{ transfer: TransferView; verified: boolean }> {
-  const res = await fetch('/api/transfers', {
+  const res = await apiFetch('/api/transfers', {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(args),
@@ -63,7 +64,7 @@ export async function submitTransfer(args: {
 }
 
 export async function fetchTransfer(txHash: string): Promise<TransferView> {
-  const res = await fetch(`/api/transfers/${txHash}`, { headers: authHeaders() })
+  const res = await apiFetch(`/api/transfers/${txHash}`, { headers: authHeaders() })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     throw new Error(`Could not check the transfer (${res.status}): ${text}`)

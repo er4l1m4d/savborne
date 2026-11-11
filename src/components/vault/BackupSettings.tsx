@@ -30,6 +30,7 @@ import { CopyButton } from './CopyButton'
 import { Button } from '@/components/ui/Button'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Banner } from '@/components/ui/Banner'
+import { apiFetch } from '@/lib/client-session'
 
 type Phase = 'closed' | 'show' | 'change' | 'restore'
 
@@ -111,7 +112,7 @@ export function BackupSettings() {
       if (newPassphrase.length < 8) throw new Error('Choose a passphrase of at least 8 characters.')
 
       // 1. Ask the server which vault this player owns.
-      const res = await fetch('/api/vaults', { headers: authHeaders() })
+      const res = await apiFetch('/api/vaults', { headers: authHeaders() })
       if (!res.ok) throw new Error(`Could not check your vault (${res.status}).`)
       const body = (await res.json()) as { vault: VaultDto | null }
       if (!body.vault) throw new Error('Create a vault before restoring one.')

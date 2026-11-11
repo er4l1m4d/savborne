@@ -31,6 +31,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Banner } from '@/components/ui/Banner'
+import { apiFetch } from '@/lib/client-session'
 
 type Phase = 'checking' | 'unlock' | 'reveal' | 'quiz' | 'type-words' | 'review'
 
@@ -53,7 +54,7 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
     setPhase('checking')
     setError(null)
     try {
-      const res = await fetch('/api/vaults', { headers: authHeaders() })
+      const res = await apiFetch('/api/vaults', { headers: authHeaders() })
       if (res.status === 401) {
         router.replace('/setup')
         return
@@ -125,7 +126,7 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
     try {
       // The proof signs the account's creation time; the server checks it
       // against the stored row, so fetch the canonical value first.
-      const meRes = await fetch('/api/players/me', { headers: authHeaders() })
+      const meRes = await apiFetch('/api/players/me', { headers: authHeaders() })
       if (!meRes.ok) throw new Error(`Could not confirm your account (${meRes.status}).`)
       const me = (await meRes.json()) as { player?: { createdAt?: string } }
       const createdAt = me.player?.createdAt
@@ -137,7 +138,7 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
       const message = deleteMessage({ address, createdAt, signedAt })
       const proof = await signMessage(message)
 
-      const res = await fetch('/api/players/me', {
+      const res = await apiFetch('/api/players/me', {
         method: 'DELETE',
         headers: authHeaders(deleteAuthHeaders({ ...proof, signedAt })),
       })

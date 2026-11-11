@@ -17,6 +17,7 @@ import { test, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { installFakeNet, rows, type FakeNet } from '@/test/fake-net'
+import { authRequest } from '@/test/session'
 import { GET, POST, PATCH } from '@/app/api/vaults/route'
 
 const PLAYER = 'NQ81 C01N BASE 0000 0000 0000 0000 0000 0000'
@@ -36,7 +37,7 @@ let net: FakeNet
 afterEach(() => net?.restore())
 
 function req(body?: unknown, headers: Record<string, string> = {}): Request {
-  return new Request('http://test/api/vaults', {
+  return authRequest('http://test/api/vaults', {
     method: body === undefined ? 'GET' : 'POST',
     headers: { 'content-type': 'application/json', ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),

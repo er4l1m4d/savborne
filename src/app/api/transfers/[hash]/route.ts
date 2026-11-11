@@ -10,13 +10,13 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { routeError } from '@/lib/report'
 import type { TransferRow, VaultRow } from '@/lib/database.types'
 import { toTransferDto } from '@/lib/vault/dto'
 import type { Network } from '@/lib/nimiq'
 import { RpcError } from '@/lib/vault/rpc'
 import { pollAndSettle } from '@/lib/vault/settle'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -27,10 +27,9 @@ const TRANSFER_COLUMNS =
 export async function GET(req: Request, { params }: { params: Promise<{ hash: string }> }) {
   const { hash } = await params
 
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   const db = supabaseAdmin()
   const { data: row, error } = await db

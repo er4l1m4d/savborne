@@ -81,12 +81,41 @@ export function readWalletProof(
   now: number,
   maxAgeMs: number = WALLET_PROOF_MAX_AGE_MS,
 ): ReadWalletProofResult {
-  const publicKeyRaw = headers.get(names.publicKey)
-  const signatureRaw = headers.get(names.signature)
-  const signedAtRaw = headers.get(names.signedAt)
+  return readWalletProofFields(
+    {
+      publicKey: headers.get(names.publicKey),
+      signature: headers.get(names.signature),
+      signedAt: headers.get(names.signedAt),
+    },
+    now,
+    maxAgeMs,
+  )
+}
+
+/**
+ * Shape-check a proof that did not arrive as headers (the session endpoint
+ * receives it in a JSON body). Same rules, one implementation.
+ */
+export function readWalletProofFields(
+  fields: {
+    publicKey: unknown
+    signature: unknown
+    signedAt: unknown
+  },
+  now: number,
+  maxAgeMs: number = WALLET_PROOF_MAX_AGE_MS,
+): ReadWalletProofResult {
+  const { publicKey: publicKeyRaw, signature: signatureRaw, signedAt: signedAtRaw } = fields
 
   if (!publicKeyRaw || !signatureRaw || !signedAtRaw) {
     return { ok: false, reason: 'missing' }
+  }
+  if (
+    typeof publicKeyRaw !== 'string' ||
+    typeof signatureRaw !== 'string' ||
+    (typeof signedAtRaw !== 'string' && typeof signedAtRaw !== 'number')
+  ) {
+    return { ok: false, reason: 'malformed' }
   }
 
   const publicKey = normalizeHex(publicKeyRaw)
@@ -94,7 +123,7 @@ export function readWalletProof(
   if (!publicKey || publicKey.length !== 64) return { ok: false, reason: 'malformed' }
   if (!signature || signature.length !== 128) return { ok: false, reason: 'malformed' }
 
-  const signedAtText = signedAtRaw.trim()
+  const signedAtText = String(signedAtRaw).trim()
   if (!/^\d+$/.test(signedAtText)) return { ok: false, reason: 'malformed' }
 
   const signedAt = Number(signedAtText)

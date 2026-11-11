@@ -35,6 +35,7 @@ import { Arena } from '@/components/battle/Arena'
 import { ItemSheet } from '@/components/battle/ItemSheet'
 import { VersusCards } from '@/components/battle/VersusCards'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 type MoveInfo = { move: string; itemKey: string | null; damage: number } | null
 
@@ -94,7 +95,7 @@ export default function BattleScreen() {
 
   const fetchState = useCallback(async () => {
     try {
-      const res = await fetch(`/api/battles/${id}`, { headers: authHeaders() })
+      const res = await apiFetch(`/api/battles/${id}`, { headers: authHeaders() })
       if (res.status === 403 || res.status === 404) {
         setError('You are not part of this battle.')
         return
@@ -145,7 +146,7 @@ export default function BattleScreen() {
     setSubmitting(true)
     setSheetOpen(false)
     try {
-      const res = await fetch(`/api/battles/${id}/move`, {
+      const res = await apiFetch(`/api/battles/${id}/move`, {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ move, itemKey }),
@@ -163,7 +164,7 @@ export default function BattleScreen() {
   async function join() {
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/battles/${id}/join`, { method: 'POST', headers: authHeaders() })
+      const res = await apiFetch(`/api/battles/${id}/join`, { method: 'POST', headers: authHeaders() })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `Failed (${res.status})`)
       await fetchState()

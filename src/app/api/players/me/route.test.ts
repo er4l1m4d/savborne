@@ -15,9 +15,10 @@ import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { installFakeNet, rows, type FakeNet } from '@/test/fake-net'
-import { GET, DELETE } from '@/app/api/players/me/route'
+import { GET, DELETE, PATCH } from '@/app/api/players/me/route'
 import { utcWeekStart } from '@/lib/game/time'
 import { newWalletSigner } from '@/test/wallet-signer'
+import { authRequest } from '@/test/session'
 import {
   DELETE_PROOF_MAX_AGE_MS,
   DELETE_PUBLIC_KEY_HEADER,
@@ -59,11 +60,11 @@ function playerRow(address: string, created_at = CREATED_AT) {
 }
 
 function getReq(headers: Record<string, string> = {}): Request {
-  return new Request('http://test/api/players/me', { headers })
+  return authRequest('http://test/api/players/me', { headers })
 }
 
 function deleteReq(headers: Record<string, string>): Request {
-  return new Request('http://test/api/players/me', { method: 'DELETE', headers })
+  return authRequest('http://test/api/players/me', { method: 'DELETE', headers })
 }
 
 /** Answers every non-player query with an empty row set. */
@@ -362,4 +363,23 @@ test('a failing RPC is a 500, not a silent success', async () => {
   )
   assert.equal(res.status, 500)
   assert.deepEqual(await res.json(), { error: 'db_error' })
+})
+
+
+test('PATCH with a bare player header is rejected before any query', async () => {
+  net = installFakeNet(() => {
+    throw new Error('should not query')
+  })
+
+  const res = await PATCH(
+    new Request('http://test/api/players/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', 'X-Player-Address': VICTIM },
+      body: JSON.stringify({ avatar: 'heroine' }),
+    }),
+  )
+
+  assert.equal(res.status, 401)
+  assert.deepEqual(await res.json(), { error: 'session_required' })
+  assert.equal(net.calls.length, 0)
 })

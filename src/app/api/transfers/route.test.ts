@@ -18,6 +18,7 @@ import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { installFakeNet, nodeTx, rows, type FakeNet, type FakeReply } from '@/test/fake-net'
+import { authRequest } from '@/test/session'
 import { GET, POST } from '@/app/api/transfers/route'
 
 const PLAYER = 'NQ81 C01N BASE 0000 0000 0000 0000 0000 0000'
@@ -63,11 +64,11 @@ let net: FakeNet
 afterEach(() => net?.restore())
 
 function getReq(headers: Record<string, string> = {}): Request {
-  return new Request('http://test/api/transfers', { headers })
+  return authRequest('http://test/api/transfers', { headers })
 }
 
 function postReq(body: unknown, headers: Record<string, string> = { 'X-Player-Address': PLAYER }): Request {
-  return new Request('http://test/api/transfers', {
+  return authRequest('http://test/api/transfers', {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
@@ -152,7 +153,7 @@ test('POST without a player header is 401, even with a garbage body', async () =
   net = installFakeNet(() => {
     throw new Error('should not query')
   })
-  const res = await POST(new Request('http://test/api/transfers', { method: 'POST', body: '{not json' }))
+  const res = await POST(authRequest('http://test/api/transfers', { method: 'POST', body: '{not json' }))
   assert.equal(res.status, 401)
   assert.equal(net.calls.length, 0)
 })

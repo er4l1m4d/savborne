@@ -21,6 +21,7 @@ import { Tabs } from '@/components/ui/Tabs'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 const LOAD_ERROR = "Couldn't load your vault."
 
@@ -383,7 +384,7 @@ function ShieldStrip() {
     ;(async () => {
       try {
         const { authHeaders } = await import('@/lib/session')
-        const res = await fetch('/api/players/me', { headers: authHeaders() })
+        const res = await apiFetch('/api/players/me', { headers: authHeaders() })
         if (!res.ok) return
         const body = (await res.json()) as { player: { shields: number } }
         if (!cancelled) setShields(body.player.shields)

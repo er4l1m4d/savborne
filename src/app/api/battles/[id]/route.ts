@@ -18,19 +18,18 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { loadBattle, AI_ADDRESS } from '@/lib/game/battleServer'
 import { modsForItems, specialAvailable, type BattleMove } from '@/lib/game/battle'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
   const { id } = await ctx.params
   const db = supabaseAdmin()
   const now = new Date()

@@ -13,6 +13,7 @@ import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { installFakeNet, nodeTx, rows, type FakeNet, type FakeReply } from '@/test/fake-net'
+import { authRequest } from '@/test/session'
 import { GET } from '@/app/api/transfers/[hash]/route'
 
 const PLAYER = 'NQ81 C01N BASE 0000 0000 0000 0000 0000 0000'
@@ -50,7 +51,7 @@ let net: FakeNet
 afterEach(() => net?.restore())
 
 function req(headers: Record<string, string> = {}): Request {
-  return new Request(`http://test/api/transfers/${HASH}`, { headers })
+  return authRequest(`http://test/api/transfers/${HASH}`, { headers })
 }
 
 function call(hash = HASH, headers: Record<string, string> = { 'X-Player-Address': PLAYER }) {

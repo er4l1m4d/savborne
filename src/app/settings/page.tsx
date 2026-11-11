@@ -32,6 +32,7 @@ import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 const CONTACT_EMAIL = 'damilareogooluwade@outlook.com'
 
@@ -72,8 +73,8 @@ export default function SettingsPage() {
     setVaultUnavailable(false)
     try {
       const [profileRes, vaultRes] = await Promise.all([
-        fetch('/api/profile', { headers: authHeaders() }),
-        fetch('/api/vaults', { headers: authHeaders() }),
+        apiFetch('/api/profile', { headers: authHeaders() }),
+        apiFetch('/api/vaults', { headers: authHeaders() }),
       ])
 
       if (profileRes.status === 401) {
@@ -119,7 +120,7 @@ export default function SettingsPage() {
     setBusy(true)
     setAvatarError(null)
     try {
-      const res = await fetch('/api/players/me', {
+      const res = await apiFetch('/api/players/me', {
         method: 'PATCH',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ avatar: next }),

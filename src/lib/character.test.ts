@@ -53,6 +53,6 @@ test('Settings has the picker and saves through PATCH /api/players/me', () => {
   assert.match(SETTINGS, /<CharacterPicker/)
   assert.match(SETTINGS, /async function changeAvatar/)
   assert.match(SETTINGS, /method: 'PATCH'/)
-  assert.match(SETTINGS, /fetch\('\/api\/players\/me'/)
+  assert.match(SETTINGS, /apiFetch\('\/api\/players\/me'/)
   assert.match(SETTINGS, /body: JSON\.stringify\(\{ avatar: next \}\)/)
 })

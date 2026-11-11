@@ -23,6 +23,7 @@ import { Banner } from '@/components/ui/Banner'
 import { Chip } from '@/components/ui/Chip'
 import { VersusCards, UnknownFighter } from '@/components/battle/VersusCards'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 type Status = 'joining' | 'searching' | 'ended' | 'error'
 
@@ -45,7 +46,7 @@ export default function RankedQueuePage() {
     let cancelled = false
     async function join() {
       try {
-        const res = await fetch('/api/queue/join', { method: 'POST', headers: authHeaders() })
+        const res = await apiFetch('/api/queue/join', { method: 'POST', headers: authHeaders() })
         const json = await res.json()
         if (cancelled) return
         if (!res.ok) {
@@ -73,7 +74,7 @@ export default function RankedQueuePage() {
   useEffect(() => {
     const onPageHide = () => {
       if (matchedRef.current) return
-      void fetch('/api/queue/leave', {
+      void apiFetch('/api/queue/leave', {
         method: 'POST',
         headers: authHeaders(),
         keepalive: true,
@@ -89,7 +90,7 @@ export default function RankedQueuePage() {
     let cancelled = false
     const tick = async () => {
       try {
-        const res = await fetch('/api/queue/poll', { method: 'POST', headers: authHeaders() })
+        const res = await apiFetch('/api/queue/poll', { method: 'POST', headers: authHeaders() })
         const json = await res.json()
         if (cancelled) return
         if (res.status === 401 || json.left) {
@@ -138,7 +139,7 @@ export default function RankedQueuePage() {
     if (leftRef.current) return
     leftRef.current = true
     try {
-      await fetch('/api/queue/leave', { method: 'POST', headers: authHeaders() })
+      await apiFetch('/api/queue/leave', { method: 'POST', headers: authHeaders() })
     } catch {
       // Best effort; a stale row self-cleans server-side.
     }
@@ -154,7 +155,7 @@ export default function RankedQueuePage() {
     setError(null)
     try {
       await dropQueue()
-      const res = await fetch('/api/battles/ai', { method: 'POST', headers: authHeaders() })
+      const res = await apiFetch('/api/battles/ai', { method: 'POST', headers: authHeaders() })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `Failed (${res.status})`)
       matchedRef.current = true
@@ -171,7 +172,7 @@ export default function RankedQueuePage() {
     setError(null)
     try {
       await dropQueue()
-      const res = await fetch('/api/battles/friend', { method: 'POST', headers: authHeaders() })
+      const res = await apiFetch('/api/battles/friend', { method: 'POST', headers: authHeaders() })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `Failed (${res.status})`)
       matchedRef.current = true

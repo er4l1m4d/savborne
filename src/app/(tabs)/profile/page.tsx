@@ -23,6 +23,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 type ProfileData = {
   player: {
@@ -57,7 +58,7 @@ export default function ProfilePage() {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch('/api/profile', { headers: authHeaders() })
+        const res = await apiFetch('/api/profile', { headers: authHeaders() })
         if (res.status === 401) {
           router.replace('/setup')
           return

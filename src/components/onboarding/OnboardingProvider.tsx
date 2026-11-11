@@ -29,6 +29,7 @@ import { deriveVaultAddress, generatePhrase } from '@/lib/vault/phrase'
 import { writeVault } from '@/lib/vault/storage'
 import { validateDisplayName } from '@/lib/display-name'
 import { DEFAULT_AVATAR, type Avatar } from '@/lib/avatar'
+import { apiFetch } from '@/lib/client-session'
 
 type Draft = {
   accounts: string[]
@@ -83,9 +84,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch('/api/players/me', {
-          headers: { [PLAYER_HEADER]: session.playerAddress },
-        })
+        const res = await apiFetch(
+          '/api/players/me',
+          { headers: { [PLAYER_HEADER]: session.playerAddress } },
+          { address: session.playerAddress },
+        )
         if (cancelled) return
         const decision = reconnectDecision(res.status)
         if (decision === 'reconnect') router.replace('/')
@@ -111,9 +114,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
    * created at the Name step.
    */
   async function pickAccount(identity: string): Promise<'reconnect' | 'created'> {
-    const res = await fetch('/api/players/me', {
-      headers: { [PLAYER_HEADER]: identity },
-    })
+    const res = await apiFetch(
+      '/api/players/me',
+      { headers: { [PLAYER_HEADER]: identity } },
+      { address: identity },
+    )
     const decision = reconnectDecision(res.status)
 
     if (decision === 'reconnect') {
@@ -178,7 +183,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       throw new Error('Your vault is not ready yet.')
     }
 
-    const res = await fetch('/api/players', {
+    const res = await apiFetch('/api/players', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -190,7 +195,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         avatar,
         privacyNoticeVersion: acceptedNoticeVersion,
       }),
-    })
+    }, { address: picked })
 
     if (res.status === 409) {
       const body = (await res.json().catch(() => ({}))) as { error?: string }

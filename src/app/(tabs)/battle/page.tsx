@@ -26,6 +26,7 @@ import { Banner } from '@/components/ui/Banner'
 import { Meter } from '@/components/ui/Meter'
 import { ModeCard } from '@/components/battle/ModeCard'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 export default function BattleMenuPage() {
   const router = useRouter()
@@ -65,7 +66,7 @@ export default function BattleMenuPage() {
     setBusy('friend')
     setError(null)
     try {
-      const res = await fetch('/api/battles/friend', { method: 'POST', headers: authHeaders() })
+      const res = await apiFetch('/api/battles/friend', { method: 'POST', headers: authHeaders() })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `Failed (${res.status})`)
       router.push(`/battle/friend/${json.battleId}`)
@@ -80,7 +81,7 @@ export default function BattleMenuPage() {
     setBusy('ai')
     setError(null)
     try {
-      const res = await fetch('/api/battles/ai', { method: 'POST', headers: authHeaders() })
+      const res = await apiFetch('/api/battles/ai', { method: 'POST', headers: authHeaders() })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `Failed (${res.status})`)
       router.push(`/battle/${json.battleId}`)

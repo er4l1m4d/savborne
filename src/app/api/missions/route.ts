@@ -30,19 +30,18 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { DAILY_MISSION_XP_CAP, WEEKLY_MISSION_XP_CAP, WEEKLY_STRATEGIST_WINS } from '@/lib/constants'
 import { utcDayOf, utcWeekStart } from '@/lib/game/time'
 import { weeklyHumanWins, weeklyMissionXp } from '@/lib/game/weekly-missions'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   const db = supabaseAdmin()
   const now = new Date()

@@ -17,21 +17,21 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { routeError } from '@/lib/report'
+import { rateLimitOrError } from '@/lib/rate-limit'
 import { isPlausibleAddress } from '@/lib/vault/address'
 import { toVaultDto } from '@/lib/vault/dto'
 import { isNetwork } from '@/lib/vault/network'
 import type { VaultRow } from '@/lib/database.types'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   const db = supabaseAdmin()
   const { data, error } = await db
@@ -47,10 +47,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   let body: { vaultAddress?: unknown; network?: unknown; backupVerified?: unknown }
   try {
@@ -69,6 +68,15 @@ export async function POST(req: Request) {
   if (typeof backupVerified !== 'boolean') {
     return NextResponse.json({ error: 'backupVerified must be a boolean' }, { status: 400 })
   }
+
+  const limited = await rateLimitOrError({
+    req,
+    route: '/api/vaults',
+    key: `vault-create:${address}`,
+    limit: 10,
+    windowSeconds: 60,
+  })
+  if (limited) return limited
 
   const db = supabaseAdmin()
 
@@ -106,10 +114,9 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   let body: { backupVerified?: unknown }
   try {

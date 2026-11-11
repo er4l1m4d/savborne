@@ -20,6 +20,7 @@ import { playLevelUp } from '@/lib/level-up-sound'
 import { buzz } from '@/lib/haptics'
 import { observeLevel } from '@/lib/level-up'
 import type { Avatar } from '@/lib/avatar'
+import { apiFetch } from '@/lib/client-session'
 
 export type PlayerMe = {
   address: string
@@ -111,7 +112,7 @@ export function usePlayerSession(): UsePlayerSessionResult {
     setSession(current)
 
     try {
-      const res = await fetch('/api/players/me', { headers: authHeaders() })
+      const res = await apiFetch('/api/players/me', { headers: authHeaders() })
       if (!res.ok) {
         if (res.status === 404) {
           // Player row was wiped server-side; treat as needs-reconnect.

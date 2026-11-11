@@ -21,6 +21,7 @@ import { VAULT_NETWORK_ID } from '@/lib/vault/network'
 import { broadcastTransaction, getAccount, getHeadHeight, RpcError } from '@/lib/vault/rpc'
 import { readVault } from '@/lib/vault/storage'
 import { signTransfer } from '@/lib/vault/phrase'
+import { apiFetch } from '@/lib/client-session'
 import {
   forgetPending,
   pollTransfer,
@@ -87,7 +88,7 @@ export function useVault(): UseVaultResult {
     try {
       await retryPending()
 
-      const res = await fetch('/api/vaults', { headers: authHeaders() })
+      const res = await apiFetch('/api/vaults', { headers: authHeaders() })
       if (!res.ok) throw new Error(`Could not load your vault (${res.status})`)
       const body = (await res.json()) as { vault: VaultDto | null }
       setVault(body.vault)
@@ -103,7 +104,7 @@ export function useVault(): UseVaultResult {
       setLockState(phraseRef.current ? 'unlocked' : 'locked')
       await refreshBalance(body.vault)
 
-      const listRes = await fetch('/api/transfers', { headers: authHeaders() })
+      const listRes = await apiFetch('/api/transfers', { headers: authHeaders() })
       if (listRes.ok) {
         const listBody = (await listRes.json()) as { transfers: TransferView[] }
         setTransfers(listBody.transfers)

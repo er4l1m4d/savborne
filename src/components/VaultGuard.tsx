@@ -15,6 +15,7 @@
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { authHeaders, readSession } from '@/lib/session'
+import { apiFetch } from '@/lib/client-session'
 
 export function VaultGuard() {
   const router = useRouter()
@@ -27,7 +28,7 @@ export function VaultGuard() {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch('/api/vaults', { headers: authHeaders() })
+        const res = await apiFetch('/api/vaults', { headers: authHeaders() })
         if (!res.ok) return
         const body = (await res.json()) as { vault: unknown }
         if (!cancelled && body.vault === null && pathname !== '/vault') {

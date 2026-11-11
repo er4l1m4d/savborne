@@ -13,7 +13,6 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { isAvatar } from '@/lib/avatar'
 import { xpToNextLevel } from '@/lib/constants'
 import { utcDayOf } from '@/lib/game/time'
@@ -21,15 +20,16 @@ import { weeklyMissionXp } from '@/lib/game/weekly-missions'
 import { readDeleteProof } from '@/lib/delete-request'
 import { verifyDeleteSignature } from '@/lib/delete-verify'
 import { routeError } from '@/lib/report'
+import { rateLimitOrError } from '@/lib/rate-limit'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   const db = supabaseAdmin()
   const now = new Date()
@@ -105,10 +105,9 @@ export async function GET(req: Request) {
  * rather than a 404, so a retry after a dropped response is safe.
  */
 export async function DELETE(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   const proof = readDeleteProof(req.headers, Date.now())
   if (!proof.ok) {
@@ -173,10 +172,9 @@ export async function DELETE(req: Request) {
  * Response: 200 { avatar }, 400, 401, 404, 500.
  */
 export async function PATCH(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   let body: { avatar?: unknown }
   try {
@@ -187,6 +185,15 @@ export async function PATCH(req: Request) {
   if (!isAvatar(body.avatar)) {
     return NextResponse.json({ error: 'Invalid avatar' }, { status: 400 })
   }
+
+  const limited = await rateLimitOrError({
+    req,
+    route: '/api/players/me',
+    key: `profile-update:${address}`,
+    limit: 20,
+    windowSeconds: 60,
+  })
+  if (limited) return limited
 
   const db = supabaseAdmin()
   const { data, error } = await db

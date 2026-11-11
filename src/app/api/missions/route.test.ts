@@ -11,6 +11,7 @@ import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { installFakeNet, rows, type FakeHandler, type FakeNet } from '@/test/fake-net'
+import { authRequest } from '@/test/session'
 import { GET } from '@/app/api/missions/route'
 import { utcWeekStart } from '@/lib/game/time'
 
@@ -66,7 +67,7 @@ let net: FakeNet
 afterEach(() => net?.restore())
 
 function req(headers: Record<string, string> = { 'X-Player-Address': PLAYER }): Request {
-  return new Request('http://test/api/missions', { headers })
+  return authRequest('http://test/api/missions', { headers })
 }
 
 function fixture({
@@ -106,7 +107,7 @@ test('without a player header it is 401 and queries nothing', async () => {
   const res = await GET(req({}))
   assert.equal(res.status, 401)
   assert.equal(net.calls.length, 0)
-  assert.deepEqual(await res.json(), { error: 'Missing X-Player-Address header' })
+  assert.deepEqual(await res.json(), { error: 'session_required' })
 })
 
 test('counters keep their names and report exact weekly XP, not a row count', async () => {

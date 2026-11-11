@@ -47,6 +47,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Banner } from '@/components/ui/Banner'
 import { takeBalanceRetry } from '@/lib/balance-retry'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 type MissionStatus = {
   key: string
@@ -95,7 +96,7 @@ export default function HomePage() {
       const address = session.playerAddress
       const signedAt = Date.now()
       const proof = await signMessage(checkInMessage({ address, signedAt }))
-      const res = await fetch('/api/check-ins', {
+      const res = await apiFetch('/api/check-ins', {
         method: 'POST',
         headers: authHeaders(checkInAuthHeaders({ ...proof, signedAt })),
       })
@@ -197,7 +198,7 @@ export default function HomePage() {
 
   async function fetchDailyMissions() {
     try {
-      const res = await fetch('/api/missions', { headers: authHeaders() })
+      const res = await apiFetch('/api/missions', { headers: authHeaders() })
       if (!res.ok) return
       const json = (await res.json()) as {
         missions: {

@@ -21,6 +21,7 @@ import { installFakeNet, rows, type FakeCall, type FakeNet, type FakeReply } fro
 import { POST } from '@/app/api/check-ins/route'
 import { checkInAuthHeaders, checkInMessage } from '@/lib/checkin-request'
 import { newWalletSigner, type TestSigner } from '@/test/wallet-signer'
+import { authRequest } from '@/test/session'
 
 const VAULT = 'NQ57 2F6C X3GB Y9B7 04U5 2BVA 4BVC M2T0 ELRL'
 
@@ -88,7 +89,7 @@ function req(
   body: unknown = {},
   headers: Record<string, string> = { 'X-Player-Address': PLAYER },
 ): Request {
-  return new Request('http://test/api/check-ins', {
+  return authRequest('http://test/api/check-ins', {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),

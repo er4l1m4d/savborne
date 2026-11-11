@@ -98,7 +98,14 @@ export function installFakeNet(handler: FakeHandler): FakeNet {
     }
     calls.push(call)
 
-    const reply = handler(call)
+    const reply =
+      handler(call) ??
+      // Rate limiting is infrastructure: every route may call it, and only the
+      // tests that care about 429 provide an explicit reply. Everything else
+      // stays strict (an unmatched call still throws).
+      (call.rpc === 'consume_rate_limit'
+        ? { json: { allowed: true, remaining: 1, retryAfterSeconds: 0 } }
+        : undefined)
     if (reply === undefined) {
       throw new Error(
         `Unmatched fake-network call: ${method} ${url.hostname}${url.pathname}` +

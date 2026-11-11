@@ -24,6 +24,7 @@
  */
 
 const STORAGE_KEY = 'savborne.session.v1'
+const TOKEN_KEY = 'savborne.auth.v1'
 
 export type Session = {
   /** The player's own Nimiq address — the identity key. */
@@ -57,6 +58,7 @@ export function writeSession(session: Session | null): void {
   if (typeof window === 'undefined') return
   if (session === null) {
     window.localStorage.removeItem(STORAGE_KEY)
+    clearSessionToken()
     return
   }
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
@@ -65,12 +67,58 @@ export function writeSession(session: Session | null): void {
 /** The header name we use to pass the address to API routes. */
 export const PLAYER_HEADER = 'X-Player-Address'
 
+/** The header that carries the signed session token. */
+export const SESSION_HEADER = 'X-Savborne-Session'
+
+export type CachedSessionToken = {
+  address: string
+  token: string
+  expiresAt: number
+}
+
+/** Read the cached token. Returns null when absent, malformed or expired. */
+export function readSessionToken(now: number = Date.now()): CachedSessionToken | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(TOKEN_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<CachedSessionToken>
+    if (
+      typeof parsed.address !== 'string' ||
+      typeof parsed.token !== 'string' ||
+      typeof parsed.expiresAt !== 'number' ||
+      parsed.expiresAt <= now + 30_000
+    ) {
+      return null
+    }
+    return { address: parsed.address, token: parsed.token, expiresAt: parsed.expiresAt }
+  } catch {
+    return null
+  }
+}
+
+export function writeSessionToken(value: CachedSessionToken): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(TOKEN_KEY, JSON.stringify(value))
+}
+
+export function clearSessionToken(): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.removeItem(TOKEN_KEY)
+}
+
 /**
  * Build the headers object for a fetch call to any Savborne API route.
- * Returns `{}` if no session is stored, so the route 401s naturally.
+ * Attaches the cached session token when it is present and fresh; the address
+ * header is kept as an echo and must agree with the token.
  */
 export function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const session = readSession()
   if (!session) return extra
-  return { [PLAYER_HEADER]: session.playerAddress, ...extra }
+  const headers: Record<string, string> = { [PLAYER_HEADER]: session.playerAddress, ...extra }
+  const cached = readSessionToken()
+  if (cached && cached.address === session.playerAddress) {
+    headers[SESSION_HEADER] = cached.token
+  }
+  return headers
 }

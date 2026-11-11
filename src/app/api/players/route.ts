@@ -30,11 +30,13 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { validateDisplayName } from '@/lib/display-name'
 import { DEFAULT_AVATAR, isAvatar } from '@/lib/avatar'
-import { isPlausibleAddress } from '@/lib/vault/address'
+import { isPlausibleAddress, sameAddress } from '@/lib/vault/address'
 import { toVaultDto } from '@/lib/vault/dto'
 import { isNetwork } from '@/lib/vault/network'
 import type { PlayerRow, VaultRow } from '@/lib/database.types'
 import { routeError } from '@/lib/report'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
+import { rateLimitOrError } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -56,6 +58,18 @@ type CreateResult = {
 }
 
 export async function POST(req: Request) {
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+
+  const limited = await rateLimitOrError({
+    req,
+    route: '/api/players',
+    key: `players-create:${auth.address}`,
+    limit: 5,
+    windowSeconds: 60,
+  })
+  if (limited) return limited
+
   let body: Body
   try {
     body = (await req.json()) as Body
@@ -75,6 +89,10 @@ export async function POST(req: Request) {
 
   if (typeof address !== 'string' || !isPlausibleAddress(address)) {
     return NextResponse.json({ error: 'Invalid player address' }, { status: 400 })
+  }
+  // The session is the authority. The body only confirms the same wallet.
+  if (!sameAddress(auth.address, address)) {
+    return NextResponse.json({ error: 'session_mismatch' }, { status: 401 })
   }
   if (typeof vaultAddress !== 'string' || !isPlausibleAddress(vaultAddress)) {
     return NextResponse.json({ error: 'Invalid vault address' }, { status: 400 })

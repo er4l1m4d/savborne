@@ -22,6 +22,7 @@ import { PassphraseField } from '@/components/vault/PassphraseField'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { Button } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
+import { apiFetch } from '@/lib/client-session'
 
 type Phase = 'pick' | 'show' | 'quiz' | 'passphrase'
 
@@ -73,7 +74,7 @@ export default function SetupVaultPage() {
     try {
       const blob = await encryptPhrase(phrase, passphrase)
 
-      const res = await fetch('/api/vaults', {
+      const res = await apiFetch('/api/vaults', {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ vaultAddress, network, backupVerified: true }),

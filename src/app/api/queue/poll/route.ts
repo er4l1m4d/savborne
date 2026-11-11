@@ -15,18 +15,27 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { RANKED } from '@/lib/constants'
 import { routeError } from '@/lib/report'
+import { rateLimitOrError } from '@/lib/rate-limit'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
+  const limited = await rateLimitOrError({
+    req,
+    route: '/api/queue/poll',
+    key: `queue-poll:${address}`,
+    limit: 120,
+    windowSeconds: 60,
+  })
+  if (limited) return limited
+
 
   const db = supabaseAdmin()
   const now = new Date()

@@ -7,6 +7,7 @@ import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { installFakeNet, rows, type FakeNet } from '@/test/fake-net'
+import { authRequest } from '@/test/session'
 import { POST } from './route'
 
 const PLAYER = 'NQ81 C01N BASE 0000 0000 0000 0000 0000 0000'
@@ -16,7 +17,7 @@ let net: FakeNet
 afterEach(() => net?.restore())
 
 function req(headers: Record<string, string> = { 'X-Player-Address': PLAYER }): Request {
-  return new Request('http://test/api/battles/b1/cancel', { method: 'POST', headers })
+  return authRequest('http://test/api/battles/b1/cancel', { method: 'POST', headers })
 }
 
 const ctx = { params: Promise.resolve({ id: 'b1' }) }

@@ -52,7 +52,6 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { bracketFromLuna, levelFromXp, xpToNextLevel, type Bracket } from '@/lib/constants'
 import { computeAward, type PlayerXpState, type XpSource } from '@/lib/game/awards'
 import { evaluateForCheckIn, type CompletedMission } from '@/lib/game/missions'
@@ -66,6 +65,7 @@ import { weeklyMissionXp } from '@/lib/game/weekly-missions'
 import { readCheckInProof } from '@/lib/checkin-request'
 import { verifyCheckInSignature } from '@/lib/checkin-verify'
 import { routeError } from '@/lib/report'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -76,10 +76,9 @@ const RATE_LIMIT = { limit: 10, windowSeconds: 60 }
 type CheckInRowLite = { balance_luna: number; recorded_at: string }
 
 export async function POST(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   // A proof is required for every POST and is shape-checked before any I/O.
   // Missing, stale and malformed proofs cost no database or chain read.

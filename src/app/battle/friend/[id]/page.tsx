@@ -23,6 +23,7 @@ import { Chip } from '@/components/ui/Chip'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { VersusCards, UnknownFighter } from '@/components/battle/VersusCards'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { apiFetch } from '@/lib/client-session'
 
 type FriendState = {
   battle: {
@@ -48,7 +49,7 @@ export default function FriendChallengePage() {
 
   const fetchState = useCallback(async () => {
     try {
-      const res = await fetch(`/api/battles/${id}`, { headers: authHeaders() })
+      const res = await apiFetch(`/api/battles/${id}`, { headers: authHeaders() })
       if (res.status === 403 || res.status === 404) {
         setError('You are not part of this challenge.')
         return
@@ -101,7 +102,7 @@ export default function FriendChallengePage() {
     setCancelling(true)
     setError(null)
     try {
-      const res = await fetch(`/api/battles/${id}/cancel`, {
+      const res = await apiFetch(`/api/battles/${id}/cancel`, {
         method: 'POST',
         headers: authHeaders(),
       })

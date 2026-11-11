@@ -20,14 +20,15 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { routeError } from '@/lib/report'
+import { rateLimitOrError } from '@/lib/rate-limit'
 import type { TransferRow, VaultRow } from '@/lib/database.types'
 import { toTransferDto } from '@/lib/vault/dto'
 import type { Network } from '@/lib/nimiq'
 import { isNetwork } from '@/lib/vault/network'
 import { RpcError } from '@/lib/vault/rpc'
 import { pollAndSettle } from '@/lib/vault/settle'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -38,10 +39,9 @@ const TRANSFER_COLUMNS =
   'id, player_address, vault_address, direction, amount_luna, fee_luna, tx_hash, status, block_height, failure_reason, created_at, confirmed_at'
 
 export async function GET(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   const db = supabaseAdmin()
   const { data, error } = await db
@@ -62,10 +62,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing player header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
 
   let body: { direction?: unknown; txHash?: unknown; amountLuna?: unknown; network?: unknown }
   try {
@@ -86,6 +85,15 @@ export async function POST(req: Request) {
   ) {
     return NextResponse.json({ error: 'Malformed transfer' }, { status: 422 })
   }
+
+  const limited = await rateLimitOrError({
+    req,
+    route: '/api/transfers',
+    key: `transfers-create:${address}`,
+    limit: 20,
+    windowSeconds: 60,
+  })
+  if (limited) return limited
 
   const db = supabaseAdmin()
 

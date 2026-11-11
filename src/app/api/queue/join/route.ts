@@ -14,19 +14,28 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLAYER_HEADER } from '@/lib/session'
 import { RANKED, BATTLE, type Bracket } from '@/lib/constants'
 import { utcDayOf } from '@/lib/game/time'
 import { routeError } from '@/lib/report'
+import { rateLimitOrError } from '@/lib/rate-limit'
+import { requirePlayer, isAuthResponse } from '@/lib/require-player'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
-  const address = req.headers.get(PLAYER_HEADER)
-  if (!address) {
-    return NextResponse.json({ error: 'Missing X-Player-Address header' }, { status: 401 })
-  }
+  const auth = requirePlayer(req)
+  if (isAuthResponse(auth)) return auth
+  const address = auth.address
+  const limited = await rateLimitOrError({
+    req,
+    route: '/api/queue/join',
+    key: `queue-join:${address}`,
+    limit: 20,
+    windowSeconds: 60,
+  })
+  if (limited) return limited
+
 
   const db = supabaseAdmin()
   const { data: p } = await db.from('players').select('*').eq('address', address).maybeSingle()
