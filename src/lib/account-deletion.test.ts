@@ -108,3 +108,15 @@ test('the player endpoint verifies the delete proof before the RPC', () => {
   const rpc = ROUTE.indexOf("rpc('delete_player'")
   assert.ok(verify >= 0 && rpc >= 0 && verify < rpc, 'the RPC must run only after verification')
 })
+
+test('vaults, readings and transfers cascade from the deleted player row', () => {
+  // `delete_player` removes the players row last. These FKs are what remove
+  // the vault mapping (and therefore the public card token), every reading and
+  // every receipt in the same statement.
+  for (const table of ['vaults', 'check_ins', 'transfers']) {
+    const start = SCHEMA.indexOf(`create table if not exists ${table} (`)
+    assert.ok(start >= 0, `no ${table} table`)
+    const body = SCHEMA.slice(start, SCHEMA.indexOf(');', start))
+    assert.match(body, /references players\(address\) on delete cascade/i, `${table} must cascade`)
+  }
+})
