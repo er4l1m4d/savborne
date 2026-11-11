@@ -61,3 +61,6 @@ next-env.d.ts
 AGENTS.md
 docs/instabox-setup.md
 scripts/instabox-*
+
+# Local motion-design workspace (600MB, its own node_modules); never part of the app.
+/ai-launch-videos/
