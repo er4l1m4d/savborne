@@ -242,6 +242,9 @@ export default function HomePage() {
     return (
       <ScreenShell variant="tab" title="Savborne">
         <Banner tone="error">{error}</Banner>
+        <Button variant="ghost" className="self-start" onClick={() => void refresh()}>
+          Try again
+        </Button>
       </ScreenShell>
     )
   }

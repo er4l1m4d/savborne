@@ -10,6 +10,7 @@
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import {
   PRIVACY_CARDS,
+  PRIVACY_CONTACT,
   PRIVACY_DISCLOSURE_TITLE,
   PRIVACY_NOTICE_VERSION,
   PRIVACY_RISK,
@@ -53,7 +54,11 @@ function DisclosureCard({ card }: { card: PrivacyCard }) {
 function VersionLine() {
   return (
     <p className="sv-label text-fg-faint">
-      Privacy notice version {PRIVACY_NOTICE_VERSION}.
+      Privacy notice version {PRIVACY_NOTICE_VERSION}. Questions or deletion help:{' '}
+      <a className="text-mint underline" href={`mailto:${PRIVACY_CONTACT}`}>
+        {PRIVACY_CONTACT}
+      </a>
+      . See <a className="text-mint underline" href="/terms">Terms and support</a>.
     </p>
   )
 }

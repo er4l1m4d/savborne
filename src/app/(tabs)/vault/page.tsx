@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { LUNA_PER_NIM } from '@/lib/constants'
+import { parseNimToLuna } from '@/lib/vault/amount'
 import { hostNetwork } from '@/lib/nimiq'
 import { readSession } from '@/lib/session'
 import { useVault } from '@/lib/vault/useVault'
@@ -83,9 +84,9 @@ export default function VaultPage() {
     if (!vault) return
     setActionError(null)
     setNotice(null)
-    const luna = Math.floor(Number(depositNim) * LUNA_PER_NIM)
-    if (!Number.isFinite(luna) || luna <= 0) {
-      setActionError('Enter an amount greater than zero.')
+    const luna = parseNimToLuna(depositNim, 5)
+    if (luna === null) {
+      setActionError('Enter a valid amount with up to five decimal places.')
       return
     }
     setBusy(true)
@@ -120,9 +121,9 @@ export default function VaultPage() {
     if (!vault) return
     setActionError(null)
     setNotice(null)
-    const luna = Math.floor(Number(withdrawNim) * LUNA_PER_NIM)
-    if (!Number.isFinite(luna) || luna <= 0) {
-      setActionError('Enter an amount greater than zero.')
+    const luna = parseNimToLuna(withdrawNim, 2)
+    if (luna === null) {
+      setActionError('Enter an amount with up to two decimal places.')
       return
     }
     setBusy(true)

@@ -15,7 +15,7 @@ const NOTICE = source('../components/PrivacyNotice.tsx')
 const PAGE = source('../app/(onboarding)/privacy/page.tsx')
 
 test('the notice version is a date and the four cards are stable', () => {
-  assert.equal(PRIVACY_NOTICE_VERSION, '2026-11-09')
+  assert.equal(PRIVACY_NOTICE_VERSION, '2026-11-11')
   assert.deepEqual(
     PRIVACY_CARDS.map((card) => card.title),
     ['What we collect', "What we don't", "What's public", "Where it's stored"],

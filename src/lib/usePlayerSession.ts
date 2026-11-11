@@ -119,6 +119,22 @@ export function usePlayerSession(): UsePlayerSessionResult {
           setNeedsReconnect(true)
           setSession(null)
           writeSession(null)
+        } else if (res.status === 401) {
+          // apiFetch already tried one silent re-sign. A second 401 means the
+          // wallet refused or the account changed; /setup is the inline
+          // reconnect path, not a dead end.
+          let code = ''
+          try {
+            code = ((await res.json()) as { error?: string }).error ?? ''
+          } catch {
+            // Non-JSON 401: treat as reconnect.
+          }
+          if (code.startsWith('session_')) {
+            setNeedsReconnect(true)
+            setError(null)
+          } else {
+            setError('Could not verify this wallet. Reconnect to continue.')
+          }
         } else {
           const text = await res.text().catch(() => '')
           setError(`Failed to load player (${res.status}): ${text}`)

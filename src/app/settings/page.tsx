@@ -255,6 +255,17 @@ export default function SettingsPage() {
                   Show tour again
                 </Button>
               </Row>
+              <Row divider>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start px-0 text-fg"
+                  onClick={() => {
+                    router.push('/terms')
+                  }}
+                >
+                  Terms and support
+                </Button>
+              </Row>
               <Row>
                 <Button
                   variant="ghost"
