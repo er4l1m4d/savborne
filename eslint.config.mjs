@@ -27,6 +27,8 @@ const eslintConfig = defineConfig([
     "savborne-spike/**",
     // Third-party asset packs (Kenney etc.) — reference material, not app code.
     "assets-raw/**",
+    // Local motion-design workspace (own package, not part of the app lint).
+    "ai-launch-videos/**",
   ]),
 ]);
 
