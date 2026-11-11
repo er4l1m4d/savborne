@@ -84,9 +84,31 @@ function errorMessage(method: string, error: NonNullable<RpcEnvelope['error']>):
   return `RPC ${method} failed: ${error.message ?? 'unknown error'}`
 }
 
-/** Single call site: envelope, transport, HTTP and JSON all handled here. */
-async function rpcCall(
-  network: Network,
+/**
+ * Endpoints for this network. `NIMIQ_RPC_URLS` (comma-separated) is tried in
+ * order before giving up; entries that are not http(s) URLs are ignored. With
+ * no env value the built-in endpoint is the only entry.
+ */
+function rpcUrls(network: Network): string[] {
+  const raw = process.env.NIMIQ_RPC_URLS
+  const configured = (raw ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => {
+      try {
+        const url = new URL(value)
+        return url.protocol === 'https:' || url.protocol === 'http:'
+      } catch {
+        return false
+      }
+    })
+
+  return configured.length > 0 ? configured : [VAULT_RPC_URL[network]]
+}
+
+/** One endpoint: envelope, transport, HTTP and JSON all handled here. */
+async function rpcCallTo(
+  url: string,
   method: string,
   params: unknown[],
   opts?: RpcOptions,
@@ -95,7 +117,7 @@ async function rpcCall(
 
   let response: Response
   try {
-    response = await fetchImpl(VAULT_RPC_URL[network], {
+    response = await fetchImpl(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
@@ -114,6 +136,29 @@ async function rpcCall(
   } catch (err) {
     throw new RpcError('rpc_error', `RPC ${method} returned invalid JSON: ${describe(err)}`)
   }
+}
+
+/**
+ * Try each endpoint in order. A transport, HTTP or JSON failure moves to the
+ * next endpoint; a JSON-RPC envelope error is returned to the caller (it is a
+ * valid node answer, e.g. "Transaction not found"). If every endpoint fails,
+ * the last error is thrown: never a zero balance.
+ */
+async function rpcCall(
+  network: Network,
+  method: string,
+  params: unknown[],
+  opts?: RpcOptions,
+): Promise<RpcEnvelope> {
+  let lastError: unknown = new RpcError('unreachable', `RPC ${method} unreachable`)
+  for (const url of rpcUrls(network)) {
+    try {
+      return await rpcCallTo(url, method, params, opts)
+    } catch (err) {
+      lastError = err
+    }
+  }
+  throw lastError
 }
 
 function unwrap<T>(method: string, envelope: RpcEnvelope): T {

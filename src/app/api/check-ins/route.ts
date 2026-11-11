@@ -55,7 +55,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { bracketFromLuna, levelFromXp, xpToNextLevel, type Bracket } from '@/lib/constants'
 import { computeAward, type PlayerXpState, type XpSource } from '@/lib/game/awards'
 import { evaluateForCheckIn, type CompletedMission } from '@/lib/game/missions'
-import { computeStreak, alreadyCheckedInToday, alreadyCheckedInThisWeek } from '@/lib/game/streaks'
+import { computeStreak, alreadyCheckedInThisWeek } from '@/lib/game/streaks'
 import { utcDayOf, utcWeekStart, utcDaysBetween } from '@/lib/game/time'
 import { itemsToUnlock, type ItemKey } from '@/lib/game/items'
 import { computeBadgeActions, type BadgeKey } from '@/lib/game/badges'
@@ -73,7 +73,12 @@ export const dynamic = 'force-dynamic'
 /** 10 requests per 60 seconds per player address, before any expensive work. */
 const RATE_LIMIT = { limit: 10, windowSeconds: 60 }
 
-type CheckInRowLite = { balance_luna: number; recorded_at: string }
+type CheckInRowLite = {
+  balance_luna: number
+  recorded_at: string
+  claimed_at: string | null
+  bracket: string | null
+}
 
 export async function POST(req: Request) {
   const auth = requirePlayer(req)
@@ -164,34 +169,48 @@ export async function POST(req: Request) {
 
   const { data: history } = await db
     .from('check_ins')
-    .select('balance_luna, recorded_at')
+    .select('balance_luna, recorded_at, claimed_at, bracket')
     .eq('player_address', address)
     .order('recorded_at', { ascending: false })
     .limit(60)
-  const prior = (history ?? []) as CheckInRowLite[]
+  const readings = (history ?? []) as CheckInRowLite[]
+  const todayRow = readings.find((r) => utcDayOf(new Date(r.recorded_at)) === today)
+  const priorReadings = readings.filter((r) => utcDayOf(new Date(r.recorded_at)) !== today)
+  // The ritual (streak, weekly mission, ranked) counts claimed days only. A
+  // cron snapshot keeps standing fresh but does not perform the check-in.
+  const claimedDays = priorReadings.filter((r) => r.claimed_at !== null)
 
-  // A same-day POST is idempotent. Return the normal shape with empty awards
-  // and do not read the chain: the reading already exists and was committed.
-  if (alreadyCheckedInToday(prior.map((r) => new Date(r.recorded_at)), now)) {
+  // A same-day POST after a claim is idempotent. Return the normal shape with
+  // empty awards and do not read the chain: the reading already exists.
+  if (todayRow && todayRow.claimed_at !== null) {
     return NextResponse.json(alreadyCheckedInResponse(player))
   }
 
-  // 4. Read the balance from the chain. No fallback: an RPC outage is a
-  //    check-in outage, surfaced honestly rather than hidden behind a cache.
-  let account: Awaited<ReturnType<typeof getAccount>>
-  try {
-    account = await getAccount(vault.address, vault.network as Network)
-  } catch (err) {
-    if (err instanceof RpcError) {
+  // 4. Prefer today's cron reading when one exists: the claim awards against
+  //    the snapshot the server already stored. Otherwise read the chain. No
+  //    fallback: an RPC outage is a check-in outage, never a zero balance.
+  let balanceLuna: number
+  let readingBracket: Bracket | null
+  if (todayRow) {
+    balanceLuna = Number(todayRow.balance_luna)
+    readingBracket = (todayRow.bracket as Bracket | null) ?? bracketFromLuna(balanceLuna)
+  } else {
+    let account: Awaited<ReturnType<typeof getAccount>>
+    try {
+      account = await getAccount(vault.address, vault.network as Network)
+    } catch (err) {
+      if (err instanceof RpcError) {
+        return routeError({
+          req, route: '/api/check-ins', code: 'rpc_unreachable', status: 503, error: err,
+        })
+      }
       return routeError({
-        req, route: '/api/check-ins', code: 'rpc_unreachable', status: 503, error: err,
+        req, route: '/api/check-ins', code: 'db_error', status: 500, error: err,
       })
     }
-    return routeError({
-      req, route: '/api/check-ins', code: 'db_error', status: 500, error: err,
-    })
+    balanceLuna = account.balanceLuna
+    readingBracket = bracketFromLuna(balanceLuna)
   }
-  const balanceLuna = account.balanceLuna
 
   // Owned items, loaded early so the Ledger Scroll XP bonus applies to this
   // check-in's awards. Items unlocked *during* this check-in take effect
@@ -203,9 +222,13 @@ export async function POST(req: Request) {
   const hasLedgerScroll = (ownedItemRows ?? []).some((r) => r.item_key === 'ledger_scroll')
 
   // 5. Build the mission snapshot.
-  const alreadyWeek = alreadyCheckedInThisWeek(prior.map((r) => new Date(r.recorded_at)), now)
-  const priorMostRecent = prior.length > 0 ? Number(prior[0].balance_luna) : null
-  const thisWeekRows = prior.filter((r) => new Date(r.recorded_at) >= weekStart)
+  const alreadyWeek = alreadyCheckedInThisWeek(
+    claimedDays.map((r) => new Date(r.recorded_at)),
+    now,
+  )
+  const priorMostRecent =
+    priorReadings.length > 0 ? Number(priorReadings[0].balance_luna) : null
+  const thisWeekRows = priorReadings.filter((r) => new Date(r.recorded_at) >= weekStart)
   const weekOpening =
     thisWeekRows.length > 0
       ? Number(thisWeekRows[thisWeekRows.length - 1].balance_luna)
@@ -243,7 +266,7 @@ export async function POST(req: Request) {
     .eq('status', 'included')
   const hasIncludedDeposit = (includedDeposits ?? 0) > 0
 
-  const newBracket: Bracket | null = bracketFromLuna(balanceLuna)
+  const newBracket: Bracket | null = readingBracket
   const currentBracket: Bracket | null = (player.bracket as Bracket | null) ?? null
   const withdrewNow = priorMostRecent !== null && balanceLuna < priorMostRecent
 
@@ -321,7 +344,7 @@ export async function POST(req: Request) {
   }
 
   // 7. Recompute streak.
-  const allCheckInDates = [now, ...prior.map((r) => new Date(r.recorded_at))]
+  const allCheckInDates = [now, ...claimedDays.map((r) => new Date(r.recorded_at))]
   const streak = computeStreak({
     checkInsAt: allCheckInDates,
     now,

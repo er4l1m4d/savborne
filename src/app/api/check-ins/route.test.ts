@@ -545,6 +545,90 @@ test('a second POST on the same UTC day is idempotent and skips the chain', asyn
   assert.equal(net.calls.filter((c) => c.rpc === 'commit_check_in').length, 0)
 })
 
+test('a cron reading is claimed against the stored balance without a chain read', async () => {
+  const readingAt = new Date().toISOString()
+  net = installFakeNet((c) => {
+    const g = gate(c, { json: { claimed: true, check_in_count: 4 } })
+    if (g) return g
+    if (c.resource === 'players') return rows(playerRow({ check_in_count: 3, bracket: 'silver' }))
+    if (c.resource === 'vaults') return rows({ address: VAULT, network: 'testnet' })
+    if (c.resource === 'check_ins') {
+      return rows({
+        balance_luna: 30_000_000,
+        recorded_at: readingAt,
+        claimed_at: null,
+        bracket: 'gold',
+      })
+    }
+    if (c.nodeMethod === 'getAccountByAddress') {
+      throw new Error('a stored cron reading must not trigger a chain read')
+    }
+    if (c.method === 'HEAD') return { json: [] }
+    if (c.method === 'GET') return rows()
+    return rows()
+  })
+
+  const res = await POST(await signedReq())
+  assert.equal(res.status, 200)
+  const body = (await res.json()) as {
+    alreadyCheckedIn: boolean
+    balanceLuna: number
+    bracket: string
+    checkInCount: number
+  }
+
+  assert.equal(body.alreadyCheckedIn, false)
+  assert.equal(body.balanceLuna, 30_000_000)
+  assert.equal(body.bracket, 'gold')
+  assert.equal(body.checkInCount, 4)
+  assert.equal(net.node('getAccountByAddress').length, 0)
+
+  const commit = net.calls.find((c) => c.rpc === 'commit_check_in')
+  assert.ok(commit)
+  const payload = commit.body as {
+    p_balance_luna: number
+    p_player: { bracket: string }
+  }
+  assert.equal(payload.p_balance_luna, 30_000_000)
+  assert.equal(payload.p_player.bracket, 'gold')
+})
+
+test('a second claim of the same cron reading returns alreadyCheckedIn with no awards', async () => {
+  net = installFakeNet((c) => {
+    if (gate(c)) return gate(c)
+    if (c.resource === 'players') return rows(playerRow({ check_in_count: 4, bracket: 'gold' }))
+    if (c.resource === 'vaults') return rows({ address: VAULT, network: 'testnet' })
+    if (c.resource === 'check_ins') {
+      return rows({
+        balance_luna: 30_000_000,
+        recorded_at: new Date().toISOString(),
+        claimed_at: new Date().toISOString(),
+        bracket: 'gold',
+      })
+    }
+    if (c.nodeMethod === 'getAccountByAddress') {
+      throw new Error('an already-claimed day must not read the chain')
+    }
+    return undefined
+  })
+
+  const res = await POST(await signedReq())
+  assert.equal(res.status, 200)
+  const body = (await res.json()) as {
+    alreadyCheckedIn: boolean
+    awarded: unknown[]
+    unlockedItems: unknown[]
+    badgeActions: unknown[]
+  }
+
+  assert.equal(body.alreadyCheckedIn, true)
+  assert.deepEqual(body.awarded, [])
+  assert.deepEqual(body.unlockedItems, [])
+  assert.deepEqual(body.badgeActions, [])
+  assert.equal(net.calls.filter((c) => c.rpc === 'commit_check_in').length, 0)
+  assert.equal(net.node('getAccountByAddress').length, 0)
+})
+
 test('five POSTs on one UTC day commit exactly once and read the chain once', async () => {
   let committed = false
   net = installFakeNet((c) => {

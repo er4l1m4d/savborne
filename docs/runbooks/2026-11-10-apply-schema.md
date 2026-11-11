@@ -3,7 +3,13 @@
 **Audience:** the project owner (human). There is no database credential in the
 agent sandbox and the SQL is never run from tooling.
 
-**Target schema version:** `2026-11-10.1`
+**Target schema version:** `2026-11-11.1`
+
+> **Revision 2026-11-11.1 (second paste).** After the first paste fixed
+> check-ins, the standing-freshness release added `check_ins.source`,
+> `check_ins.claimed_at`, `check_ins.bracket`, the `record_reading` RPC and the
+> `cron_state` cursor. Apply the same file again, whole, once. It is still
+> idempotent and preserves rows. The version marker must read `2026-11-11.1`.
 
 ## Why
 
@@ -54,19 +60,20 @@ Paste this separately after the main file. Every value must match.
 ```sql
 -- 1. Schema version marker
 select version, applied_at from schema_meta where id = 'singleton';
--- expect: 2026-11-10.1 | <timestamp>
+-- expect: 2026-11-11.1 | <timestamp>
 
 -- 2. The release-gate objects exist
 select exists(select 1 from pg_proc where proname = 'commit_check_in') as commit_check_in,
        exists(select 1 from pg_proc where proname = 'consume_rate_limit') as consume_rate_limit,
+       exists(select 1 from pg_proc where proname = 'record_reading') as record_reading,
        exists(select 1 from pg_indexes
                where schemaname = 'public'
                  and indexname = 'check_ins_player_day_uidx') as check_in_day_index;
--- expect: true | true | true
+-- expect: true | true | true | true
 
 -- 3. Health RPC reports the same version and both functions
 select schema_health();
--- expect: {"version":"2026-11-10.1","commitCheckIn":true,"consumeRateLimit":true}
+-- expect: {"version":"2026-11-11.1","commitCheckIn":true,"consumeRateLimit":true}
 
 -- 4. One reading per UTC day is enforced
 select count(*) from (
@@ -110,7 +117,7 @@ curl -sS https://savborne.vercel.app/api/health -w "\n%{http_code}\n"
 ```
 
 Pass: HTTP 200 with `"ok":true`, `schemaVersion` and `expectedSchemaVersion`
-both `2026-11-10.1`, and `checkInRpc` / `rateLimitRpc` / `db` all `true`.
+both `2026-11-11.1`, and `checkInRpc` / `rateLimitRpc` / `db` all `true`.
 Fail: HTTP 503 - read `checks` to see which object is missing.
 
 ### c. A real wallet check-in
@@ -138,7 +145,7 @@ step, it only removes duplicate same-day readings, and it is safe to re-run.
 | Symptom | Meaning | Action |
 |---|---|---|
 | `permission denied for table ...` | service_role grant missing | Re-run the whole file; check the grants near the end |
-| `function ... does not exist` in PostgREST | paste and deploy differ | Confirm `schema_version()` returns `2026-11-10.1`, then redeploy |
+| `function ... does not exist` in PostgREST | paste and deploy differ | Confirm `schema_version()` returns `2026-11-11.1`, then redeploy |
 | `/api/health` 503 with `checkInRpc:false` | `commit_check_in` missing or wrong signature | Re-paste the file; check the function's argument list |
 | `/api/health` 503 with `version:null` | `schema_meta` missing | Re-paste the file; the insert is near the tables |
 

@@ -14,6 +14,12 @@ import { authRequest } from '@/test/session'
 import { POST } from '@/app/api/queue/join/route'
 
 const PLAYER = 'NQ81 C01N BASE 0000 0000 0000 0000 0000 0000'
+const VAULT_LOW = 'NQ07 1111 1111 1111 1111 1111 1111 1111 1111'
+const VAULT_OK = 'NQ07 2222 2222 2222 2222 2222 2222 2222 2222'
+
+function chain(balance: number) {
+  return { json: { jsonrpc: '2.0', id: 1, result: { data: { balance, type: 'basic' } } } }
+}
 
 const BASE_PLAYER = {
   address: PLAYER,
@@ -52,9 +58,11 @@ test('four distinct-day check-ins do not unlock ranked', async () => {
   assert.equal(net.to('queue').length, 0)
 })
 
-test('a missing bracket does not unlock ranked', async () => {
+test('an on-chain balance below 1 NIM does not unlock ranked', async () => {
   net = installFakeNet((c) => {
     if (c.resource === 'players') return rows({ ...BASE_PLAYER, bracket: null })
+    if (c.resource === 'vaults') return rows({ address: VAULT_LOW, network: 'testnet' })
+    if (c.nodeMethod === 'getAccountByAddress') return chain(0)
     return undefined
   })
 
@@ -63,12 +71,14 @@ test('a missing bracket does not unlock ranked', async () => {
   assert.equal(net.to('queue').length, 0)
 })
 
-test('level 3 with five check-ins and a bracket joins the queue', async () => {
+test('level 3 with five claimed days and 30 NIM joins with the chain bracket', async () => {
   net = installFakeNet((c) => {
     if (c.resource === 'players') return rows(BASE_PLAYER)
+    if (c.resource === 'vaults') return rows({ address: VAULT_OK, network: 'testnet' })
     if (c.resource === 'daily_battles') return rows()
     if (c.resource === 'battles') return rows()
     if (c.resource === 'queue') return rows()
+    if (c.nodeMethod === 'getAccountByAddress') return chain(30_000_000)
     return undefined
   })
 
@@ -80,4 +90,6 @@ test('level 3 with five check-ins and a bracket joins the queue', async () => {
   const upsert = net.to('queue').find((c) => c.method === 'POST')!
   assert.equal((upsert.body as { player_address: string }).player_address, PLAYER)
   assert.equal((upsert.body as { status: string }).status, 'waiting')
+  assert.equal((upsert.body as { bracket: string }).bracket, 'gold')
+  assert.equal(net.node('getAccountByAddress').length, 1)
 })

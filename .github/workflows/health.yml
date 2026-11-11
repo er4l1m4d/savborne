@@ -38,7 +38,7 @@ jobs:
             echo "::error::health body is not ok:true"
             exit 1
           fi
-          if ! printf '%s' "$body" | grep -q '"schemaVersion":"2026-11-10.1"'; then
+          if ! printf '%s' "$body" | grep -q '"schemaVersion":"2026-11-11.1"'; then
             echo "::error::schema version mismatch"
             exit 1
           fi

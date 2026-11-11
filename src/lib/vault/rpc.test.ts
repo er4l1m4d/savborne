@@ -190,3 +190,72 @@ test('the client never calls getBalance', async () => {
   ])
   assert.ok(!methods.includes('getBalance'))
 })
+
+test('NIMIQ_RPC_URLS falls back in order and returns the first good answer', async () => {
+  const previous = process.env.NIMIQ_RPC_URLS
+  process.env.NIMIQ_RPC_URLS = 'https://rpc-one.invalid,https://rpc-two.invalid'
+  const seen: string[] = []
+  const fetchImpl = async (url: string): Promise<Response> => {
+    seen.push(url)
+    if (url.includes('rpc-one')) throw new Error('ECONNREFUSED')
+    return new Response(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        result: { data: { address: VAULT, balance: 42_000_000, type: 'basic' } },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )
+  }
+
+  try {
+    const account = await getAccount(VAULT, 'testnet', { fetchImpl })
+    assert.equal(account.balanceLuna, 42_000_000)
+    assert.deepEqual(seen, ['https://rpc-one.invalid', 'https://rpc-two.invalid'])
+  } finally {
+    if (previous === undefined) delete process.env.NIMIQ_RPC_URLS
+    else process.env.NIMIQ_RPC_URLS = previous
+  }
+})
+
+test('every endpoint failing is an RpcError, never a zero balance', async () => {
+  const previous = process.env.NIMIQ_RPC_URLS
+  process.env.NIMIQ_RPC_URLS = 'https://rpc-one.invalid,https://rpc-two.invalid'
+  const fetchImpl = async (): Promise<Response> => {
+    throw new Error('ECONNREFUSED')
+  }
+
+  try {
+    await assert.rejects(
+      () => getAccount(VAULT, 'testnet', { fetchImpl }),
+      (err: unknown) => err instanceof RpcError && err.kind === 'unreachable',
+    )
+  } finally {
+    if (previous === undefined) delete process.env.NIMIQ_RPC_URLS
+    else process.env.NIMIQ_RPC_URLS = previous
+  }
+})
+
+test('a hung endpoint is aborted by the per-call timeout and moves on', async () => {
+  const previous = process.env.NIMIQ_RPC_URLS
+  process.env.NIMIQ_RPC_URLS = 'https://slow.invalid'
+  let aborted = false
+  const fetchImpl = (_url: string, init: RequestInit): Promise<Response> =>
+    new Promise((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => {
+        aborted = true
+        reject(new DOMException('aborted', 'AbortError'))
+      })
+    })
+
+  try {
+    await assert.rejects(
+      () => getAccount(VAULT, 'testnet', { fetchImpl, timeoutMs: 20 }),
+      (err: unknown) => err instanceof RpcError && err.kind === 'unreachable',
+    )
+    assert.equal(aborted, true)
+  } finally {
+    if (previous === undefined) delete process.env.NIMIQ_RPC_URLS
+    else process.env.NIMIQ_RPC_URLS = previous
+  }
+})

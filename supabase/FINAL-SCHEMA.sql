@@ -64,7 +64,13 @@ create table if not exists check_ins (
   player_address text not null references players(address) on delete cascade,
   balance_luna   bigint not null,
   recorded_at    timestamptz not null default now(),
-  utc_date       date generated always as (((recorded_at at time zone 'utc'))::date) stored
+  utc_date       date generated always as (((recorded_at at time zone 'utc'))::date) stored,
+  -- 'player' = claimed ritual (awards XP), 'cron' = snapshot (awards nothing).
+  source         text not null default 'player' check (source in ('player','cron')),
+  claimed_at     timestamptz,
+  -- Bracket at reading time, computed in TypeScript. Text, not the enum, so a
+  -- future bracket rename does not need a table rewrite.
+  bracket        text
 );
 
 create table if not exists missions (
@@ -193,9 +199,16 @@ create table if not exists schema_meta (
 );
 
 insert into schema_meta (id, version)
-values ('singleton', '2026-11-10.1')
+values ('singleton', '2026-11-11.1')
 on conflict (id) do update
   set version = excluded.version, applied_at = now();
+
+-- Resume point for bounded cron pages. One row per job; no player data.
+create table if not exists cron_state (
+  id         text primary key,
+  cursor     text,
+  updated_at timestamptz not null default now()
+);
 
 -- ─── Vault and savings loop (additive, spec §5) ─────────────────────────────
 -- The vault address is derived on the player's device from a 24-word phrase.
@@ -269,9 +282,22 @@ alter table check_ins
 create unique index if not exists check_ins_player_day_uidx
   on check_ins (player_address, utc_date);
 
+-- Readings vs claims. Existing rows were all player claims, so they get
+-- claimed_at = recorded_at exactly once. Cron readings stay unclaimed.
+alter table check_ins add column if not exists source     text not null default 'player';
+alter table check_ins add column if not exists claimed_at timestamptz;
+alter table check_ins add column if not exists bracket    text;
+
+update check_ins
+   set claimed_at = recorded_at
+ where source = 'player' and claimed_at is null;
+
+-- Ranked is earned by claimed days, not by snapshots. A cron reading must
+-- never move this counter.
 update players p
 set check_in_count = coalesce(
-  (select count(*) from check_ins c where c.player_address = p.address),
+  (select count(*) from check_ins c
+    where c.player_address = p.address and c.claimed_at is not null),
   0
 );
 
@@ -379,6 +405,7 @@ alter table daily_battles   enable row level security;
 alter table daily_xp        enable row level security;
 alter table api_rate_limits enable row level security;
 alter table schema_meta     enable row level security;
+alter table cron_state      enable row level security;
 alter table vaults          enable row level security;
 alter table transfers       enable row level security;
 
@@ -526,7 +553,15 @@ as $$
     p.address,
     p.display_name,
     p.level,
-    p.bracket,
+    coalesce(
+      (select ci.bracket::bracket_name
+         from check_ins ci
+        where ci.player_address = p.address
+          and ci.bracket is not null
+        order by ci.recorded_at desc
+        limit 1),
+      p.bracket
+    ) as bracket,
     p.rating,
     p.wins,
     p.losses,
@@ -537,6 +572,7 @@ as $$
       (select ci.balance_luna
          from check_ins ci
         where ci.player_address = p.address
+          and ci.claimed_at is not null
         order by ci.recorded_at asc
         limit 1),
       p.current_balance_luna
@@ -757,10 +793,29 @@ declare
   v_item        jsonb;
   v_badge       jsonb;
 begin
-  insert into check_ins (player_address, balance_luna, recorded_at)
-  values (p_address, p_balance_luna, p_recorded_at)
+  insert into check_ins (
+    player_address, balance_luna, recorded_at, source, claimed_at, bracket
+  )
+  values (
+    p_address, p_balance_luna, p_recorded_at, 'player', p_recorded_at,
+    nullif(p_player->>'bracket', '')
+  )
   on conflict (player_address, utc_date) do nothing
   returning id into v_inserted_id;
+
+  if v_inserted_id is null then
+    -- A cron snapshot may already exist for today. Claim it exactly once;
+    -- the route passes the stored balance so the award reflects that reading.
+    update check_ins
+       set claimed_at = p_recorded_at,
+           source = 'player',
+           balance_luna = p_balance_luna,
+           bracket = nullif(p_player->>'bracket', '')
+     where player_address = p_address
+       and utc_date = (p_recorded_at at time zone 'utc')::date
+       and claimed_at is null
+    returning id into v_inserted_id;
+  end if;
 
   if v_inserted_id is null then
     select check_in_count into v_count
@@ -771,9 +826,10 @@ begin
     );
   end if;
 
-  -- The unique index makes count(*) the number of distinct UTC days.
+  -- Ranked is earned by claimed days. A cron reading must not unlock it.
   select count(*) into v_count
-    from check_ins where player_address = p_address;
+    from check_ins
+   where player_address = p_address and claimed_at is not null;
 
   update players set
     current_balance_luna = case
@@ -895,6 +951,95 @@ revoke execute on function commit_check_in(
 grant execute on function commit_check_in(
   text, bigint, timestamptz, jsonb, int, jsonb, jsonb, jsonb
 ) to service_role;
+
+-- ─── Scheduled vault readings (cron) ────────────────────────────────────────
+-- Records one balance snapshot for a player/day and keeps standing fresh
+-- WITHOUT awarding XP, a streak day, missions, or a claim. Bracket thresholds
+-- are computed in TypeScript and passed in; this function never duplicates them.
+--
+-- A snapshot can revoke status that is no longer true: Golden Crown below Gold,
+-- and the withdrawal badges on a lower balance. Re-awards happen on the next
+-- claim through the normal reward pipeline.
+create or replace function record_reading(
+  p_address      text,
+  p_balance_luna bigint,
+  p_recorded_at  timestamptz,
+  p_bracket      text
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_prior    bigint;
+  v_withdrew boolean := false;
+  v_bracket  bracket_name := nullif(p_bracket, '')::bracket_name;
+  v_row_id   bigint;
+begin
+  -- Latest reading before this one, including today's claimed row, so an
+  -- intraday withdrawal is visible to the snapshot that follows it.
+  select balance_luna into v_prior
+    from check_ins
+   where player_address = p_address
+   order by recorded_at desc
+   limit 1;
+
+  v_withdrew := v_prior is not null and p_balance_luna < v_prior;
+
+  insert into check_ins (
+    player_address, balance_luna, recorded_at, source, bracket
+  )
+  values (p_address, p_balance_luna, p_recorded_at, 'cron', p_bracket)
+  on conflict (player_address, utc_date) do update
+    set balance_luna = excluded.balance_luna,
+        bracket = excluded.bracket,
+        recorded_at = excluded.recorded_at
+  returning id into v_row_id;
+
+  update players set
+    current_balance_luna = p_balance_luna,
+    bracket = v_bracket,
+    withdrawal_in_progress = case
+      when v_withdrew then true
+      when v_prior is not null then false
+      else withdrawal_in_progress end,
+    last_withdrawal_at = case
+      when v_withdrew then p_recorded_at
+      else last_withdrawal_at end,
+    steady_hand_started_at = case
+      when v_withdrew then p_recorded_at
+      else steady_hand_started_at end
+  where address = p_address;
+
+  if v_bracket is distinct from 'gold' then
+    update player_badges
+       set revoked_at = p_recorded_at
+     where player_address = p_address
+       and badge_key = 'golden_crown'
+       and revoked_at is null;
+  end if;
+
+  if v_withdrew then
+    update player_badges
+       set revoked_at = p_recorded_at
+     where player_address = p_address
+       and badge_key in ('week_warrior', 'iron_saver')
+       and revoked_at is null;
+  end if;
+
+  return jsonb_build_object(
+    'recorded', true,
+    'withdrawal', v_withdrew,
+    'bracket', v_bracket
+  );
+end;
+$$;
+
+revoke all on function record_reading(text, bigint, timestamptz, text) from public;
+revoke execute on function record_reading(text, bigint, timestamptz, text)
+  from anon, authenticated;
+grant execute on function record_reading(text, bigint, timestamptz, text)
+  to service_role;
 
 -- ─── Schema version contract ────────────────────────────────────────────────
 -- The app calls schema_health() from GET /api/health. It reports the marker

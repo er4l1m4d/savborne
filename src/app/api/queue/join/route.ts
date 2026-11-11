@@ -14,14 +14,36 @@
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { RANKED, BATTLE, type Bracket } from '@/lib/constants'
+import { RANKED, BATTLE, type Bracket, bracketFromLuna } from '@/lib/constants'
 import { utcDayOf } from '@/lib/game/time'
 import { routeError } from '@/lib/report'
 import { rateLimitOrError } from '@/lib/rate-limit'
 import { requirePlayer, isAuthResponse } from '@/lib/require-player'
+import { getAccount, RpcError } from '@/lib/vault/rpc'
+import type { Network } from '@/lib/nimiq'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+/**
+ * Ranked eligibility must reflect the vault's balance at the moment of truth,
+ * not the last check-in. A 60s in-process cache bounds chain calls when a
+ * client retries; a cache miss always reads the chain. A null bracket is
+ * cached too (an empty vault stays empty for the same minute).
+ */
+const BALANCE_TTL_MS = 60_000
+const bracketCache = new Map<string, { at: number; bracket: Bracket | null }>()
+
+async function freshBracket(vaultAddress: string, network: Network): Promise<Bracket | null> {
+  const key = `${network}:${vaultAddress}`
+  const cached = bracketCache.get(key)
+  if (cached && Date.now() - cached.at < BALANCE_TTL_MS) return cached.bracket
+
+  const account = await getAccount(vaultAddress, network)
+  const bracket = bracketFromLuna(account.balanceLuna)
+  bracketCache.set(key, { at: Date.now(), bracket })
+  return bracket
+}
 
 export async function POST(req: Request) {
   const auth = requirePlayer(req)
@@ -49,7 +71,33 @@ export async function POST(req: Request) {
       { status: 403 },
     )
   }
-  if (!p.bracket) {
+  const { data: vault, error: vaultErr } = await db
+    .from('vaults')
+    .select('address, network')
+    .eq('player_address', address)
+    .maybeSingle()
+  if (vaultErr) {
+    return routeError({ req, route: '/api/queue/join', code: 'db_error', status: 500, error: vaultErr })
+  }
+  if (!vault) {
+    return NextResponse.json(
+      { error: 'You need at least 1 NIM in your savings account to enter ranked.' },
+      { status: 403 },
+    )
+  }
+
+  let bracket: Bracket | null
+  try {
+    bracket = await freshBracket(vault.address, vault.network as Network)
+  } catch (err) {
+    if (err instanceof RpcError) {
+      return routeError({
+        req, route: '/api/queue/join', code: 'rpc_unreachable', status: 503, error: err,
+      })
+    }
+    return routeError({ req, route: '/api/queue/join', code: 'db_error', status: 500, error: err })
+  }
+  if (!bracket) {
     return NextResponse.json(
       { error: 'You need at least 1 NIM in your savings account to enter ranked.' },
       { status: 403 },
@@ -85,7 +133,7 @@ export async function POST(req: Request) {
   const now = new Date()
   const { error } = await db.from('queue').upsert({
     player_address: address,
-    bracket: p.bracket as Bracket,
+    bracket,
     rating: p.rating,
     entered_at: now.toISOString(),
     last_poll_at: now.toISOString(),

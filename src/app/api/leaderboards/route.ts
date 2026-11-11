@@ -44,6 +44,24 @@ type StatsRow = {
   has_vault: boolean
 }
 
+/**
+ * The aggregate is cohort-wide, so it is cached for everyone for at most 60s.
+ * The bracket inside each row comes from the latest reading in SQL, not from
+ * `players.bracket`, so a cron snapshot or a claim is visible on the next
+ * refresh even when the player never checked in.
+ */
+const STATS_TTL_MS = 60_000
+let statsCache: { at: number; rows: StatsRow[] } | null = null
+
+async function loadStats(db: ReturnType<typeof supabaseAdmin>): Promise<StatsRow[]> {
+  if (statsCache && Date.now() - statsCache.at < STATS_TTL_MS) return statsCache.rows
+  const { data, error } = await db.rpc('leaderboard_stats')
+  if (error) throw error
+  const rows = (data ?? []) as StatsRow[]
+  statsCache = { at: Date.now(), rows }
+  return rows
+}
+
 export async function GET(req: Request) {
   const auth = requirePlayer(req)
   if (isAuthResponse(auth)) return auth
@@ -62,23 +80,24 @@ export async function GET(req: Request) {
   const friendsOnly = url.searchParams.get('friends') === '1'
 
   const db = supabaseAdmin()
-  const [{ data: stats, error }, friendRows] = await Promise.all([
-    db.rpc('leaderboard_stats'),
-    friendsOnly
-      ? db
-          .from('battles')
-          .select('player_a, player_b')
-          .or(`player_a.eq.${address},player_b.eq.${address}`)
-          .neq('mode', 'ai')
-      : Promise.resolve({ data: null }),
-  ])
-  if (error) {
+  let stats: StatsRow[]
+  try {
+    stats = await loadStats(db)
+  } catch (error) {
     return routeError({
       req, route: '/api/leaderboards', code: 'db_error', status: 500, error,
     })
   }
 
-  let rows = (stats ?? []) as StatsRow[]
+  const friendRows = friendsOnly
+    ? await db
+        .from('battles')
+        .select('player_a, player_b')
+        .or(`player_a.eq.${address},player_b.eq.${address}`)
+        .neq('mode', 'ai')
+    : { data: null }
+
+  let rows = stats
   if (friendsOnly) {
     const set = new Set<string>([address])
     for (const b of (friendRows as { data: { player_a: string; player_b: string | null }[] | null })?.data ?? []) {
