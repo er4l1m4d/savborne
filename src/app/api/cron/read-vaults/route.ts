@@ -36,7 +36,8 @@ export const maxDuration = 60
 
 const PAGE_SIZE = 100
 const CONCURRENCY = 5
-const TIME_BUDGET_MS = 45_000
+const RPC_TIMEOUT_MS = 5_000
+const TIME_BUDGET_MS = 20_000
 const CURSOR_ID = 'read-vaults'
 
 type VaultPageRow = {
@@ -90,6 +91,7 @@ export async function GET(req: Request) {
   let failed = 0
   let withdrawals = 0
   let cursor: string | null = null
+  let hasMore = false
 
   const { data: state, error: stateErr } = await db
     .from('cron_state')
@@ -108,7 +110,10 @@ export async function GET(req: Request) {
   cursor = (state?.cursor as string | null) ?? null
 
   for (;;) {
-    if (Date.now() - started >= TIME_BUDGET_MS) break
+    if (Date.now() - started >= TIME_BUDGET_MS) {
+      hasMore = true
+      break
+    }
 
     let query = db
       .from('vaults')
@@ -131,12 +136,23 @@ export async function GET(req: Request) {
     const page = (data ?? []) as VaultPageRow[]
     if (page.length === 0) {
       cursor = null
+      hasMore = false
       break
     }
 
-    const outcomes = await mapLimit(page, CONCURRENCY, async (vault) => {
+    // Stop starting chunks once the budget is spent. A chunk that has already
+    // started is at most CONCURRENCY * RPC_TIMEOUT_MS, so the function stays
+    // under its 60s ceiling even when every endpoint hangs.
+    let pageProcessed = 0
+    const outcomes: { ok: boolean; withdrawal?: boolean }[] = []
+    for (let offset = 0; offset < page.length; offset += CONCURRENCY) {
+      if (Date.now() - started >= TIME_BUDGET_MS) break
+      const chunk = page.slice(offset, offset + CONCURRENCY)
+      const chunkOutcomes = await mapLimit(chunk, CONCURRENCY, async (vault) => {
       try {
-        const account = await getAccount(vault.address, vault.network as Network)
+        const account = await getAccount(vault.address, vault.network as Network, {
+          timeoutMs: RPC_TIMEOUT_MS,
+        })
         const bracket = bracketFromLuna(account.balanceLuna)
         const { data: result, error: rpcErr } = await db.rpc('record_reading', {
           p_address: vault.player_address,
@@ -156,9 +172,12 @@ export async function GET(req: Request) {
         })
         return { ok: false as const }
       }
-    })
+      })
+      outcomes.push(...chunkOutcomes)
+      pageProcessed += chunk.length
+    }
 
-    processed += page.length
+    processed += pageProcessed
     for (const outcome of outcomes) {
       if (outcome.ok) {
         recorded++
@@ -168,9 +187,18 @@ export async function GET(req: Request) {
       }
     }
 
-    const last = page[page.length - 1].address
-    const more = page.length === PAGE_SIZE
-    cursor = more ? last : null
+    if (pageProcessed === 0) {
+      // The budget ran out before the first chunk. Keep the previous cursor so
+      // the next run starts at the same place.
+      hasMore = true
+      break
+    }
+
+    const pageDone = pageProcessed === page.length
+    cursor = pageDone
+      ? (page.length === PAGE_SIZE ? page[page.length - 1].address : null)
+      : page[pageProcessed - 1].address
+    hasMore = page.length === PAGE_SIZE || !pageDone
 
     const { error: saveErr } = await db.from('cron_state').upsert(
       { id: CURSOR_ID, cursor, updated_at: recordedAt },
@@ -187,11 +215,11 @@ export async function GET(req: Request) {
       break
     }
 
-    if (!more) break
+    if (!hasMore) break
   }
 
   const elapsedMs = Date.now() - started
-  const incomplete = Date.now() - started >= TIME_BUDGET_MS && cursor !== null
+  const incomplete = hasMore
 
   return NextResponse.json({
     ok: true,
