@@ -6,6 +6,10 @@ const TOUR = readFileSync(
   new URL('../components/VaultTour.tsx', import.meta.url),
   'utf8',
 )
+const PLACEMENT = readFileSync(
+  new URL('./tour-placement.ts', import.meta.url),
+  'utf8',
+)
 const NAV = readFileSync(
   new URL('../components/PixelNav.tsx', import.meta.url),
   'utf8',
@@ -67,8 +71,8 @@ test('async anchors are watched, not measured once against a skeleton', () => {
 
 test('the card stays inside the app frame and the viewport', () => {
   assert.match(TOUR, /querySelector\('\.sv-frame'\)/)
-  assert.match(TOUR, /frame\.left \+ half/)
-  assert.match(TOUR, /frame\.right - half/)
+  assert.match(PLACEMENT, /frame\.left \+ half/)
+  assert.match(PLACEMENT, /frame\.right - half/)
 })
 
 test('replay and delete clear both tour flags', () => {

@@ -32,6 +32,7 @@ import {
 import { usePathname } from 'next/navigation'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button } from '@/components/ui/Button'
+import { placeTourCard } from '@/lib/tour-placement'
 
 /** Legacy vault tour flag. Kept for storage already written by shipped builds. */
 export const TOUR_FLAG_KEY = 'savborne.tour.v1'
@@ -324,9 +325,9 @@ function sameRect(previous: DOMRect | null, next: DOMRect | null): boolean {
   )
 }
 
-/** Place the card under the anchor when there is room, else above/centred. */
+/** Place the card in the free side of the anchor, never over it. */
 function cardPosition(rect: DOMRect | null): CSSProperties {
-  if (!rect || typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return {
       top: '50%',
       left: '50%',
@@ -335,28 +336,12 @@ function cardPosition(rect: DOMRect | null): CSSProperties {
     }
   }
 
-  const half = Math.min(180, (window.innerWidth - 32) / 2)
   // On a desktop the app frame is narrower than the viewport; keep the card
   // inside the phone column instead of letting it float into the dark gutter.
   const frame = document.querySelector('.sv-frame')?.getBoundingClientRect()
-  const minX = frame ? frame.left + half + 8 : half
-  const maxX = frame ? frame.right - half - 8 : window.innerWidth - half
-  const centerX = Math.min(Math.max(rect.left + rect.width / 2, minX), maxX)
-
-  const spaceBelow = window.innerHeight - rect.bottom - 16
-  const spaceAbove = rect.top - 16
-  // Prefer below when it can show a readable card; otherwise take the larger
-  // side. The card scrolls when the viewport is short, so the ring stays on
-  // screen instead of the card overlapping its own target.
-  const placeBelow = spaceBelow >= 160 || spaceBelow >= spaceAbove
-  const top = placeBelow
-    ? Math.min(rect.bottom + 16, Math.max(16, window.innerHeight - 340))
-    : Math.max(16, rect.top - 16 - 340)
-
-  return {
-    top,
-    left: centerX,
-    transform: 'translateX(-50%)',
-    maxHeight: `calc(100dvh - ${top}px - 16px)`,
-  }
+  return placeTourCard({
+    rect,
+    viewport: { width: window.innerWidth, height: window.innerHeight },
+    frame: frame ? { left: frame.left, right: frame.right } : null,
+  })
 }

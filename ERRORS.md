@@ -296,6 +296,13 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** `buildHeaders` now builds a `Headers` object and uses `set()`, which replaces the caller's entry case-insensitively. A client test asserts one player value and one session value when the caller already sent them.
 **Prevention:** Never merge header names in a plain object. Build `Headers` or lower-case every key before adding; `Headers.get()` returns duplicate values joined by `", "`, not the last one.
 
+### [2026-11-12] Tour card clamped itself back over the highlighted button
+**Symptom:** The guided tour sometimes sat on top of the control it was pointing at (for example the Deposit button), hiding the button the step told the player to use.
+**Context:** `cardPosition` in `VaultTour.tsx`, on shorter viewports or anchors below the middle of the screen.
+**Root cause:** Placement preferred below the anchor, then clamped `top` to `innerHeight - 340` to reserve an assumed card height. When the anchor sat lower than that line, the clamp moved the card above the anchor's bottom edge, covering it. The 340px assumption also ignored the real content height.
+**Fix:** Extracted `placeTourCard` (`src/lib/tour-placement.ts`): it anchors the card to the free side of the spotlight, caps `maxHeight` to that side so long copy scrolls, and never clamps back over the anchor. A sweep test covers anchor positions and viewport sizes.
+**Prevention:** Position a popover from the anchor's edge and cap its size to the available gap; never solve overflow by moving it across the target. Hardcoded content heights drift with the copy.
+
 ---
 
 ## Historical
