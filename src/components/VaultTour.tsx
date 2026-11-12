@@ -142,15 +142,18 @@ export function VaultTour() {
   const [active, setActive] = useState(false)
   const [index, setIndex] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
+  const [cardHeight, setCardHeight] = useState(0)
   const cardRef = useRef<HTMLDivElement>(null)
 
   const step = steps[index]
+  const placed = cardPosition(rect, cardHeight)
 
   // Leaving the screen ends the tour; the next screen can start its own.
   useEffect(() => {
     setActive(false)
     setIndex(0)
     setRect(null)
+    setCardHeight(0)
   }, [pathname])
 
   // Start only once the first anchor exists, so the card does not open over a
@@ -226,6 +229,16 @@ export function VaultTour() {
     }
   }, [active, step?.anchor, index])
 
+  // The card's natural height picks the side that can show it whole. Measure
+  // after every render because the step, the compact layout and the viewport
+  // can all change it; `scrollHeight` still reports the full content when
+  // maxHeight is currently clipping it.
+  useLayoutEffect(() => {
+    if (!active) return
+    const height = cardRef.current?.scrollHeight ?? 0
+    setCardHeight((previous) => (previous === height ? previous : height))
+  }, [active, index, rect, placed.compact])
+
   // Escape leaves the tour. Focus the card when it opens so a keyboard user is
   // not stranded behind the overlay.
   useEffect(() => {
@@ -274,14 +287,20 @@ export function VaultTour() {
         ref={cardRef}
         tabIndex={-1}
         className="absolute w-[calc(100%-2rem)] max-w-90 max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain outline-none"
-        style={cardPosition(rect)}
+        style={placed.style}
       >
-        <PixelPanel className="p-4 flex flex-col gap-3">
+        <PixelPanel
+          className={`flex flex-col ${placed.compact ? 'p-3 gap-2' : 'p-4 gap-3'}`}
+        >
           <span className="sv-section-label text-fg-faint">
             Step {index + 1} of {steps.length}
           </span>
-          <h2 className="sv-subheading">{step.title}</h2>
-          <p className="sv-body text-fg-muted">{step.body}</p>
+          <h2 className={placed.compact ? 'sv-subheading text-lg' : 'sv-subheading'}>
+            {step.title}
+          </h2>
+          <p className={`sv-body text-fg-muted ${placed.compact ? 'text-sm leading-snug' : ''}`}>
+            {step.body}
+          </p>
 
           <div className="flex items-center gap-2">
             {index > 0 && (
@@ -325,23 +344,31 @@ function sameRect(previous: DOMRect | null, next: DOMRect | null): boolean {
   )
 }
 
+type CardPosition = { style: CSSProperties; compact: boolean }
+
 /** Place the card in the free side of the anchor, never over it. */
-function cardPosition(rect: DOMRect | null): CSSProperties {
+function cardPosition(rect: DOMRect | null, cardHeight: number): CardPosition {
   if (typeof window === 'undefined') {
     return {
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      maxHeight: 'calc(100dvh - 2rem)',
+      style: {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        maxHeight: 'calc(100dvh - 2rem)',
+      },
+      compact: false,
     }
   }
 
   // On a desktop the app frame is narrower than the viewport; keep the card
   // inside the phone column instead of letting it float into the dark gutter.
   const frame = document.querySelector('.sv-frame')?.getBoundingClientRect()
-  return placeTourCard({
+  const placement = placeTourCard({
     rect,
     viewport: { width: window.innerWidth, height: window.innerHeight },
     frame: frame ? { left: frame.left, right: frame.right } : null,
+    cardHeight,
   })
+  const { compact, ...style } = placement
+  return { style, compact }
 }

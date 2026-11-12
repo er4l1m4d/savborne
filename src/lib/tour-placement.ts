@@ -28,6 +28,8 @@ export type TourCardPlacement = {
   top?: number
   bottom?: number
   maxHeight: number
+  /** Tighten padding, gaps and text so the card fits without scrolling. */
+  compact: boolean
 }
 
 /** Space kept between the card and the viewport edge / the spotlight. */
@@ -38,13 +40,24 @@ const GAP = 16
 const MIN_READABLE = 160
 /** Below this, neither side can show a usable card; centre it instead. */
 const MIN_SIDE = 120
+/**
+ * The full card is about 250px tall on a narrow phone. Below this much free
+ * side, tighten the card rather than let it scroll.
+ */
+const COMPACT_BELOW = 300
 
 export function placeTourCard(args: {
   rect: TourRect | null
   viewport: TourViewport
   frame?: TourFrame | null
+  /**
+   * Natural height of the card, measured after render. When present, a side
+   * that cannot show the whole card is not chosen while the other side can.
+   */
+  cardHeight?: number
 }): TourCardPlacement {
   const { rect, viewport, frame } = args
+  const cardHeight = args.cardHeight && args.cardHeight > 0 ? args.cardHeight : 0
 
   // The card is at most 360px wide, so its half-width is capped at 180.
   const half = Math.min(180, Math.max(0, (viewport.width - MARGIN * 2) / 2))
@@ -61,26 +74,33 @@ export function placeTourCard(args: {
       left: centerX,
       transform: 'translate(-50%, -50%)',
       maxHeight: Math.max(0, viewport.height - MARGIN * 2),
+      compact: false,
     }
   }
 
   const spaceBelow = Math.max(0, viewport.height - rect.bottom - MARGIN - GAP)
   const spaceAbove = Math.max(0, rect.top - MARGIN - GAP)
+  const largestSide = Math.max(spaceAbove, spaceBelow)
 
   // A very short viewport can leave no readable side. Centre the card rather
   // than shrinking it to nothing; the ring still marks the target.
-  if (Math.max(spaceAbove, spaceBelow) < MIN_SIDE) {
+  if (largestSide < MIN_SIDE) {
     return {
       top: viewport.height / 2,
       left: centerX,
       transform: 'translate(-50%, -50%)',
       maxHeight: Math.max(0, viewport.height - MARGIN * 2),
+      compact: true,
     }
   }
 
-  // Prefer below when it can show a readable card; otherwise take the larger
-  // side. Never clamp the card back over the anchor to make it fit.
-  const placeBelow = spaceBelow >= MIN_READABLE || spaceBelow >= spaceAbove
+  // Prefer below when it can show the whole card. If only one side fits, use
+  // it; when neither fits, use the larger side and let the card scroll there.
+  // Never clamp the card back over the anchor to make it fit.
+  const needed = cardHeight > 0 ? cardHeight : MIN_READABLE
+  const fitsBelow = spaceBelow >= needed
+  const fitsAbove = spaceAbove >= needed
+  const placeBelow = fitsBelow || (!fitsAbove && spaceBelow >= spaceAbove)
 
   if (placeBelow) {
     const top = Math.min(rect.bottom + GAP, viewport.height - MARGIN)
@@ -89,6 +109,7 @@ export function placeTourCard(args: {
       left: centerX,
       transform: 'translateX(-50%)',
       maxHeight: Math.max(0, viewport.height - top - MARGIN),
+      compact: largestSide < COMPACT_BELOW,
     }
   }
 
@@ -100,6 +121,7 @@ export function placeTourCard(args: {
     left: centerX,
     transform: 'translateX(-50%)',
     maxHeight: Math.max(0, viewport.height - bottom - MARGIN),
+    compact: largestSide < COMPACT_BELOW,
   }
 }
 

@@ -300,8 +300,8 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Symptom:** The guided tour sometimes sat on top of the control it was pointing at (for example the Deposit button), hiding the button the step told the player to use.
 **Context:** `cardPosition` in `VaultTour.tsx`, on shorter viewports or anchors below the middle of the screen.
 **Root cause:** Placement preferred below the anchor, then clamped `top` to `innerHeight - 340` to reserve an assumed card height. When the anchor sat lower than that line, the clamp moved the card above the anchor's bottom edge, covering it. The 340px assumption also ignored the real content height.
-**Fix:** Extracted `placeTourCard` (`src/lib/tour-placement.ts`): it anchors the card to the free side of the spotlight, caps `maxHeight` to that side so long copy scrolls, and never clamps back over the anchor. A sweep test covers anchor positions and viewport sizes.
-**Prevention:** Position a popover from the anchor's edge and cap its size to the available gap; never solve overflow by moving it across the target. Hardcoded content heights drift with the copy.
+**Fix:** Extracted `placeTourCard` (`src/lib/tour-placement.ts`): it measures the card's natural height, picks a side that can show the whole card, and switches to a tighter layout when the largest side is under 300px. Long copy scrolls only when neither side can fit even the compact card, and the card never clamps back over the anchor. A sweep test covers anchor positions and viewport sizes.
+**Prevention:** Position a popover from the anchor's edge, measure the content, and cap its size to the available gap; never solve overflow by moving it across the target. Hardcoded content heights drift with the copy.
 
 ---
 

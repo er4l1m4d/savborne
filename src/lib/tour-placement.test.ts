@@ -46,23 +46,89 @@ test('the card stays inside the desktop app frame', () => {
   assert.equal(placement.left, 667)
 })
 
+test('a side that fits the whole card beats a nearer side that would scroll', () => {
+  const viewport = { width: 390, height: 568 }
+  const rect = anchor(300) // bottom 348; 188 below, 268 above
+
+  // Without a measured height the old heuristic picks below and scrolls.
+  const unmeasured = placeTourCard({ rect, viewport })
+  assert.equal(unmeasured.top, rect.bottom + GAP)
+  assert.ok(unmeasured.maxHeight < 220)
+
+  // With the real height it flips above, where the whole card fits.
+  const measured = placeTourCard({ rect, viewport, cardHeight: 220 })
+  assert.equal(measured.bottom, viewport.height - rect.top + GAP)
+  assert.ok(measured.maxHeight >= 220)
+})
+
+test('both sides fitting keeps below and leaves the card unconstrained', () => {
+  const viewport = { width: 390, height: 844 }
+  const rect = anchor(300)
+  const placement = placeTourCard({ rect, viewport, cardHeight: 220 })
+
+  assert.equal(placement.top, rect.bottom + GAP)
+  assert.ok(placement.maxHeight >= 220)
+})
+
+test('when neither side fits, the larger side is used and capped to it', () => {
+  const viewport = { width: 390, height: 400 }
+  const rect = anchor(180) // 140 below, 148 above
+  const placement = placeTourCard({ rect, viewport, cardHeight: 300 })
+
+  assert.equal(placement.transform, 'translateX(-50%)')
+  assert.ok(placement.bottom !== undefined)
+  assert.equal(placement.maxHeight, 148)
+})
+
+test('a tight side switches the card to its compact layout', () => {
+  const viewport = { width: 390, height: 667 }
+  const placement = placeTourCard({ rect: anchor(300), viewport })
+  // 287px below and 268px above: neither is a roomy full card.
+  assert.equal(placement.compact, true)
+})
+
+test('a roomy side keeps the full card layout', () => {
+  const viewport = { width: 390, height: 844 }
+  const placement = placeTourCard({ rect: anchor(300), viewport })
+  assert.equal(placement.compact, false)
+})
+
 test('no anchor position is ever covered, on phone and desktop sizes', () => {
+  const cardHeight = 220
+
   for (const width of [320, 390, 430, 1280]) {
     for (const height of [360, 568, 667, 844, 932]) {
       const viewport = { width, height }
 
       for (let top = 0; top <= height - 40; top += 10) {
         const rect = anchor(top)
-        const placement = placeTourCard({ rect, viewport })
+        const placement = placeTourCard({ rect, viewport, cardHeight })
         const label = `${width}x${height} at ${top}: ${JSON.stringify(placement)}`
+
+        const spaceBelow = Math.max(0, height - rect.bottom - MARGIN - GAP)
+        const spaceAbove = Math.max(0, rect.top - MARGIN - GAP)
+        const largest = Math.max(spaceAbove, spaceBelow)
+
+        if (placement.transform === 'translate(-50%, -50%)') {
+          // Only for sides too short to be worth using.
+          assert.ok(largest < 120, label)
+          continue
+        }
 
         if (placement.bottom !== undefined) {
           const bottomEdge = height - placement.bottom
           assert.ok(bottomEdge <= rect.top - GAP, label)
           assert.ok(bottomEdge - placement.maxHeight >= MARGIN, label)
-        } else if (placement.transform === 'translateX(-50%)') {
+        } else {
           assert.ok(placement.top! >= rect.bottom + GAP, label)
           assert.ok(placement.top! + placement.maxHeight <= height - MARGIN, label)
+        }
+
+        // A side that can show the whole card is never constrained.
+        if (largest >= cardHeight) {
+          assert.ok(placement.maxHeight >= cardHeight, label)
+        } else {
+          assert.equal(placement.maxHeight, largest, label)
         }
       }
     }
