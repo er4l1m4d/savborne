@@ -28,7 +28,7 @@ export function PixelNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 flex items-stretch bg-background border-t-2 border-bevel"
+      className="sv-fixed-frame fixed bottom-0 flex items-stretch bg-background border-t-2 border-bevel"
       style={{
         height: 'var(--nav-h)',
         padding: '8px 12px 20px',
@@ -42,7 +42,7 @@ export function PixelNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            data-tour={tab.href === '/' ? 'home' : undefined}
+            data-tour={navTourAnchor(tab.href)}
             aria-current={active ? 'page' : undefined}
             className={`flex flex-1 flex-col items-center justify-center gap-1 min-h-14 no-underline transition-colors ${
               active ? 'text-mint' : 'text-fg-muted hover:text-foreground'
@@ -63,4 +63,22 @@ export function PixelNav() {
       })}
     </nav>
   )
+}
+
+/** Tour anchors stay stable even if a tab's route changes. */
+function navTourAnchor(href: string): string {
+  switch (href) {
+    case '/':
+      return 'nav-home'
+    case '/battle':
+      return 'nav-battle'
+    case '/missions':
+      return 'nav-missions'
+    case '/leaderboard':
+      return 'nav-ranks'
+    case '/profile':
+      return 'nav-profile'
+    default:
+      return `nav-${href.replace(/^\//, '')}`
+  }
 }

@@ -53,7 +53,12 @@
 
   /* LAYOUT */
   --nav-h: 84px;
-  --gut: 22px;
+  /* 22px at the 390 design width, tightening to 18px on a 320 phone. */
+  --gut: clamp(18px, 5.6vw, 22px);
+  /* The app is a phone-first column. On a tablet or desktop it stays a
+     centred frame instead of stretching the 390 design edge to edge. */
+  --frame-w: 480px;
+  --outside: #070C0B;
 
   /* MOTION — shared curves so screens do not re-type them */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -128,6 +133,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── App frame ───────────────────────────────────────────────────────────
+   Every route renders inside one centred column. Fixed chrome (the bottom
+   nav and sheets) uses the same edges via `.sv-fixed-frame`, so on a tablet
+   or desktop the app reads as a phone-sized app, not a stretched mobile page
+   with 1000px-wide panels. On a phone both rules are no-ops. */
+.sv-frame {
+  position: relative;
+  width: 100%;
+  max-width: var(--frame-w);
+  min-height: 100dvh;
+  margin-inline: auto;
+  background: var(--shell);
+}
+
+.sv-fixed-frame {
+  left: max(0px, calc((100vw - var(--frame-w)) / 2));
+  right: max(0px, calc((100vw - var(--frame-w)) / 2));
+}
+
+@media (min-width: 520px) {
+  body {
+    background: var(--outside);
+  }
+  .sv-frame {
+    box-shadow: 0 0 0 1px var(--line);
+  }
+}
+
 /* Bevel utility — the signature pixel-RPG border */
 .vpx {
   border: 2px solid var(--bevel);
@@ -138,10 +171,22 @@ body {
   box-shadow: 0 3px 0 var(--line);
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 4px; }
+/* Scrollbars — square pixel track, bevel thumb, mint on hover. Mobile
+   WebViews use overlay scrollbars and may ignore the WebKit rules; the
+   standard properties are scoped to engines without `::-webkit-scrollbar`
+   so Chromium keeps the square thumb instead of a rounded native one. */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--bevel-soft) var(--surface-low);
+  }
+}
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface-low); }
-::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--bevel-soft); }
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active { background: var(--mint); }
+::-webkit-scrollbar-corner { background: var(--surface-low); }
 
 /* Numeric role — the class every figure in the app carries.
  *
@@ -429,6 +474,7 @@ body {
     gap: 16px;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
     padding-top: 16px;
     padding-bottom: 16px;
     /* .pxw draws its 2px outline outside the panel box. Give the scroll
@@ -499,11 +545,9 @@ body {
   .sv-row--you {
     min-height: 60px;
     margin-block: 0 4px;
-    margin-inline: -14px;
-    padding-inline: 14px;
+    padding-inline: 12px;
     background: var(--you-surface);
-    border-top: 2px solid var(--mint);
-    border-bottom: 2px solid var(--mint);
+    border: 2px solid var(--mint);
   }
   .sv-row--divider { border-bottom: 2px solid var(--track); }
   .sv-row--divider:last-child { border-bottom: 0; }
@@ -594,12 +638,13 @@ body {
   .sv-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(12, 18, 17, 0.7); }
   .sv-sheet-panel {
     position: fixed;
-    left: 0;
-    right: 0;
+    left: max(0px, calc((100vw - var(--frame-w)) / 2));
+    right: max(0px, calc((100vw - var(--frame-w)) / 2));
     bottom: 0;
     z-index: 61;
     max-height: 80dvh;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
     padding: 22px;
     padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
     background: var(--surface);

@@ -50,7 +50,9 @@ export default function RootLayout({ children }: PropsWithChildren) {
       className={`${jakarta.variable} ${silkscreen.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <VersionGate>{children}</VersionGate>
+        <div className="sv-frame">
+          <VersionGate>{children}</VersionGate>
+        </div>
       </body>
     </html>
   );

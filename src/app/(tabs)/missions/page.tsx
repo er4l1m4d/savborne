@@ -87,6 +87,13 @@ export default function MissionsPage() {
   const daily = missions?.filter((m) => m.type === 'daily') ?? []
   const weekly = missions?.filter((m) => m.type === 'weekly') ?? []
   const oneTime = missions?.filter((m) => m.type === 'onetime') ?? []
+  const oneTimeDone = oneTime.filter((m) => m.completed).length
+  const oneTimeXp = oneTime.reduce((sum, m) => sum + (m.completed ? m.xpReward : 0), 0)
+  // Open goals first, finished ones at the bottom: the tab is a to-do list,
+  // not an archive. A stable sort keeps the API order inside each group.
+  const oneTimeOrdered = [...oneTime].sort(
+    (a, b) => Number(a.completed) - Number(b.completed),
+  )
 
   return (
     <ScreenShell variant="tab" title="Missions" bodyClassName="gap-3.5">
@@ -142,7 +149,13 @@ export default function MissionsPage() {
           )
         ) : oneTime.length > 0 ? (
           <GroupList>
-            <Group title="One-time" reset="Never expires" missions={oneTime} />
+            <Group
+              title="Milestones"
+              reset="Never expires"
+              missions={oneTimeOrdered}
+              caption={`${oneTimeDone} of ${oneTime.length} complete · ${oneTimeXp} XP earned`}
+              progress={{ value: oneTimeDone, max: oneTime.length }}
+            />
           </GroupList>
         ) : (
           <EmptyPanel tone="onetime" />
@@ -162,22 +175,36 @@ function Group({
   reset,
   missions,
   cap,
+  caption,
+  progress,
 }: {
   title: string
   reset: string
   missions: Mission[]
   cap?: number
+  /** Overrides the reset/cap line, e.g. the one-time completion counter. */
+  caption?: string
+  /** Optional completion meter, currently used by the one-time goals. */
+  progress?: { value: number; max: number }
 }) {
-  const caption =
-    cap === undefined ? reset : `${reset} · ${xpCounter(earnedXp(missions, cap), cap)}`
+  const text =
+    caption ?? (cap === undefined ? reset : `${reset} · ${xpCounter(earnedXp(missions, cap), cap)}`)
 
   return (
     <section className="flex flex-col gap-2" aria-label={title}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
         <h2 className="sv-subheading">{title}</h2>
-        <span className="sv-caption font-bold text-fg-muted tabular-nums">{caption}</span>
+        <span className="sv-caption font-bold text-fg-muted tabular-nums">{text}</span>
       </div>
-      <PixelPanel className="px-4 py-0">
+      {progress && (
+        <Meter
+          value={progress.value}
+          max={progress.max}
+          height={10}
+          label={`${title} complete`}
+        />
+      )}
+      <PixelPanel className="px-4 py-2">
         {missions.map((m, i) => (
           <MissionRow key={m.key} m={m} divider={i < missions.length - 1} />
         ))}

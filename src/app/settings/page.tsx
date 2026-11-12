@@ -22,7 +22,7 @@ import { disconnectPlan } from '@/lib/reconnect'
 import type { Avatar } from '@/lib/avatar'
 import type { Bracket } from '@/lib/constants'
 import { CharacterPicker } from '@/components/CharacterPicker'
-import { TOUR_FLAG_KEY } from '@/components/VaultTour'
+import { APP_TOUR_FLAG_KEY, TOUR_FLAG_KEY } from '@/components/VaultTour'
 import { BackupSettings } from '@/components/vault/BackupSettings'
 import { PrivacyNotice } from '@/components/PrivacyNotice'
 import { ScreenShell } from '@/components/ui/ScreenShell'
@@ -162,11 +162,12 @@ export default function SettingsPage() {
 
   function showTourAgain() {
     try {
+      window.localStorage.removeItem(APP_TOUR_FLAG_KEY)
       window.localStorage.removeItem(TOUR_FLAG_KEY)
     } catch {
       // Non-fatal.
     }
-    router.push('/vault')
+    router.push('/')
   }
 
   function openDisconnect() {
@@ -294,7 +295,7 @@ export default function SettingsPage() {
                   className="w-full justify-start px-0 text-fg"
                   onClick={showTourAgain}
                 >
-                  Show tour again
+                  Replay the tour
                 </Button>
               </Row>
               <Row divider>

@@ -119,7 +119,8 @@ export default function LeaderboardPage() {
         ]}
       />
 
-      <div className="flex min-h-11 items-center justify-end">
+      <div className="flex min-h-11 items-center justify-between gap-3">
+        <span className="sv-caption font-bold text-fg-muted">Show</span>
         <FilterBar
           ariaLabel="Board filter"
           value={friends ? 'friends' : 'everyone'}
@@ -154,7 +155,7 @@ export default function LeaderboardPage() {
           <EmptyPanel board={board} />
         ) : (
           <>
-            <PixelPanel className="px-3.5 py-0.5">
+            <PixelPanel className="px-3.5 py-2">
               {rows.map((row, i) => (
                 <RankRowView
                   key={`${row.rank}-${row.displayName}`}
@@ -168,7 +169,7 @@ export default function LeaderboardPage() {
             {pinned && you && (
               <section className="flex flex-col gap-2" aria-label="Your rank">
                 <h2 className="sv-caption font-bold text-fg-muted">Your rank</h2>
-                <PixelPanel tone="mint" className="px-3.5 py-0.5">
+                <PixelPanel tone="mint" className="px-3.5 py-2">
                   <RankRowView
                     row={you}
                     board={board}
@@ -219,7 +220,7 @@ function RankRowView({
       variant={isYou ? 'you' : 'default'}
       minHeight={56}
       divider={divider}
-      className="gap-3"
+      className="gap-2 min-[360px]:gap-3"
       leading={
         <span
           className={`num w-[26px] shrink-0 text-center text-[14px] font-bold ${rankClass}`}
@@ -232,14 +233,16 @@ function RankRowView({
         row.statsHidden ? (
           <span className="sv-caption shrink-0 text-fg-faint">Private</span>
         ) : (
-          <span className="flex shrink-0 items-center gap-3">
-            <span className="sv-caption w-[52px] shrink-0 whitespace-nowrap font-bold text-fg-muted">
+          <span className="flex shrink-0 items-center gap-2 min-[360px]:gap-3">
+            <span className="sv-caption hidden w-[52px] shrink-0 whitespace-nowrap font-bold text-fg-muted min-[360px]:inline-block">
               {bracket ?? '—'}
               {!bracket && <span className="sr-only">No bracket yet</span>}
             </span>
             <span
               className={`num shrink-0 text-right text-[14px] font-bold ${
-                board === 'ranked' ? 'w-12' : 'w-14'
+                board === 'ranked'
+                  ? 'w-10 min-[360px]:w-12'
+                  : 'w-12 min-[360px]:w-14'
               }`}
             >
               <span className="sr-only">Score </span>

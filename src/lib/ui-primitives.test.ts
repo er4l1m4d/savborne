@@ -23,11 +23,25 @@ test('Button exposes the approved variants and press/loading states', () => {
 test('PixelPanel composes the stepped panel and tone variables', () => {
   const src = ui('PixelPanel.tsx')
   assert.match(src, /wrapperClassName\?:\s*string/)
+  assert.match(src, /tourAnchor\?:\s*string/)
+  assert.match(src, /data-tour=\{tourAnchor\}/)
   assert.match(src, /data-tone=\{tone\}/)
   assert.match(src, /className=\{`pxw/)
   assert.match(src, /className=\{`px sv-panel/)
   assert.match(CSS, /\.pxw\[data-tone='coral'\]\s*>\s*\.px/)
   assert.match(CSS, /\.pxw\[data-tone='off'\]\s*>\s*\.px/)
+})
+
+test('the app frame keeps every route in a centred phone column', () => {
+  const layout = readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8')
+  const nav = readFileSync(new URL('../components/PixelNav.tsx', import.meta.url), 'utf8')
+  assert.match(CSS, /--frame-w:\s*480px/)
+  assert.match(CSS, /\.sv-frame\s*\{[^}]*max-width:\s*var\(--frame-w\)/)
+  assert.match(CSS, /\.sv-frame\s*\{[^}]*margin-inline:\s*auto/)
+  assert.match(CSS, /\.sv-fixed-frame\s*\{[^}]*calc\(\(100vw - var\(--frame-w\)\) \/ 2\)/)
+  assert.match(CSS, /\.sv-sheet-panel\s*\{[^}]*left:\s*max\(0px/)
+  assert.match(layout, /className="sv-frame"/)
+  assert.match(nav, /sv-fixed-frame/)
 })
 
 test('ScreenShell owns the header, the scroll body and the back icon', () => {
@@ -173,16 +187,15 @@ test('FilterBar is one 32px track with 44px pressed segments', () => {
   assert.doesNotMatch(pressed.slice(0, 220), /var\(--mint\)/)
 })
 
-test('Row has a mint-bordered You variant that bleeds through the panel padding', () => {
+test('Row has a mint-outlined You variant that stays inside the panel', () => {
   const src = ui('Row.tsx')
   assert.match(src, /variant\?:\s*'default'\s*\|\s*'you'/)
   assert.match(src, /sv-row--you/)
   assert.match(CSS, /--you-surface:\s*#1B2E29/)
   assert.match(CSS, /\.sv-row--you\s*\{[^}]*min-height:\s*60px/)
   assert.match(CSS, /\.sv-row--you\s*\{[^}]*margin-block:\s*0 4px/)
-  assert.match(CSS, /\.sv-row--you\s*\{[^}]*margin-inline:\s*-14px/)
-  assert.match(CSS, /\.sv-row--you\s*\{[^}]*padding-inline:\s*14px/)
-  assert.match(CSS, /\.sv-row--you\s*\{[^}]*border-top:\s*2px solid var\(--mint\)/)
-  assert.match(CSS, /\.sv-row--you\s*\{[^}]*border-bottom:\s*2px solid var\(--mint\)/)
+  assert.doesNotMatch(CSS, /\.sv-row--you\s*\{[^}]*margin-inline:\s*-14px/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*padding-inline:\s*12px/)
+  assert.match(CSS, /\.sv-row--you\s*\{[^}]*border:\s*2px solid var\(--mint\)/)
   assert.match(CSS, /\.sv-row--you\s*\{[^}]*background:\s*var\(--you-surface\)/)
 })

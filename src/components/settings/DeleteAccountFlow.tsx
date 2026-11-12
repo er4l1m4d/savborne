@@ -23,7 +23,7 @@ import { phraseMatchesVault } from '@/lib/vault/phrase'
 import { VaultLockedError } from '@/lib/vault/errors'
 import { deleteAuthHeaders, deleteMessage } from '@/lib/delete-request'
 import { signMessage } from '@/lib/nimiq'
-import { TOUR_FLAG_KEY } from '@/components/VaultTour'
+import { APP_TOUR_FLAG_KEY, TOUR_FLAG_KEY } from '@/components/VaultTour'
 import { deletionGate, type DeletionGate } from '@/lib/account-deletion'
 import { BackupQuiz } from '@/components/vault/BackupQuiz'
 import { CopyButton } from '@/components/vault/CopyButton'
@@ -154,6 +154,7 @@ export function DeleteAccountFlow({ playerAddress }: { playerAddress: string }) 
       try {
         clearVault(playerAddress)
         writeSession(null)
+        window.localStorage.removeItem(APP_TOUR_FLAG_KEY)
         window.localStorage.removeItem(TOUR_FLAG_KEY)
       } catch {
         // Best-effort.

@@ -270,7 +270,7 @@ export default function HomePage() {
     >
       <CharacterCard player={player} bracket={bracket} />
 
-      <PixelPanel className="p-4 flex flex-col gap-3.5">
+      <PixelPanel tourAnchor="home-savings" className="p-4 flex flex-col gap-3.5">
         <div className="flex items-baseline justify-between gap-2">
           <span className="sv-label font-bold text-fg-muted">Savings account</span>
           <span
@@ -306,6 +306,7 @@ export default function HomePage() {
           onClick={onCheckIn}
           disabled={alreadyCheckedIn}
           loading={checking}
+          data-tour="checkin"
         >
           {checking ? (
             'Reading balance…'
@@ -320,7 +321,7 @@ export default function HomePage() {
 
         {checkError && <Banner tone="error">{checkError}</Banner>}
 
-        <ButtonLink href="/vault" variant="ghost" className="self-start">
+        <ButtonLink href="/vault" variant="ghost" className="self-start" data-tour="vault-link">
           Open vault
         </ButtonLink>
       </PixelPanel>

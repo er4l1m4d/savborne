@@ -57,6 +57,15 @@ test('the page ports the handoff groups and copy', () => {
   assert.match(PAGE, /earnedXp\(/)
 })
 
+test('the one-time tab is a progress list, not a flat archive', () => {
+  assert.match(PAGE, /Milestones/)
+  assert.match(PAGE, /oneTimeDone/)
+  assert.match(PAGE, /oneTimeXp/)
+  assert.match(PAGE, /progress=\{\{ value: oneTimeDone, max: oneTime\.length \}\}/)
+  assert.match(PAGE, /Number\(a\.completed\) - Number\(b\.completed\)/)
+  assert.match(PAGE, /px-4 py-2/)
+})
+
 test('the row shows a 24px status box, mint XP and open-row descriptions', () => {
   assert.match(PAGE, /w-6 h-6/)
   assert.match(PAGE, /<Glyph name="check"/)

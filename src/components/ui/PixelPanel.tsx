@@ -19,6 +19,8 @@ type PixelPanelProps = {
   wrapperClassName?: string
   /** Applied to the wrapper; `VaultTour` positions the whole shadowed box. */
   style?: CSSProperties
+  /** Optional `data-tour` anchor for the wrapper, so tours point at the panel. */
+  tourAnchor?: string
   children: ReactNode
 }
 
@@ -27,12 +29,14 @@ export function PixelPanel({
   className,
   wrapperClassName,
   style,
+  tourAnchor,
   children,
 }: PixelPanelProps) {
   return (
     <div
       className={`pxw ${wrapperClassName ?? ''}`.trim()}
       data-tone={tone}
+      data-tour={tourAnchor}
       style={style}
     >
       <div className={`px sv-panel ${className ?? ''}`.trim()}>{children}</div>

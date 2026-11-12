@@ -7,10 +7,11 @@ import type { ReactNode } from 'react'
  * 58px (or 56px rank) rhythm and the divider. The title column is `min-w-0` so
  * long names wrap instead of pushing the trailing figure off-screen.
  *
- * `variant="you"` is the handoff's caller row: 60px, mint top and bottom
- * borders, no top gap and a 4px bottom gap, and a 14px inline bleed that
- * reaches the panel's padding edge. It matches a `px-3.5` panel. The variant
- * owns both borders, so it never takes `sv-row--56` or `sv-row--divider`.
+ * `variant="you"` is the handoff's caller row: 60px, a mint outline, no top
+ * gap and a 4px bottom gap. It stays inside the panel padding rather than
+ * bleeding to the bevel — a full-bleed band cuts the container outline and
+ * reads as a rendering bug. It matches a `px-3.5` panel. The variant owns the
+ * border, so it never takes `sv-row--56` or `sv-row--divider`.
  */
 
 type RowProps = {
