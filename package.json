@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "verify": "npm test && npx tsc --noEmit && npm run lint && npm run build",
     "vault:e2e": "node scripts/vault-e2e.mjs",
     "checkin:e2e": "node scripts/checkin-e2e.mjs",
     "fonts:vendor": "node scripts/vendor-fonts.mjs"

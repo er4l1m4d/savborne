@@ -266,7 +266,7 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Context:** `savborne.vercel.app` after the check-in trust batch deployed; production Supabase had never had `FINAL-SCHEMA.sql` applied.
 **Root cause:** Deployment and schema were released as separate steps with no contract between them. The app called `consume_rate_limit` and `commit_check_in`, which existed only in the repo.
 **Fix:** Applied the whole idempotent schema file in the Supabase SQL Editor. Added `schema_meta`, `schema_version()`, `schema_health()` and `GET /api/health`; the health check reports a version mismatch or a missing RPC as a 503 instead of letting players discover it. The fake-proof probe moved from 500 to 401 `bad_signature`.
-**Prevention:** `/api/health` is polled every 15 minutes by `.github/workflows/health.yml`; `schema_version` is bumped in the same edit as any schema change and pinned to `EXPECTED_SCHEMA_VERSION` by a test.
+**Prevention:** `/api/health` is polled every few minutes by an external uptime monitor (see `docs/runbooks/deploy.md`); `schema_version` is bumped in the same edit as any schema change and pinned to `EXPECTED_SCHEMA_VERSION` by a test.
 
 ### [2026-11-11] A session token in normalised form broke every exact-match query
 **Symptom:** After sessions were added, battle routes returned 403 "Not your battle" and vault reads returned empty for addresses that existed. `npx tsc` was clean.

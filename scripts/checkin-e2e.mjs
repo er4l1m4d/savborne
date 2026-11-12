@@ -138,6 +138,30 @@ async function main() {
   console.log(`test wallet: ${wallet.address}`)
   console.log(`test vault:  ${vaultWallet.address}\n`)
 
+  // 0. Identity fails closed ----------------------------------------------------
+  // A missing SESSION_SECRET makes every authenticated route throw. That must
+  // surface as 401 (the token is rejected), never as 500 (the deployment is
+  // misconfigured and nobody can sign in).
+  const bare = await call('/api/profile', {
+    headers: { 'X-Player-Address': wallet.address },
+  })
+  step(bare.status === 401, 'a bare X-Player-Address is refused', `HTTP ${bare.status}`)
+
+  const garbage = await call('/api/profile', {
+    headers: {
+      'X-Player-Address': wallet.address,
+      'X-Savborne-Session': 'not-a-real-token',
+    },
+  })
+  step(
+    garbage.status === 401,
+    'a garbage session is 401, not 500',
+    `HTTP ${garbage.status}`,
+  )
+
+  const cron = await call('/api/cron/read-vaults')
+  step(cron.status === 401, 'the cron route rejects a request without the secret', `HTTP ${cron.status}`)
+
   // 1. Session + player + vault -------------------------------------------------
   const signedAt = Date.now()
   const sessionProof = wallet.sign(sessionMessage(wallet.address, signedAt), signedAt)

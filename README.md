@@ -10,8 +10,7 @@ balance you can see on chain into XP, streaks, items, missions, badges, and rank
 `nimiqpay://miniapp?url=https://savborne.vercel.app`
 
 [![Live](https://img.shields.io/badge/live-savborne.vercel.app-6FD0AE)](https://savborne.vercel.app)
-[![Tests](https://img.shields.io/badge/tests-542%20passing-6FD0AE)](https://github.com/er4l1m4d/savborne)
-[![CI](https://github.com/er4l1m4d/savborne/actions/workflows/ci.yml/badge.svg)](https://github.com/er4l1m4d/savborne/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-548%20passing-6FD0AE)](https://github.com/er4l1m4d/savborne)
 [![License](https://img.shields.io/badge/license-MIT-C9C1A8)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000)](https://nextjs.org)
 
@@ -194,7 +193,8 @@ Then open the URL in Nimiq Pay or use
 ## Quality
 
 ```bash
-npm test              # 542 tests, 0 failures
+npm run verify        # tests, typecheck, lint and build in one pass
+npm test              # 548 tests, 0 failures
 npx tsc --noEmit      # clean
 npm run lint          # 0 errors, 0 warnings
 npm run build         # production build
@@ -203,10 +203,10 @@ npm run checkin:e2e -- https://your-preview.vercel.app
                       # disposable-wallet check-in probe; refuses production
 ```
 
-CI (`.github/workflows/ci.yml`) runs tests, typecheck, lint, build and an
-informational audit on every push and pull request, with no secrets. A
-scheduled workflow polls `/api/health` every 15 minutes and fails loudly when
-the deployed schema version and the database disagree.
+`npm run verify` is the release gate and the only required check before a push;
+there is no hosted CI. Production uptime is watched by an external monitor that
+polls `GET /api/health` and alerts when the endpoint is not 200 or its
+`schemaVersion` does not match `EXPECTED_SCHEMA_VERSION`.
 
 The suite covers the money path, session tokens, check-in signatures, rate
 limiting, the weekly XP math, mission evaluation, streaks, badge reachability,
@@ -224,7 +224,6 @@ identity, and check-in state.
 | `supabase/FINAL-SCHEMA.sql` | The one idempotent SQL file: schema, seeds, RLS, grants, RPCs |
 | `scripts/vault-e2e.mjs` | Testnet end-to-end probe for the money path |
 | `scripts/checkin-e2e.mjs` | Disposable-wallet check-in/delete probe for a preview |
-| `.github/workflows/` | CI and the 15-minute production health probe |
 | `docs/runbooks/` | Schema paste, deploy and incident runbooks |
 | `docs/screenshots/` | Shipped-UI renders used in this README |
 | `docs/submission-cycle3.md` | Cycle III submission copy |

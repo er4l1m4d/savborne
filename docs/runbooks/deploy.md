@@ -4,7 +4,7 @@
 
 ## Preconditions
 
-- [ ] CI is green on the release commit (tests, tsc, lint, build).
+- [ ] `npm run verify` is green on the release commit (tests, tsc, lint, build).
 - [ ] `supabase/FINAL-SCHEMA.sql` has been pasted into production and
       `GET /api/health` reports `schemaVersion = 2026-11-11.4`.
 - [ ] The env vars below exist in Vercel for the Production environment.
@@ -58,7 +58,30 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 # 200 { ok:true, processed>=1, failed:0 }
 ```
 
-6. Watch `/api/health` and the scheduled workflow for 24 hours.
+6. Watch `/api/health` for 24 hours. The external monitor below should report
+   green; if it alerts, treat it as a production incident.
+
+## Monitoring (external, no GitHub Actions)
+
+There is no hosted CI and no GitHub workflow. Two things replace it:
+
+- **Release gate:** `npm run verify` locally before every push. The suite uses
+  a fake network, so it needs no `.env.local` and no secrets.
+- **Production uptime:** a free external monitor, because nothing in the repo
+  can alert you when the deployment is down.
+
+Set it up once:
+
+1. Create a free account with UptimeRobot (or Better Stack).
+2. Add an HTTP(s) monitor for `https://savborne.vercel.app/api/health`.
+3. Interval 5 minutes, timeout 30 seconds.
+4. Enable keyword monitoring and require both `"ok":true` and
+   `"schemaVersion":"2026-11-11.4"` in the body. Bump that string when
+   `EXPECTED_SCHEMA_VERSION` changes.
+5. Alert to an address you actually read. A monitor with no alert is decoration.
+
+The endpoint returns 503 and lists the failing check when the database is
+unreachable, the schema version drifts, or a required RPC is missing.
 
 ## Rollback
 
@@ -74,7 +97,7 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 
 ## What not to do
 
-- Do not run the SQL from CI, a script or a migration tool.
+- Do not run the SQL from a script or any automation; the human pastes it.
 - Do not deploy while `/api/health` reports a version mismatch.
 - Do not "fix" a 500 by disabling the session guard; that reopens the identity
   hole.
