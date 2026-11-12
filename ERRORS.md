@@ -289,6 +289,13 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** Identity follows the wallet address: onboarding offers only `signingAccount(list)` (index 0), and `/setup/vault` accepts only the stored profile's wallet. `pickAccount` calls `ensureSessionToken` explicitly so a wallet refusal or wrong signer is shown as itself. `apiFetch` now retries `session_revoked` as well (the session spec's table already required it), and session-issue errors map to actionable copy.
 **Prevention:** Treat `listAccounts()` as a mixed list, not a list of identities: index 0 is the wallet, later entries are contracts. Never offer an address the wallet signer cannot authorise.
 
+### [2026-11-12] Case-variant header keys became "addr, addr" and 401 session_mismatch
+**Symptom:** After the onboarding fix, the Create-vault screen showed `Could not check this wallet (session_mismatch)`.
+**Context:** `apiFetch` in `src/lib/client-session.ts`, whenever the caller passed `authHeaders()` or a player header in `init.headers`.
+**Root cause:** `headersToObject` lower-cased names via `Headers.forEach`, then `buildHeaders` added the canonical `X-Player-Address` / `X-Savborne-Session`. Plain object keys are case-sensitive, so both spellings survived; `fetch` normalised them and joined the values with `", "`. `requirePlayer` compared `"addr, addr"` with the token address and returned `session_mismatch`. A duplicated session header produced `"token, token"` and `session_invalid` on every other authenticated page.
+**Fix:** `buildHeaders` now builds a `Headers` object and uses `set()`, which replaces the caller's entry case-insensitively. A client test asserts one player value and one session value when the caller already sent them.
+**Prevention:** Never merge header names in a plain object. Build `Headers` or lower-case every key before adding; `Headers.get()` returns duplicate values joined by `", "`, not the last one.
+
 ---
 
 ## Historical

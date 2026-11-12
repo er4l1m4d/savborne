@@ -88,6 +88,7 @@ test('a revoked session is re-signed and the request is retried once', async (t)
       if (vaultCalls === 1) return json({ error: 'session_revoked' }, 401)
       const headers = new Headers(init?.headers)
       assert.equal(headers.get('X-Savborne-Session'), 'fresh')
+      assert.equal(headers.get('X-Player-Address'), ADDRESS)
       return json({ vault: null })
     }
     throw new Error(`unexpected fetch: ${url}`)
@@ -99,6 +100,30 @@ test('a revoked session is re-signed and the request is retried once', async (t)
   assert.equal(signCalls, 1)
   assert.equal(sessionCalls, 1)
   assert.equal(vaultCalls, 2)
+})
+
+test('caller auth headers are replaced, not duplicated by casing', async (t) => {
+  const store = installBrowser(t)
+  store.set(
+    TOKEN_KEY,
+    JSON.stringify({ address: ADDRESS, token: 'live', expiresAt: Date.now() + 3_600_000 }),
+  )
+
+  const sent: Headers[] = []
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    sent.push(new Headers(init?.headers))
+    return json({ ok: true })
+  }) as typeof fetch
+
+  // `authHeaders()` returns canonical-case names; fetch lower-cases them.
+  // Adding the same names again must replace, never produce "value, value".
+  await apiFetch('/api/players/me', {
+    headers: { 'X-Player-Address': ADDRESS, 'X-Savborne-Session': 'live' },
+  })
+
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].get('X-Player-Address'), ADDRESS)
+  assert.equal(sent[0].get('X-Savborne-Session'), 'live')
 })
 
 test('a non-session 401 is returned untouched, without a re-sign', async (t) => {

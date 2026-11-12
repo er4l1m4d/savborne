@@ -117,23 +117,22 @@ export async function ensureSessionToken(
   }
 }
 
-function headersToObject(headers?: HeadersInit): Record<string, string> {
-  const out: Record<string, string> = {}
-  if (!headers) return out
-  new Headers(headers).forEach((value, key) => {
-    out[key] = value
-  })
-  return out
-}
-
-/** Build headers for one attempt: caller headers, token, then the address echo. */
-function buildHeaders(target: string | undefined, headers?: HeadersInit): Record<string, string> {
-  const out = headersToObject(headers)
+/**
+ * Build headers for one attempt: caller headers, token, then the address echo.
+ *
+ * Keep this a `Headers` object. Header names are case-insensitive, but plain
+ * object keys are not: turning the caller's `X-Player-Address` into a
+ * lower-case key and then adding the canonical spelling produces two entries,
+ * and `fetch` joins them into `"addr, addr"`. The server then sees a claimed
+ * address that no longer matches the token (`session_mismatch`).
+ */
+function buildHeaders(target: string | undefined, headers?: HeadersInit): Headers {
+  const out = new Headers(headers)
   const cached = readSessionToken()
   if (target && cached && cached.address === target) {
-    out[SESSION_HEADER] = cached.token
+    out.set(SESSION_HEADER, cached.token)
   }
-  if (target) out[PLAYER_HEADER] = target
+  if (target) out.set(PLAYER_HEADER, target)
   return out
 }
 
