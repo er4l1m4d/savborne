@@ -235,9 +235,6 @@ identity, and check-in state.
 - **Event:** Nimiq Mini Apps Competition, Cycle III
 - **Track:** Save - individual savings with a game layer
 - **Cycle window:** 14 October 2026 to 11 November 2026
-- **Status:** public-readiness hardening in progress; vault, check-in,
-  missions, battles, leaderboards, signed sessions, daily readings and account
-  deletion are implemented end to end.
 
 ## Licence
 
