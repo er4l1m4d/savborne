@@ -12,7 +12,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { listAccounts, hostNetwork, type Network } from '@/lib/nimiq'
 import { describeWalletError } from '@/lib/wallet-errors'
-import { authHeaders, readSession } from '@/lib/session'
+import { readSession } from '@/lib/session'
+import { sameAddress } from '@/lib/vault/address'
 import { encryptPhrase } from '@/lib/vault/crypto'
 import { deriveVaultAddress, generatePhrase } from '@/lib/vault/phrase'
 import { writeVault } from '@/lib/vault/storage'
@@ -22,7 +23,7 @@ import { PassphraseField } from '@/components/vault/PassphraseField'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { Button } from '@/components/ui/Button'
 import { Banner } from '@/components/ui/Banner'
-import { apiFetch } from '@/lib/client-session'
+import { apiFetch, ensureSessionToken } from '@/lib/client-session'
 
 type Phase = 'pick' | 'show' | 'quiz' | 'passphrase'
 
@@ -40,16 +41,34 @@ export default function SetupVaultPage() {
   const session = useMemo(() => readSession(), [])
 
   useEffect(() => {
+    // This page registers a vault for an existing profile. Without the stored
+    // session there is no profile to attach it to; reconnect through setup.
+    if (!session) {
+      router.replace('/setup')
+      return
+    }
+
     ;(async () => {
       try {
         const list = await listAccounts()
-        setAccounts(list)
-        if (session && list.includes(session.playerAddress)) setIdentity(session.playerAddress)
+        // A profile belongs to one wallet. Do not let the picker register a
+        // vault for a different account: the session and the local key would
+        // then disagree about who owns it.
+        const owned = list.find((account) => sameAddress(account, session.playerAddress))
+        if (!owned) {
+          setAccounts([])
+          setError(
+            'This device is signed in with a different wallet. Switch back to the account that owns this profile in Nimiq Pay, then try again.',
+          )
+          return
+        }
+        setAccounts([owned])
+        setIdentity(owned)
       } catch (err) {
         setError(describeWalletError(err))
       }
     })()
-  }, [session])
+  }, [session, router])
 
   async function createVault(address: string) {
     setIdentity(address)
@@ -74,11 +93,19 @@ export default function SetupVaultPage() {
     try {
       const blob = await encryptPhrase(phrase, passphrase)
 
-      const res = await apiFetch('/api/vaults', {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ vaultAddress, network, backupVerified: true }),
-      })
+      // Prove the picked wallet can authorise the request before the server
+      // sees it; otherwise a failed re-sign is masked as a bare 401.
+      await ensureSessionToken(identity)
+
+      const res = await apiFetch(
+        '/api/vaults',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vaultAddress, network, backupVerified: true }),
+        },
+        { address: identity },
+      )
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string }
         throw new Error(

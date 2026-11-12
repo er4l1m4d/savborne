@@ -76,6 +76,10 @@ export async function isGetBalanceAvailable(): Promise<boolean> {
 /**
  * Ask Nimiq Pay for the user's accounts. The first call prompts the user to
  * approve account sharing; subsequent calls in the same session are silent.
+ *
+ * The list is NOT a list of identities: the wallet address comes first and the
+ * current HTLC address, when there is one, comes second. Use `signingAccount`
+ * for identity; the rest cannot authorise a signature.
  */
 export async function listAccounts(): Promise<string[]> {
   const provider = await initProvider()
@@ -85,6 +89,20 @@ export async function listAccounts(): Promise<string[]> {
   } catch (err) {
     throw normaliseError(err)
   }
+}
+
+/**
+ * The one address Nimiq Pay can sign for.
+ *
+ * Nimiq Pay keeps its spendable NIM in an HTLC. `listAccounts()` returns the
+ * wallet address first, then the HTLC address if the wallet has one. `sign()`
+ * always uses the wallet's selected account and ignores an address chosen in
+ * the mini app, so asking for a session with the HTLC address always ends in a
+ * 401 `wrong_signer`. Identity follows the first address only.
+ */
+export function signingAccount(accounts: readonly string[]): string | null {
+  const first = accounts[0]
+  return typeof first === 'string' && first.length > 0 ? first : null
 }
 
 /**

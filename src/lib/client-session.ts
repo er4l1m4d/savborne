@@ -32,8 +32,25 @@ function isSessionCode(value: unknown): boolean {
     value === 'session_required' ||
     value === 'session_expired' ||
     value === 'session_invalid' ||
+    value === 'session_revoked' ||
     value === 'session_mismatch'
   )
+}
+
+/** Turn a session-issue error code into something the player can act on. */
+function sessionErrorMessage(code: string): string {
+  switch (code) {
+    case 'stale':
+      return 'The wallet signature took too long. Try again.'
+    case 'bad_signature':
+      return 'Nimiq Pay did not sign this session. Tap again and approve the prompt.'
+    case 'wrong_signer':
+      return "Nimiq Pay signed with a different account than the one selected. Use the wallet's main account, or switch accounts in Nimiq Pay and try again."
+    case 'rate_limited':
+      return 'Too many session requests. Wait a moment, then try again.'
+    default:
+      return `Could not start a session (${code}). Try again.`
+  }
 }
 
 async function readErrorCode(res: Response): Promise<string | null> {
@@ -75,7 +92,7 @@ export async function ensureSessionToken(
 
     if (!res.ok) {
       const code = (await readErrorCode(res)) ?? `http_${res.status}`
-      throw new Error(`Could not start a session (${code}). Try again.`)
+      throw new Error(sessionErrorMessage(code))
     }
 
     const body = (await res.json()) as { token?: unknown; expiresAt?: unknown }

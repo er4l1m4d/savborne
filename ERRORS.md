@@ -282,6 +282,12 @@ rules: { 'react-hooks/set-state-in-effect': 'warn' }
 **Fix:** Added `ai-launch-videos/**` to the TypeScript and ESLint ignores with a comment that it is local, non-app tooling. The directory itself was not modified.
 **Prevention:** Treat a new top-level workspace as local until it is intentionally added; keep `npm test`, `tsc`, `lint` and `build` meaningful on a clean checkout (CI proves it).
 
+### [2026-11-12] Onboarding 401 "Could not check this wallet" when the HTLC address was picked
+**Symptom:** Tapping an account on the "Create your vault" screen showed `Could not check this wallet (401).`
+**Context:** `OnboardingProvider.pickAccount` running inside Nimiq Pay. `listAccounts()` returned both the wallet address and the current HTLC address, and the picker rendered both as identities.
+**Root cause:** Nimiq Pay lists the wallet's signing address first and the current HTLC address second. `sign()` always uses the wallet's selected account and cannot sign for the HTLC. Minting a session for the HTLC returned 401 `wrong_signer`; `apiFetch` swallowed that error and sent the probe without a token, so the screen reported the probe's bare 401 instead of the signing failure.
+**Fix:** Identity follows the wallet address: onboarding offers only `signingAccount(list)` (index 0), and `/setup/vault` accepts only the stored profile's wallet. `pickAccount` calls `ensureSessionToken` explicitly so a wallet refusal or wrong signer is shown as itself. `apiFetch` now retries `session_revoked` as well (the session spec's table already required it), and session-issue errors map to actionable copy.
+**Prevention:** Treat `listAccounts()` as a mixed list, not a list of identities: index 0 is the wallet, later entries are contracts. Never offer an address the wallet signer cannot authorise.
 
 ---
 

@@ -20,7 +20,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useRouter } from 'next/navigation'
-import { hostNetwork, listAccounts } from '@/lib/nimiq'
+import { hostNetwork, listAccounts, signingAccount } from '@/lib/nimiq'
 import { PLAYER_HEADER, readSession, writeSession } from '@/lib/session'
 import { reconnectDecision, reconnectProfile, sessionFromProfile } from '@/lib/reconnect'
 import { sameAddress } from '@/lib/vault/address'
@@ -29,7 +29,7 @@ import { deriveVaultAddress, generatePhrase } from '@/lib/vault/phrase'
 import { writeVault } from '@/lib/vault/storage'
 import { validateDisplayName } from '@/lib/display-name'
 import { DEFAULT_AVATAR, type Avatar } from '@/lib/avatar'
-import { apiFetch } from '@/lib/client-session'
+import { apiFetch, ensureSessionToken } from '@/lib/client-session'
 
 type Draft = {
   accounts: string[]
@@ -104,8 +104,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   async function startConnect() {
     const list = await listAccounts()
-    setAccounts(list)
-    return list
+    // Nimiq Pay returns the signing wallet address first, then the current
+    // HTLC address. Only the first can authorise a signature; offering the
+    // HTLC in the picker always ended in a 401 `wrong_signer`.
+    const signable = signingAccount(list)
+    const usable = signable ? [signable] : []
+    setAccounts(usable)
+    return usable
   }
 
   /**
@@ -114,6 +119,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
    * created at the Name step.
    */
   async function pickAccount(identity: string): Promise<'reconnect' | 'created'> {
+    // Acquire the session before the probe. `apiFetch` deliberately sends the
+    // request even when signing failed, so the probe would report a bare 401;
+    // doing it here surfaces the wallet refusal, clock skew or wrong-signer
+    // rejection instead.
+    await ensureSessionToken(identity)
+
     const res = await apiFetch(
       '/api/players/me',
       { headers: { [PLAYER_HEADER]: identity } },
@@ -142,7 +153,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       return 'created'
     }
 
-    throw new Error(`Could not check this wallet (${res.status}).`)
+    // Keep the server's stable code: `session_revoked` needs a reconnect,
+    // while `session_unavailable` is a server problem the player cannot fix.
+    const body = (await res.json().catch(() => ({}))) as { error?: unknown }
+    const code = typeof body.error === 'string' ? body.error : String(res.status)
+    throw new Error(`Could not check this wallet (${code}).`)
   }
 
   async function lockVault(passphrase: string) {

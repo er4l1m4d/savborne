@@ -30,6 +30,11 @@ test('the onboarding group shares one provider', () => {
   assert.match(PROVIDER, /avatar,\n\s+privacyNoticeVersion: acceptedNoticeVersion/)
 })
 
+test('onboarding offers only the signable account and surfaces session errors', () => {
+  assert.match(PROVIDER, /signingAccount\(list\)/)
+  assert.match(PROVIDER, /await ensureSessionToken\(identity\)/)
+})
+
 test('the phrase never reaches browser storage', () => {
   assert.doesNotMatch(PROVIDER, /window\.(?:local|session)Storage/)
   assert.doesNotMatch(PROVIDER, /\.(?:setItem|getItem)\(/)
