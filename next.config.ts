@@ -7,6 +7,13 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
   .filter(Boolean);
 
 const nextConfig: NextConfig = {
+  // Keep the security-upgrade guard armed: `next build` re-checks the installed
+  // version against the advisory feed and fails closed if a new one lands, so a
+  // dependency that ships later inherits the same protection (16.4.1 -> 16.4.6,
+  // 2026-11-23).
+  experimental: {
+    agentUpgrade: "security",
+  },
   // The public tunnel for local development is machine-specific, so the host
   // list comes from ALLOWED_DEV_ORIGINS (e.g. "*.instabox.tech") rather than
   // being committed as product configuration.
