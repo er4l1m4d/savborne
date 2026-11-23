@@ -25,15 +25,53 @@ const silkscreen = localFont({
   display: "swap",
 });
 
+// Link previews need absolute image URLs, so the base has to be the canonical
+// production domain. VERCEL_URL is the *deployment* URL (savborne-<hash>...),
+// which would point every shared card at a frozen build; the project
+// production URL is the stable one. NEXT_PUBLIC_SITE_URL wins if a custom
+// domain is ever added. The localhost fallback keeps dev quiet instead of
+// emitting a build warning.
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000");
+
+const title = "Savborne — Savings RPG for Nimiq Pay";
+const description =
+  "A non-custodial NIM vault with a game layer. Check in daily and turn your real on-chain balance into XP, streaks, items and rank.";
+
 export const metadata: Metadata = {
-  // Absolute base for OG/Twitter image URLs. Vercel provides VERCEL_URL; the
-  // localhost fallback keeps dev quiet instead of emitting a build warning.
-  metadataBase: new URL(
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000",
-  ),
-  title: "Savborne — Savings RPG for Nimiq Pay",
-  description:
-    "Connect a NIM savings account. Check in daily. Earn XP, items, badges. Battle other Savborne players.",
+  metadataBase: new URL(siteUrl),
+  title,
+  description,
+  applicationName: "Savborne",
+  // public/og.png, built by `node scripts/og-card.mjs`. 1200x630 is the 1.91:1
+  // box X, Discord and Telegram crop to, so nothing is letterboxed.
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Savborne",
+    title,
+    description,
+    locale: "en_US",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Savborne: Save for real. Level up for fun. A savings RPG for Nimiq Pay.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/og.png"],
+  },
 };
 
 export const viewport: Viewport = {
