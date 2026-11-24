@@ -255,11 +255,14 @@ export function hostLanguage(): string {
   return lang || 'en'
 }
 
-/** Whether the app is currently running inside Nimiq Pay. */
-export function isInsideNimiqPay(): boolean {
-  if (typeof window === 'undefined') return false
-  return typeof (window as { nimiqPay?: unknown }).nimiqPay !== 'undefined'
-}
+/**
+ * Whether the app is currently running inside Nimiq Pay.
+ *
+ * Re-exported from `nimiq-host.ts` so the gate can ask this without pulling the
+ * SDK into its chunk. Import it from there in anything reachable from the root
+ * layout.
+ */
+export { isInsideNimiqPay } from './nimiq-host'
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 

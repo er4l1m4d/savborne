@@ -13,7 +13,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
-import { isGetBalanceAvailable, isInsideNimiqPay, WalletError } from '@/lib/nimiq'
+import { isInsideNimiqPay } from '@/lib/nimiq-host'
 import { BrandMark } from '@/components/BrandMark'
 import { OutsideNimiqPay } from '@/components/OutsideNimiqPay'
 import { PixelPanel } from '@/components/ui/PixelPanel'
@@ -42,13 +42,28 @@ export function VersionGate({ children }: { children: ReactNode }) {
         if (!cancelled) setState({ phase: 'outside_nimiq' })
         return
       }
+
+      // Loaded here, not at module scope: `lib/nimiq.ts` pulls in the whole
+      // `@nimiq/mini-app-sdk`, which is a chunk of its own. Anyone opening the
+      // app in a normal browser never reaches this line, and never pays for a
+      // wallet they cannot use.
+      let wallet: typeof import('@/lib/nimiq')
       try {
-        const ok = await isGetBalanceAvailable()
+        wallet = await import('@/lib/nimiq')
+      } catch {
+        if (!cancelled) setState({ phase: 'update_required', reason: 'Wallet unavailable' })
+        return
+      }
+
+      try {
+        const ok = await wallet.isGetBalanceAvailable()
         if (!cancelled) setState(ok ? { phase: 'ready' } : { phase: 'update_required' })
       } catch (err) {
         if (cancelled) return
         const reason =
-          err instanceof WalletError ? `Wallet error: ${err.type}` : 'Wallet unavailable'
+          err instanceof wallet.WalletError
+            ? `Wallet error: ${err.type}`
+            : 'Wallet unavailable'
         setState({ phase: 'update_required', reason })
       }
     }

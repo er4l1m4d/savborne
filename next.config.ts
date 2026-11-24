@@ -7,6 +7,37 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
   .filter(Boolean);
 
 const nextConfig: NextConfig = {
+  // Response headers. The frame-ancestors rule is the one that matters: Savborne
+  // renders Deposit and Withdraw, so a page that could frame it could sit an
+  // invisible overlay over those buttons. It stays frameable by Nimiq's own
+  // hosts because the open-link wrapper is a legitimate framer; everyone else
+  // is refused. Deliberately a partial CSP (frame-ancestors only) rather than a
+  // full policy: a script-src list would have to enumerate Next's inline
+  // hydration and the Supabase origins, and a policy that breaks the app is
+  // worse than the hole it closes.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "frame-ancestors 'self'",
+              'https://*.nimiq.com',
+              'https://nimiq.com',
+              'https://nimpay.app',
+              'https://*.nimpay.app',
+              'https://*.nimiq.app',
+            ].join(' '),
+          },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        ],
+      },
+    ]
+  },
   // Keep the security-upgrade guard armed: `next build` re-checks the installed
   // version against the advisory feed and fails closed if a new one lands, so a
   // dependency that ships later inherits the same protection (16.4.1 -> 16.4.6,
