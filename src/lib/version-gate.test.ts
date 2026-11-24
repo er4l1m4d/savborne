@@ -54,11 +54,10 @@ test('the preview page claims nothing it cannot do', () => {
   // gate exists precisely because those calls are unavailable here.
   assert.doesNotMatch(PREVIEW, /from '@\/lib\/nimiq'/)
   assert.doesNotMatch(PREVIEW, /isInsideNimiqPay|isGetBalanceAvailable|sendBasicTransaction/)
-  // And the custody warning the rest of the app makes has to survive on the one
-  // page a browser-only visitor reads, in short: who holds the NIM, and what
-  // losing the phrase costs.
-  assert.match(PREVIEW, /never holds your NIM/)
-  assert.match(PREVIEW, /Lose the phrase and the device, and the NIM is gone/)
+  // And what the rest of the app promises about custody has to survive here, in
+  // the hero's own words. There is no longer a paragraph of its own for it: on
+  // this page one clear clause beats a disclaimer.
+  assert.match(PREVIEW, /vault only you control/)
   // The screenshots are the shipped screens with fixture data, and the page
   // says so rather than implying a live player.
   assert.match(PREVIEW, /sample data/)

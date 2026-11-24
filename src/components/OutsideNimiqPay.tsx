@@ -8,10 +8,14 @@
  * thing anyone scoring the Mini App sees: they click the demo link on a laptop
  * and land on a wall. This is the wall, turned into the pitch.
  *
- * It stays honest about what it is: the app does not run here, the screenshots
- * are the shipped screens with sample data, and the only real call to action is
- * the deeplink or the QR a phone can scan. It touches no wallet API, holds no
- * state and reads no player data, so it cannot break the gate it lives behind.
+ * It stays honest about what it is: the app does not run here, the screenshot is
+ * the shipped screen with sample data, and the only real call to action is the
+ * deeplink or the QR a phone can scan. It touches no wallet API, holds no state
+ * and reads no player data, so it cannot break the gate it lives behind.
+ *
+ * Custody is stated once, in the hero's own words ("a vault only you control"),
+ * rather than in a panel of its own: on this page one clear sentence beats a
+ * disclaimer, and the app repeats the full warning at onboarding where it lands.
  */
 
 import Image from 'next/image'
@@ -100,10 +104,6 @@ export function OutsideNimiqPay() {
               </ButtonLink>
             </div>
 
-            <p className="sv-caption mt-3 text-fg-faint">
-              Opens Savborne inside the Nimiq Pay app.
-            </p>
-
             <section className="mt-12">
               <h2 className="sv-section-label text-fg-faint">The loop</h2>
               <ol className="mt-4 flex flex-col">
@@ -118,17 +118,9 @@ export function OutsideNimiqPay() {
                 ))}
               </ol>
             </section>
-
-            <PixelPanel className="mt-10 flex flex-col gap-3 p-5">
-              <span className="sv-section-label text-mint">Non-custodial</span>
-              <p className="sv-caption max-w-[62ch] text-fg-muted">
-                Savborne never holds your NIM. Deposits are signed by your wallet, withdrawals by a
-                24-word phrase only you have. Lose the phrase and the device, and the NIM is gone.
-              </p>
-            </PixelPanel>
           </div>
 
-          <div className="flex flex-col items-center gap-5">
+          <div className="flex flex-col items-center gap-4 md:items-end">
             <div className="vpx w-full max-w-[320px] overflow-hidden bg-surface-low">
               <Image
                 src="/preview/home.png"
@@ -139,37 +131,48 @@ export function OutsideNimiqPay() {
                 priority
               />
             </div>
-            <p className="sv-caption max-w-[300px] text-center text-fg-faint">
-              The shipped app, with sample data.
-            </p>
-
-            <PixelPanel className="hidden w-full max-w-[320px] flex-col items-center gap-3 p-4 md:flex">
-              <Image
-                src="/deeplink-qr.png"
-                width={148}
-                height={148}
-                alt="QR code that opens Savborne inside Nimiq Pay"
-                className="block"
-              />
-              <p className="sv-caption text-center text-fg-muted">
-                On a laptop? Scan with your phone camera.
-              </p>
-            </PixelPanel>
+            <p className="sv-caption text-fg-faint">The shipped app, with sample data.</p>
           </div>
         </div>
 
-        <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
-          <span className="sv-caption text-fg-faint">
-            Savborne &middot; Save for real. Level up for fun.
-          </span>
-          <a
-            href="https://github.com/er4l1m4d/savborne"
-            target="_blank"
-            rel="noreferrer"
-            className="sv-caption text-fg-faint hover:text-mint"
-          >
-            Source and licence on GitHub
-          </a>
+        <footer className="mt-16 border-t border-line pt-9">
+          <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:gap-12">
+            <div>
+              <h2 className="max-w-[24ch] text-[clamp(24px,3.1vw,34px)] leading-[1.12] font-extrabold tracking-[-0.03em]">
+                Get it on your phone.
+              </h2>
+              <p className="mt-3 max-w-[54ch] text-[18px] leading-[1.55] font-medium text-fg-muted">
+                Savborne only runs inside Nimiq Pay, so there is nothing to sign in with here. Tap{' '}
+                <span className="font-bold text-fg">Open in Nimiq Pay</span> above
+                <span className="hidden md:inline">, or scan the code with your camera</span>.
+              </p>
+            </div>
+
+            <PixelPanel className="hidden items-center gap-3 p-4 md:flex">
+              <Image
+                src="/deeplink-qr.png"
+                width={126}
+                height={126}
+                alt="QR code that opens Savborne inside Nimiq Pay"
+                className="block"
+              />
+              <span className="sv-caption max-w-[9ch] text-fg-muted">Scan to open</span>
+            </PixelPanel>
+          </div>
+
+          <div className="mt-9 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
+            <span className="sv-caption text-fg-faint">
+              Savborne &middot; Save for real. Level up for fun.
+            </span>
+            <a
+              href="https://github.com/er4l1m4d/savborne"
+              target="_blank"
+              rel="noreferrer"
+              className="sv-caption text-fg-faint hover:text-mint"
+            >
+              Source and licence on GitHub
+            </a>
+          </div>
         </footer>
       </div>
     </div>
