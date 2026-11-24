@@ -15,6 +15,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import { isGetBalanceAvailable, isInsideNimiqPay, WalletError } from '@/lib/nimiq'
 import { BrandMark } from '@/components/BrandMark'
+import { OutsideNimiqPay } from '@/components/OutsideNimiqPay'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Glyph } from '@/components/Glyphs'
@@ -78,13 +79,7 @@ export function VersionGate({ children }: { children: ReactNode }) {
   }
 
   if (state.phase === 'outside_nimiq') {
-    return (
-      <GateScreen
-        icon={<Glyph name="phone" size={72} />}
-        headline="Savborne lives inside Nimiq Pay"
-        body="Savborne is a Nimiq Pay Mini App. Open this URL inside the Nimiq Pay app to create your vault."
-      />
-    )
+    return <OutsideNimiqPay />
   }
 
   if (state.phase === 'update_required') {

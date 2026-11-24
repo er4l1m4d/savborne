@@ -25,15 +25,42 @@ test('Preparing is the brand mark and one line, with no spinner', () => {
   assert.doesNotMatch(checking, /sv-dots|animate-spin/)
 })
 
-test('the outside state has the phone panel and no CTA', () => {
-  const outside = GATE.slice(
-    GATE.indexOf("phase === 'outside_nimiq'"),
-    GATE.indexOf("phase === 'update_required'"),
-  )
-  assert.match(outside, /<Glyph name="phone" size=\{72\} \/>/)
-  assert.match(outside, /Savborne lives inside Nimiq Pay/)
-  assert.doesNotMatch(outside, /<Button/)
-  assert.doesNotMatch(outside, /href="https:\/\/nimiq.com"/)
+const PREVIEW = readFileSync(
+  new URL('../components/OutsideNimiqPay.tsx', import.meta.url),
+  'utf8',
+)
+
+const OUTSIDE = GATE.slice(
+  GATE.indexOf("phase === 'outside_nimiq'"),
+  GATE.indexOf("phase === 'update_required'"),
+)
+
+test('the outside state hands off to the preview page', () => {
+  assert.match(OUTSIDE, /<OutsideNimiqPay \/>/)
+  // Still not the update screen's job: that one belongs to a wallet that
+  // answered but is too old, and offering the site link here would be wrong.
+  assert.doesNotMatch(OUTSIDE, /href="https:\/\/nimiq.com"/)
+})
+
+test('the preview page offers the deeplink, the video and the QR', () => {
+  assert.match(PREVIEW, /nimiqpay:\/\/miniapp\?url=https:\/\/savborne\.vercel\.app/)
+  assert.match(PREVIEW, /https:\/\/vimeo\.com\/user265760449\/savborne-demo-video/)
+  assert.match(PREVIEW, /\/deeplink-qr\.png/)
+  assert.match(PREVIEW, /href=\{DEEPLINK\}/)
+})
+
+test('the preview page claims nothing it cannot do', () => {
+  // It renders outside the wallet, so it must not reach for the bridge: the
+  // gate exists precisely because those calls are unavailable here.
+  assert.doesNotMatch(PREVIEW, /from '@\/lib\/nimiq'/)
+  assert.doesNotMatch(PREVIEW, /isInsideNimiqPay|isGetBalanceAvailable|sendBasicTransaction/)
+  // And the custody claim the rest of the app makes has to survive on the one
+  // page a browser-only visitor reads.
+  assert.match(PREVIEW, /never holds your NIM/)
+  assert.match(PREVIEW, /unrecoverable/)
+  // The screenshots are the shipped screens with fixture data, and the page
+  // says so rather than implying a live player.
+  assert.match(PREVIEW, /sample data/)
 })
 
 test('Update Nimiq Pay offers the site link and a retry', () => {
