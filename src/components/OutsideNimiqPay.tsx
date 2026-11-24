@@ -85,11 +85,17 @@ export function OutsideNimiqPay() {
               wallet and signs every deposit &mdash; that is the only way in.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href={DEEPLINK} variant="primary">
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <ButtonLink href={DEEPLINK} variant="primary" size="lg">
                 Open in Nimiq Pay
               </ButtonLink>
-              <ButtonLink href={VIDEO} target="_blank" rel="noreferrer" variant="secondary">
+              <ButtonLink
+                href={VIDEO}
+                target="_blank"
+                rel="noreferrer"
+                variant="secondary"
+                size="lg"
+              >
                 Watch the 2-min demo
               </ButtonLink>
             </div>
@@ -116,10 +122,8 @@ export function OutsideNimiqPay() {
             <PixelPanel className="mt-10 flex flex-col gap-3 p-5">
               <span className="sv-section-label text-mint">Non-custodial</span>
               <p className="sv-caption max-w-[62ch] text-fg-muted">
-                Savborne never holds your NIM. The vault address comes from a 24-word phrase
-                generated on your device: deposits are signed by your Nimiq Pay wallet, withdrawals
-                by that phrase. If you lose the phrase and the device, the NIM is unrecoverable
-                &mdash; the app says so before you start.
+                Savborne never holds your NIM. Deposits are signed by your wallet, withdrawals by a
+                24-word phrase only you have. Lose the phrase and the device, and the NIM is gone.
               </p>
             </PixelPanel>
           </div>
@@ -136,7 +140,7 @@ export function OutsideNimiqPay() {
               />
             </div>
             <p className="sv-caption max-w-[300px] text-center text-fg-faint">
-              The shipped screens, with sample data.
+              The shipped app, with sample data.
             </p>
 
             <PixelPanel className="hidden w-full max-w-[320px] flex-col items-center gap-3 p-4 md:flex">
@@ -152,24 +156,6 @@ export function OutsideNimiqPay() {
               </p>
             </PixelPanel>
           </div>
-        </div>
-
-        <div className="mt-12 grid grid-cols-3 gap-3 md:gap-4">
-          {[
-            { src: '/preview/vault.png', alt: 'The vault screen, showing the deposit address and a withdrawal.' },
-            { src: '/preview/missions.png', alt: 'The missions screen, with daily and weekly goals.' },
-            { src: '/preview/battle.png', alt: 'A duel in progress on the battle screen.' },
-          ].map((shot) => (
-            <div key={shot.src} className="overflow-hidden rounded-sm border border-line bg-surface-low">
-              <Image
-                src={shot.src}
-                width={780}
-                height={1688}
-                alt={shot.alt}
-                className="block h-auto w-full"
-              />
-            </div>
-          ))}
         </div>
 
         <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
