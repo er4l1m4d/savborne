@@ -45,6 +45,7 @@ import { Row } from '@/components/ui/Row'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Banner } from '@/components/ui/Banner'
+import { FiatValue } from '@/components/FiatValue'
 import { takeBalanceRetry } from '@/lib/balance-retry'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { apiFetch } from '@/lib/client-session'
@@ -299,6 +300,11 @@ export default function HomePage() {
             ) : null}
           </span>
         </div>
+
+        <FiatValue
+          nim={player.balanceLuna / LUNA_PER_NIM}
+          className="-mt-2 sv-label text-fg-faint"
+        />
 
         <Button
           variant="primary"

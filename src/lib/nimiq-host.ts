@@ -16,3 +16,14 @@ export function isInsideNimiqPay(): boolean {
   if (typeof window === 'undefined') return false
   return typeof (window as { nimiqPay?: unknown }).nimiqPay !== 'undefined'
 }
+
+/**
+ * The fiat currency the person picked in Nimiq Pay, or undefined when the host
+ * does not report one. A plain property read, like `hostLanguage` in
+ * `lib/nimiq.ts`, so callers do not have to load the wallet SDK for it.
+ */
+export function hostFiat(): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  const value = (window as { nimiqPay?: { userFiat?: unknown } }).nimiqPay?.userFiat
+  return typeof value === 'string' ? value : undefined
+}
