@@ -281,30 +281,39 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="flex flex-wrap items-baseline gap-2">
-          <span className="sv-number-xl">{(player.balanceLuna / LUNA_PER_NIM).toFixed(2)}</span>
-          <span className="sv-label text-fg-muted">NIM</span>
-          <span className="ml-auto">
-            {deltaLuna !== 0 ? (
-              <Chip
-                variant="outline"
-                color={deltaLuna > 0 ? 'var(--mint)' : 'var(--coral-text)'}
-              >
-                {deltaLuna > 0 ? '+' : '-'}
-                {(Math.abs(deltaLuna) / LUNA_PER_NIM).toFixed(2)} since last
-              </Chip>
-            ) : player.streakCurrent > 0 ? (
-              <Chip variant="outline" color="var(--coral-text)">
-                {player.streakCurrent}-day streak
-              </Chip>
-            ) : null}
-          </span>
-        </div>
+        {/* Two steady rows: the balance owns the first, and the second holds the
+            secondary facts — the fiat conversion on the left, the streak or the
+            change on the right. The chip used to share the balance row, so a
+            four-figure balance pushed it onto a line of its own, wedged between
+            the number and the fiat value. */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline gap-2">
+            <span className="sv-number-xl">{(player.balanceLuna / LUNA_PER_NIM).toFixed(2)}</span>
+            <span className="sv-label text-fg-muted">NIM</span>
+          </div>
 
-        <FiatValue
-          nim={player.balanceLuna / LUNA_PER_NIM}
-          className="-mt-2 sv-label text-fg-faint"
-        />
+          <div className="flex items-center justify-between gap-2">
+            <FiatValue
+              nim={player.balanceLuna / LUNA_PER_NIM}
+              className="sv-label text-fg-faint"
+            />
+            <span className="shrink-0">
+              {deltaLuna !== 0 ? (
+                <Chip
+                  variant="outline"
+                  color={deltaLuna > 0 ? 'var(--mint)' : 'var(--coral-text)'}
+                >
+                  {deltaLuna > 0 ? '+' : '-'}
+                  {(Math.abs(deltaLuna) / LUNA_PER_NIM).toFixed(2)} since last
+                </Chip>
+              ) : player.streakCurrent > 0 ? (
+                <Chip variant="outline" color="var(--coral-text)">
+                  {player.streakCurrent}-day streak
+                </Chip>
+              ) : null}
+            </span>
+          </div>
+        </div>
 
         <Button
           variant="primary"
