@@ -56,3 +56,10 @@ test('The check-in awards use the real badge and item art', () => {
   assert.doesNotMatch(HOME, /◇/)
   assert.doesNotMatch(HOME, /uppercase tracking-widest/)
 })
+
+test('Home warns in the final hours of an unclaimed streak day', () => {
+  assert.match(HOME, /streakAtRisk/)
+  assert.match(HOME, /left to check in and keep your streak/)
+  // The cue never claims the streak is already lost.
+  assert.doesNotMatch(HOME, /streak (is )?(broken|lost)/i)
+})

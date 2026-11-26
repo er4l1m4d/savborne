@@ -28,7 +28,7 @@ import {
 } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
 import { BADGES, type BadgeAction } from '@/lib/game/badges'
-import { checkedInToday } from '@/lib/checkin-state'
+import { checkedInToday, formatHoursMinutes, streakAtRisk } from '@/lib/checkin-state'
 import {
   checkInDestination,
   takeCheckInAwards,
@@ -80,6 +80,14 @@ export default function HomePage() {
   const [checkError, setCheckError] = useState<string | null>(null)
   const [dailyMissions, setDailyMissions] = useState<MissionStatus[] | null>(null)
   const [deltaLuna, setDeltaLuna] = useState(0)
+  // Ticks the streak-risk countdown. Half a minute keeps the minutes honest
+  // without re-rendering Home on every second.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(timer)
+  }, [])
+
   useEffect(() => {
     if (loading) return
     if (needsReconnect || session === null) router.replace('/setup')
@@ -253,6 +261,7 @@ export default function HomePage() {
   const bracket = player.bracket as Bracket | null
   const alreadyCheckedIn = checkedInToday(player.lastCheckInAt)
   const battlesLeft = Math.max(0, BATTLE.dailyLimit - player.battlesToday)
+  const streakRiskMs = streakAtRisk(player.streakCurrent, player.lastCheckInAt, now)
 
   return (
     <ScreenShell
@@ -314,6 +323,12 @@ export default function HomePage() {
             </span>
           </div>
         </div>
+
+        {streakRiskMs !== null && (
+          <p className="sv-label text-coral-text">
+            {formatHoursMinutes(streakRiskMs)} left to check in and keep your streak
+          </p>
+        )}
 
         <Button
           variant="primary"
