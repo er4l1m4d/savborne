@@ -271,7 +271,7 @@
     "channelIsGesture": "A channel is a perceptual gesture, not a CSS property. Lunge and shake both animate translateX and both are legitimate because they are distinguishable without reading - one-way and committed versus two-way and decaying.",
     "pendingWork": {
       "timeoutBeat": "Needs an API change. The server auto-plays defend on deadline and the payload reports it as a chosen move, so the client cannot tell them apart. Needs an auto / move_source flag on the move row, surfaced through the battle GET.",
-      "glowBeat": "Needs a pre-baked 8-neighbour gilt rim path per character in assets/characters.json. Not done. A 4-neighbour rim renders as a dotted outline. filter: drop-shadow would break the quantised idiom. Until it lands, defend and item-use have no animation.",
+      "glowBeat": "Needs a pre-baked 8-neighbour gilt rim path per character - shipped as assets/character-glows.json (scripts/glow-ship.mjs) and wired into the arena's defend/item-use beat in the app on 2026-11-26. A 4-neighbour rim renders as a dotted outline. filter: drop-shadow would break the quantised idiom.",
       "arenasWithoutPlates": "A_ItemSheet, A_Win, A_Loss and A_Tie carry no nameplate, so handover and commit beats have nowhere to land."
     },
     "reducedMotion": "Implemented twice in the document and both are required: a CSS media query, and a JS reduce flag from matchMedia used inside the demo functions. The media query alone cannot express \"skip this beat but still drain the bar\"."

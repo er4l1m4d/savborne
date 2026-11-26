@@ -25,6 +25,7 @@ import { rivalForBattle } from '@/lib/game/rivals'
 import { Glyph } from '@/components/Glyphs'
 import { CharacterArt } from '@/components/CharacterArt'
 import { RivalArt } from '@/components/RivalArt'
+import { CharacterGlow, heroGlowKey, rivalGlowKey } from '@/components/battle/CharacterGlow'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Button, ButtonLink } from '@/components/ui/Button'
@@ -89,9 +90,18 @@ export default function BattleScreen() {
   const [offlineSince, setOfflineSince] = useState<number | null>(null)
   const [reconnecting, setReconnecting] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  // The defend/item-use glow beat (art bible §4: "an effect has been applied
+  // to this fighter"). One beat in flight at most; a newer turn drops it.
+  const [glow, setGlow] = useState<{ me: boolean; opponent: boolean }>({
+    me: false,
+    opponent: false,
+  })
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const creatorRedirected = useRef(false)
   const completedRedirected = useRef(false)
+  const firstStateSeen = useRef(false)
+  const lastSeenTurn = useRef<number | null>(null)
+  const glowTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchState = useCallback(async () => {
     try {
@@ -140,6 +150,41 @@ export default function BattleScreen() {
       router.replace(`/battle/${id}/result`)
     }
   }, [state, id, router])
+
+  // The defend/item-use beat fires on a state transition observed between two
+  // polls, never on a clock (art bible §6). The first poll only records the
+  // turn it arrives on, so a reload does not replay an old beat; every later
+  // turn that contains a defend or an item lights the rim on that fighter.
+  useEffect(() => {
+    if (!state) return
+    if (!firstStateSeen.current) {
+      firstStateSeen.current = true
+      if (state.lastTurn) lastSeenTurn.current = state.lastTurn.turnNumber
+      return
+    }
+    const turn = state.lastTurn
+    if (!turn || lastSeenTurn.current === turn.turnNumber) return
+    lastSeenTurn.current = turn.turnNumber
+    const mine = state.viewer.side === 'a' ? turn.a : turn.b
+    const theirs = state.viewer.side === 'a' ? turn.b : turn.a
+    const next = {
+      me: mine?.move === 'defend' || Boolean(mine?.itemKey),
+      opponent: theirs?.move === 'defend' || Boolean(theirs?.itemKey),
+    }
+    if (!next.me && !next.opponent) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    setGlow(next)
+    if (glowTimer.current) clearTimeout(glowTimer.current)
+    glowTimer.current = setTimeout(() => setGlow({ me: false, opponent: false }), 480)
+  }, [state])
+
+  // The beat's timer must not outlive the screen.
+  useEffect(
+    () => () => {
+      if (glowTimer.current) clearTimeout(glowTimer.current)
+    },
+    [],
+  )
 
   async function submitMove(move: string, itemKey: ItemKey | null = null) {
     if (!state || submitting) return
@@ -287,18 +332,40 @@ export default function BattleScreen() {
     )
   }
 
-  const opponentArt =
-    battle.mode === 'ai' ? (
-      <RivalArt rival={rivalForBattle(id)} size={96} />
-    ) : (
-      <CharacterArt bracket={(battle.opponentBracket as Bracket | null) ?? null} size={96} />
-    )
+  const rival = rivalForBattle(id)
+  const oppGlowKey =
+    battle.mode === 'ai'
+      ? rivalGlowKey(rival)
+      : heroGlowKey((battle.opponentBracket as Bracket | null) ?? null, 'hero')
+  const myGlowKey = heroGlowKey(
+    (viewer.bracket as Bracket | null) ?? null,
+    viewer.avatar as Avatar,
+  )
+  // The sprite and its rim share one box: same 16x16 grid, same size, the rim
+  // on top. The Arena mirrors the opponent's wrapper, so the rim mirrors too.
+  const opponentArt = (
+    <div className="relative flex leading-none">
+      {battle.mode === 'ai' ? (
+        <RivalArt rival={rival} size={96} />
+      ) : (
+        <CharacterArt bracket={(battle.opponentBracket as Bracket | null) ?? null} size={96} />
+      )}
+      <span className="sv-glow" data-on={glow.opponent ? 'true' : 'false'}>
+        <CharacterGlow glowKey={oppGlowKey} size={96} />
+      </span>
+    </div>
+  )
   const myArt = (
-    <CharacterArt
-      bracket={(viewer.bracket as Bracket | null) ?? null}
-      character={viewer.avatar as Avatar}
-      size={112}
-    />
+    <div className="relative flex leading-none">
+      <CharacterArt
+        bracket={(viewer.bracket as Bracket | null) ?? null}
+        character={viewer.avatar as Avatar}
+        size={112}
+      />
+      <span className="sv-glow" data-on={glow.me ? 'true' : 'false'}>
+        <CharacterGlow glowKey={myGlowKey} size={112} />
+      </span>
+    </div>
   )
   const lockedItems = ITEMS.filter((item) => !item.isBadge && !viewer.ownedItems.includes(item.key))
     .map((item) => item.key)

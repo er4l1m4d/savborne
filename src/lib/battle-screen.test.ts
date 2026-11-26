@@ -43,3 +43,16 @@ test('the battle screen uses the additive GET fields', () => {
   assert.match(PAGE, /battle\.opponentLevel/)
   assert.match(PAGE, /battle\.opponentBracket/)
 })
+
+test('the battle screen fires the defend/item glow beat on a poll diff', () => {
+  assert.match(PAGE, /<CharacterGlow/)
+  assert.match(PAGE, /sv-glow/)
+  // The rim means "an effect was applied to this fighter": defend or item use.
+  assert.match(PAGE, /mine\?\.move === 'defend' \|\| Boolean\(mine\?\.itemKey\)/)
+  assert.match(PAGE, /theirs\?\.move === 'defend' \|\| Boolean\(theirs\?\.itemKey\)/)
+  // The beat fires on a turn transition between polls, never on a clock.
+  assert.match(PAGE, /lastSeenTurn/)
+  assert.match(PAGE, /firstStateSeen/)
+  // Reduced motion collapses the beat entirely.
+  assert.match(PAGE, /prefers-reduced-motion: reduce/)
+})

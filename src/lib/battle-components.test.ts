@@ -63,3 +63,14 @@ test('ItemSheet refuses to spend a turn on a no-modifier item', () => {
   assert.match(src, /state === 'available' && !passive \? \(\) => onUse\(itemKey\) : undefined/)
   assert.doesNotMatch(src, /state === 'available' \? \(\) => onUse/)
 })
+
+test('CharacterGlow draws the shipped rim on the sprite grid', () => {
+  const src = component('CharacterGlow.tsx')
+  assert.match(src, /character-glows\.json/)
+  assert.match(src, /viewBox="0 0 16 16"/)
+  assert.match(src, /imageRendering: 'pixelated'/)
+  assert.match(src, /aria-hidden/)
+  // Every player sprite has a rim; the rival names are their own keys.
+  assert.match(src, /heroGlowKey/)
+  assert.match(src, /rivalGlowKey/)
+})

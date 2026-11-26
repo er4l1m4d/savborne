@@ -82,7 +82,7 @@ Every battle state must be legible without reading a word of text. To keep it th
 | **scale** | outcome magnitude | `108` winner · `84` loser · equal in a tie |
 | **lunge** (one-way horizontal) | aggression | `0 → translateX(24px) → 0`, 450ms `steps(6)`, attacker's resolving beat only |
 | **impact** (brightness flash + two-way decaying shake) | damage received | `filter: brightness(2.2)` 400ms `steps(4)` **plus** `translateX ±6px` 300ms `steps(5)` |
-| **glow** (gilt silhouette rim) | **an effect has been applied to this fighter** — claimed 2026-10-30 for defend and item-use | 1px rim `#FEE761`, 8-neighbour silhouette. **Not yet implemented**; needs a pre-baked rim path per character |
+| **glow** (gilt silhouette rim) | **an effect has been applied to this fighter** — claimed 2026-10-30 for defend and item-use | 1px rim `#FEE761`, 8-neighbour silhouette. **Implemented 2026-11-26**: the rims ship in `assets/character-glows.json` and fire in the app's arena on a poll diff (defend and item-use; a timeout still reads as an ordinary defend until the `move_source` flag exists) |
 | **bob** (small vertical) | **decoration only, carries no information** | `0 → −2px, steps(1)` on the acting fighter. Demoted 2026-10-30, see consequence 3 |
 | **ground shadow** | floor contact | **retired 2026-10-17.** Never carries state |
 
@@ -215,6 +215,8 @@ Until that lands the honest ceiling is: **we can show what they played, never wh
 `filter: drop-shadow` produces a soft, anti-aliased halo and would break the quantised idiom the whole set holds. The rim is therefore generated the way the badge chips are — an **8-neighbour** silhouette outline, one pixel wide, in `#FEE761` — and **pre-baked per character into `assets/characters.json`** as an extra path so the client only toggles its visibility. A 4-neighbour rim was tried and renders as a dotted outline, because every diagonal corner is left unpainted.
 
 This is an asset change and is **not done**. `scripts/glow-candidates.mjs` is the reference implementation of the rim. Until it lands, defend and item-use have no beat, which is the honest state of things rather than a gap in the spec.
+
+**Status 2026-11-26:** the rims shipped as `assets/character-glows.json` and the beat now fires in the app — `src/components/battle/CharacterGlow.tsx` overlays the pre-baked path on the sprite, the battle screen triggers it on a turn transition observed between polls (first observation records only, so a reload does not replay an old beat), and it is skipped under `prefers-reduced-motion`. The timeout distinction below still needs the API flag.
 
 ### Reduced motion
 

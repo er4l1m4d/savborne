@@ -68,6 +68,7 @@
   --t-pop: 900ms;
   --t-dots: 1s;
   --t-shake: 300ms;
+  --t-glow: 240ms;
 }
 
 /* Vestibular safety. 0.01ms rather than 0s on purpose: a zero-duration
@@ -81,6 +82,7 @@
     --t-pop: 0.01ms;
     --t-dots: 0.01ms;
     --t-shake: 0.01ms;
+    --t-glow: 0.01ms;
   }
 }
 
@@ -310,6 +312,20 @@ body {
 .sv-shake { animation: sv-shake var(--t-shake) var(--ease); }
 .sv-pop { animation: sv-pop var(--t-pop) var(--ease); }
 
+/* Battle glow rim: an effect was applied to this fighter (defend, item use).
+   The rim itself is pre-baked pixel art; only its opacity moves, in three
+   quantised steps, so it snaps the way the sprites do. The beat is skipped
+   entirely under reduced motion, so the collapse here is a backstop. */
+.sv-glow {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-glow) steps(3, end);
+}
+.sv-glow[data-on='true'] { opacity: 1; }
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --t-press: 0.01ms;
@@ -318,6 +334,7 @@ body {
     --t-pop: 0.01ms;
     --t-dots: 0.01ms;
     --t-shake: 0.01ms;
+    --t-glow: 0.01ms;
   }
   .sv-sheet, .sv-shake, .sv-pop, .sv-dots span, .sv-loader span { animation: none; }
   .sv-press:active { transform: none; }
