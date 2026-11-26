@@ -251,7 +251,7 @@ Notes:
 - **Daily check-in:** Open the app and record the balance. Counts toward the Daily Check-in mission.
 - **Weekly check-in:** Record at least one balance in the calendar week. Keeps the streak alive.
 - **Grace day:** One missed day per calendar week is forgiven. Does not stack. Week resets Monday 00:00 UTC.
-- **Streak badges:** One-week streak badge for everyone. Four-week streak badge (Iron Saver) for players who stay through 11 November.
+- **Streak badges:** One-week streak badge for everyone. Four-week streak badge (Iron Saver) for players who keep a four-week streak.
 
 ### 4.5 Scoring of savings (leaderboards)
 
@@ -375,7 +375,7 @@ Eight items, two per bracket. Items stay in the inventory after a withdrawal.
 |---|---|---|
 | First Steps | First check-in | No |
 | Week Warrior | One-week streak (for everyone) | **Yes** |
-| Iron Saver | Four-week streak (players who stay through 11 November) | **Yes** |
+| Iron Saver | Four-week check-in streak | **Yes** |
 | Steady Hand | No withdrawals for a month | No |
 | First Blade | First battle win | No |
 | Golden Crown | Gold bracket status (an item-linked badge) | No |

@@ -36,7 +36,7 @@ export const BADGES: {
 }[] = [
   { key: 'first_steps',   name: 'First Steps',   description: 'Complete your first check-in', revokedOnWithdrawal: false },
   { key: 'week_warrior',  name: 'Week Warrior',  description: 'Keep a seven-day check-in streak', revokedOnWithdrawal: true },
-  { key: 'iron_saver',    name: 'Iron Saver',    description: 'Four-week streak through 11 November', revokedOnWithdrawal: true },
+  { key: 'iron_saver',    name: 'Iron Saver',    description: 'Keep a four-week check-in streak', revokedOnWithdrawal: true },
   { key: 'steady_hand',   name: 'Steady Hand',   description: 'Thirty consecutive UTC days with no withdrawal', revokedOnWithdrawal: false },
   { key: 'first_blade',   name: 'First Blade',   description: 'Win your first battle', revokedOnWithdrawal: false },
   { key: 'golden_crown',  name: 'Golden Crown',  description: 'Reach the Gold bracket', revokedOnWithdrawal: false },

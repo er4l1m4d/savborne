@@ -385,7 +385,7 @@ on conflict (key) do update
 insert into badges (id, name, description, revoked_on_withdrawal) values
   ('first_steps',  'First Steps',  'First check-in',                      false),
   ('week_warrior', 'Week Warrior', 'One-week streak',                      true),
-  ('iron_saver',   'Iron Saver',   'Four-week streak through 11 November', true),
+  ('iron_saver',   'Iron Saver',   'Four-week check-in streak',              true),
   ('steady_hand',  'Steady Hand',  'No withdrawals for 30 UTC days',       false),
   ('first_blade',  'First Blade',  'First battle win',                     false),
   ('golden_crown', 'Golden Crown', 'Gold bracket status',                  false)
