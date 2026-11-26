@@ -41,6 +41,13 @@ test('Balance dropped reads the handoff and has a single way home', () => {
   assert.match(WITHDRAWAL, /Removed/)
 })
 
+test('Balance dropped shows revoked badges as removed art, not a name list', () => {
+  assert.match(WITHDRAWAL, /<BadgeArt/)
+  assert.match(WITHDRAWAL, /state="removed"/)
+  assert.doesNotMatch(WITHDRAWAL, /◈/)
+  assert.doesNotMatch(WITHDRAWAL, /◇/)
+})
+
 test('Home routes a check-in to the celebration screens', () => {
   assert.match(HOME, /checkInDestination/)
   assert.match(HOME, /writeBracketHandoff/)

@@ -46,3 +46,13 @@ test('Home reads the mission payload field the API returns', () => {
   assert.match(HOME, /xpReward: m\.xpReward \?\? m\.xp_reward/)
   assert.doesNotMatch(HOME, /xpReward: m\.xp_reward\b/)
 })
+
+test('The check-in awards use the real badge and item art', () => {
+  assert.match(HOME, /<BadgeArt/)
+  assert.match(HOME, /<ItemArt/)
+  assert.match(HOME, /sv-section-label/)
+  // The text glyphs and raw uppercase labels the panel used to carry are gone.
+  assert.doesNotMatch(HOME, /◈/)
+  assert.doesNotMatch(HOME, /◇/)
+  assert.doesNotMatch(HOME, /uppercase tracking-widest/)
+})

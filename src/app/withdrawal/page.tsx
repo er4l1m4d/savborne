@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation'
 import { LUNA_PER_NIM } from '@/lib/constants'
 import { BADGES } from '@/lib/game/badges'
 import { takeWithdrawalHandoff, type WithdrawalHandoff } from '@/lib/checkin-handoff'
-import { Glyph } from '@/components/Glyphs'
+import { BadgeArt, Glyph } from '@/components/Glyphs'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { ButtonLink } from '@/components/ui/Button'
@@ -95,10 +95,24 @@ export default function WithdrawalPage() {
       <PixelPanel className="p-3.5 flex flex-col gap-2">
         <span className="sv-label text-coral-text">Removed</span>
         {removed.length > 0 ? (
-          <span className="sv-label text-fg-soft">
-            {removed.map((badge) => badge.name).join(', ')}. This week&apos;s Steady Saver
-            mission resets.
-          </span>
+          <>
+            <ul className="flex flex-col gap-1.5">
+              {removed.map((badge) => (
+                <li key={badge.key} className="flex items-center gap-2.5">
+                  <BadgeArt
+                    badge={badge.key}
+                    state="removed"
+                    size={32}
+                    title={`${badge.name} removed`}
+                  />
+                  <span className="sv-label font-bold">{badge.name}</span>
+                </li>
+              ))}
+            </ul>
+            <span className="sv-label text-fg-soft">
+              This week&apos;s Steady Saver mission resets.
+            </span>
+          </>
         ) : (
           <span className="sv-label text-fg-soft">
             No badges were removed. This week&apos;s Steady Saver mission resets.

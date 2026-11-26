@@ -38,7 +38,8 @@ import {
   writeWithdrawalHandoff,
 } from '@/lib/checkin-handoff'
 import { CharacterArt } from '@/components/CharacterArt'
-import { Glyph } from '@/components/Glyphs'
+import { ItemArt } from '@/components/ItemArt'
+import { BadgeArt, Glyph } from '@/components/Glyphs'
 import { ScreenShell } from '@/components/ui/ScreenShell'
 import { PixelPanel } from '@/components/ui/PixelPanel'
 import { Row } from '@/components/ui/Row'
@@ -79,7 +80,6 @@ export default function HomePage() {
   const [checkError, setCheckError] = useState<string | null>(null)
   const [dailyMissions, setDailyMissions] = useState<MissionStatus[] | null>(null)
   const [deltaLuna, setDeltaLuna] = useState(0)
-
   useEffect(() => {
     if (loading) return
     if (needsReconnect || session === null) router.replace('/setup')
@@ -469,27 +469,51 @@ function AwardsPanel({ awards }: { awards: AwardSummary }) {
         </p>
       )}
       {awards.unlockedItems.length > 0 && (
-        <ul className="sv-label text-butter-text flex flex-col gap-0.5 pt-1 border-t border-line">
-          <li className="uppercase tracking-widest font-bold">New items unlocked</li>
-          {awards.unlockedItems.map((k) => {
-            const it = ITEMS.find((i) => i.key === k)
-            return it ? <li key={k}>◈ {it.name} - {it.blurb}</li> : null
-          })}
-        </ul>
+        <div className="flex flex-col gap-2 pt-1 border-t border-line">
+          <span className="sv-section-label text-butter-text">New items unlocked</span>
+          <ul className="grid grid-cols-2 gap-2">
+            {awards.unlockedItems.map((k) => {
+              const it = ITEMS.find((i) => i.key === k)
+              return it ? (
+                <li
+                  key={k}
+                  className="flex items-center gap-2.5 bg-sprite-well border-2 border-line p-2.5"
+                >
+                  <ItemArt item={k} size={32} />
+                  <span className="sv-label font-bold leading-tight">{it.name}</span>
+                </li>
+              ) : null
+            })}
+          </ul>
+        </div>
       )}
       {awards.badgeActions.length > 0 && (
-        <ul className="sv-label text-mint flex flex-col gap-0.5 pt-1 border-t border-line">
-          <li className="uppercase tracking-widest font-bold">Badges</li>
-          {awards.badgeActions.map((a) => {
-            const b = BADGES.find((x) => x.key === a.badge)
-            const label = `${a.kind === 'award' ? '◈ Earned' : '◇ Revoked'}: ${b?.name ?? a.badge}`
-            return (
-              <li key={`${a.kind}-${a.badge}`} className={a.kind === 'revoke' ? 'text-coral-text' : ''}>
-                {label}
-              </li>
-            )
-          })}
-        </ul>
+        <div className="flex flex-col gap-2 pt-1 border-t border-line">
+          <span className="sv-section-label text-mint">Badges</span>
+          <ul className="flex flex-col gap-1.5">
+            {awards.badgeActions.map((a) => {
+              const b = BADGES.find((x) => x.key === a.badge)
+              const state = a.kind === 'award' ? 'earned' : 'removed'
+              return (
+                <li key={`${a.kind}-${a.badge}`} className="flex items-center gap-2.5">
+                  <BadgeArt
+                    badge={a.badge}
+                    state={state}
+                    size={32}
+                    title={`${b?.name ?? a.badge} ${state}`}
+                  />
+                  <span className="sv-label font-bold">
+                    {b?.name ?? a.badge}
+                    <span className={a.kind === 'award' ? ' text-mint' : ' text-coral-text'}>
+                      {' '}
+                      {state}
+                    </span>
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       )}
     </PixelPanel>
   )
