@@ -65,6 +65,27 @@ export function modsForItems(activeItemKeys: Iterable<ItemKey>): ItemMods {
   return mods
 }
 
+/**
+ * Whether the battle engine gives this item an active modifier. Ledger Scroll
+ * (+5% check-in XP) and the Golden Crown (a status badge) work outside
+ * battles; the item sheet mutes them with this check so a player cannot spend
+ * a whole turn on an item that does nothing in the arena.
+ *
+ * Derived from `modsForItems` rather than a hand-kept list so the two can
+ * never disagree about what counts as a battle effect.
+ */
+export function hasBattleEffect(key: ItemKey): boolean {
+  const mods = modsForItems([key])
+  return (
+    mods.defendPercentBonus !== 0 ||
+    mods.defendFlatReduce !== 0 ||
+    mods.attackPercent !== 0 ||
+    mods.specialPercent !== 0 ||
+    mods.specialCooldownOff ||
+    mods.revealsLastMove
+  )
+}
+
 function baseDamage(move: BattleMove): number {
   if (move === 'attack') return BATTLE.attackDamage
   if (move === 'special') return BATTLE.specialDamage

@@ -3,7 +3,9 @@
  *
  * The in-battle item picker. Available items are real buttons; used and locked
  * items are disabled rows so the player can see the whole loadout and why the
- * unavailable rows are unavailable.
+ * unavailable rows are unavailable. Owned items the engine gives no modifier
+ * (Ledger Scroll, Golden Crown) stay visible but are disabled and labelled
+ * "No battle effect" instead of letting a turn be spent on nothing.
  */
 
 import { BottomSheet } from '@/components/ui/BottomSheet'
@@ -11,6 +13,7 @@ import { Button } from '@/components/ui/Button'
 import { ItemArt } from '@/components/ItemArt'
 import { BRACKETS } from '@/lib/constants'
 import { ITEMS, type ItemKey } from '@/lib/game/items'
+import { hasBattleEffect } from '@/lib/game/battle'
 
 type ItemSheetProps = {
   open: boolean
@@ -36,9 +39,13 @@ function ItemRow({
   const item = ITEMS.find((entry) => entry.key === itemKey)
   if (!item) return null
 
-  const disabled = state !== 'available' || busy
+  // An owned item the engine gives no modifier must be honest about it: the
+  // row stays visible (Ledger Scroll earns check-in XP, the Crown is a status
+  // badge) but cannot spend a turn that would do nothing in the arena.
+  const passive = state === 'available' && !hasBattleEffect(itemKey)
+  const disabled = state !== 'available' || passive || busy
   const className =
-    state === 'available'
+    state === 'available' && !passive
       ? 'border-mint'
       : state === 'locked'
         ? 'border-dashed border-bevel-soft'
@@ -56,7 +63,7 @@ function ItemRow({
       fullWidth
       disabled={disabled}
       className={className}
-      onClick={state === 'available' ? () => onUse(itemKey) : undefined}
+      onClick={state === 'available' && !passive ? () => onUse(itemKey) : undefined}
     >
       <span className="shrink-0">
         <ItemArt item={itemKey} size={32} />
@@ -68,9 +75,15 @@ function ItemRow({
         </span>
       </span>
       <span
-        className={`sv-label shrink-0 ${state === 'available' ? 'text-mint' : 'text-fg-muted'}`}
+        className={`sv-label shrink-0 ${state === 'available' && !passive ? 'text-mint' : 'text-fg-muted'}`}
       >
-        {state === 'available' ? 'Use' : state === 'used' ? 'Used' : 'Locked'}
+        {passive
+          ? 'No battle effect'
+          : state === 'available'
+            ? 'Use'
+            : state === 'used'
+              ? 'Used'
+              : 'Locked'}
       </span>
     </Button>
   )

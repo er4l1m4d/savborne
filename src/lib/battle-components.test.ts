@@ -54,3 +54,12 @@ test('ItemSheet uses the bottom sheet and the three item states', () => {
   assert.match(src, /border-mint/)
   assert.match(src, /border-dashed/)
 })
+
+test('ItemSheet refuses to spend a turn on a no-modifier item', () => {
+  const src = component('ItemSheet.tsx')
+  assert.match(src, /hasBattleEffect/)
+  assert.match(src, /'No battle effect'/)
+  // A passive row is disabled and never calls onUse.
+  assert.match(src, /state === 'available' && !passive \? \(\) => onUse\(itemKey\) : undefined/)
+  assert.doesNotMatch(src, /state === 'available' \? \(\) => onUse/)
+})
