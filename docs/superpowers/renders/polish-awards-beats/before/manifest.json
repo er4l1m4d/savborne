@@ -1,0 +1,11 @@
+{
+  "base": "http://localhost:3138",
+  "mode": "before",
+  "widths": [
+    360,
+    390,
+    430
+  ],
+  "height": 780,
+  "date": "2026-11-26T12:18:22.926Z"
+}

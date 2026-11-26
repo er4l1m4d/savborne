@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savborne - polish-awards-beats review</title>
+<style>
+  body { background: #0C1211; color: #F3EEDD; font: 15px/1.5 system-ui, sans-serif; margin: 0; padding: 32px 22px 80px; }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  p.intro { color: #A9B8B2; max-width: 72ch; margin: 0 0 32px; }
+  h2 { font-size: 20px; margin: 48px 0 4px; }
+  p.note { color: #A9B8B2; font-size: 13px; max-width: 72ch; margin: 0 0 12px; }
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; align-items: start; }
+  figure { margin: 0; }
+  img { width: 100%; height: auto; image-rendering: pixelated; border: 1px solid #2E4642; }
+  figcaption { font-size: 12px; color: #A9B8B2; margin-top: 6px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .cols3 img { max-width: 130px; }
+  span.new { color: #6FD0AE; }
+</style>
+</head>
+<body>
+<h1>Savborne - polish-awards-beats</h1>
+<p class="intro">
+  Review renders for the six-change polish batch. Fixture data throughout
+  (Kemi, 12.40 NIM, Mint Wraith); every /api call was intercepted, nothing
+  touched production. Before images are <code>main</code> at bd5ac4aa.
+  States marked <span class="new">new</span> did not exist on main.
+</p>
+
+<h2>Home - check-in awards</h2>
+<p class="note">The one that matters: the awards panel now draws the real item tiles and badge art (earned mint, removed coral) instead of the old text glyph list.</p>
+<div class="pair">
+  <figure><img src="../before/home-awards@390.png" alt="awards before"><figcaption>before - main</figcaption></figure>
+  <figure><img src="../after/home-awards@390.png" alt="awards after"><figcaption>after - this branch</figcaption></figure>
+</div>
+<div class="cols3 pair">
+  <figure><img src="../after/home-awards@360.png" alt=""><figcaption>360</figcaption></figure>
+  <figure><img src="../after/home-awards@430.png" alt=""><figcaption>430</figcaption></figure>
+  <figure><img src="../after/home-awards@390.png" alt=""><figcaption>390</figcaption></figure>
+</div>
+
+<h2>Home - final-hours streak cue <span class="new">new</span></h2>
+<p class="note">A fixed clock at 20:30 UTC with the day unclaimed. The cue is coral, sentence case, and only exists inside the six-hour window.</p>
+<div class="cols3 pair">
+  <figure><img src="../after/home-streak-risk@360.png" alt=""><figcaption>360</figcaption></figure>
+  <figure><img src="../after/home-streak-risk@390.png" alt=""><figcaption>390</figcaption></figure>
+  <figure><img src="../after/home-streak-risk@430.png" alt=""><figcaption>430</figcaption></figure>
+</div>
+
+<h2>Withdrawal - removed badges as art</h2>
+<p class="note">Revoked badges render with the shipped removed-state drawings instead of a comma-separated name list.</p>
+<div class="pair">
+  <figure><img src="../before/withdrawal@390.png" alt="withdrawal before"><figcaption>before - main</figcaption></figure>
+  <figure><img src="../after/withdrawal@390.png" alt="withdrawal after"><figcaption>after - this branch</figcaption></figure>
+</div>
+
+<h2>Battle - item sheet honesty</h2>
+<p class="note">Ledger Scroll and Golden Crown stay visible but can no longer spend a turn on nothing: disabled rows, no mint border, a plain "No battle effect".</p>
+<div class="pair">
+  <figure><img src="../before/battle-item-sheet@390.png" alt="sheet before"><figcaption>before - main</figcaption></figure>
+  <figure><img src="../after/battle-item-sheet@390.png" alt="sheet after"><figcaption>after - this branch</figcaption></figure>
+</div>
+
+<h2>Battle - defend and item-use rim <span class="new">new</span></h2>
+<p class="note">The pre-baked gilt rim fires on the fighter an effect was applied to, caught mid-beat from a live poll transition. Also visible on your own sprite when you defend.</p>
+<div class="cols3 pair">
+  <figure><img src="../after/battle-glow@360.png" alt=""><figcaption>360</figcaption></figure>
+  <figure><img src="../after/battle-glow@390.png" alt=""><figcaption>390</figcaption></figure>
+  <figure><img src="../after/battle-glow@430.png" alt=""><figcaption>430</figcaption></figure>
+</div>
+
+<h2>Home - default (unchanged layout check)</h2>
+<p class="note">No cue, no awards: the savings card, missions and battle card as on main, so you can see nothing else moved.</p>
+<div class="pair">
+  <figure><img src="../before/home-default@390.png" alt="home before"><figcaption>before - main</figcaption></figure>
+  <figure><img src="../after/home-default@390.png" alt="home after"><figcaption>after - this branch</figcaption></figure>
+</div>
+</body>
+</html>
